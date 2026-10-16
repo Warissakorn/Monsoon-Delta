@@ -1,0 +1,20 @@
+# view/tile_view.gd
+func update_collider(visible_top_y: float) -> void:
+	var pts := PackedVector3Array()
+	for k in 6:
+		var a: float = deg_to_rad(60.0 * k - 90.0)
+		var p := Vector3(cos(a), 0.0, sin(a))
+		pts.append(p + Vector3(0.0, -1.6, 0.0))
+		pts.append(p + Vector3(0.0, visible_top_y, 0.0))
+	(_pick_shape.shape as ConvexPolygonShape3D).points = pts
+
+# view/board_view.gd — call from _physics_process only when the mouse or camera moved
+func pick(screen_pos: Vector2) -> Vector2i:
+	var cam: Camera3D = get_viewport().get_camera_3d()
+	var from: Vector3 = cam.project_ray_origin(screen_pos)
+	var to: Vector3 = from + cam.project_ray_normal(screen_pos) * 100.0
+	var q := PhysicsRayQueryParameters3D.create(from, to, 1)
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(q)
+	if hit.is_empty():
+		return NO_TILE
+	return (hit["collider"] as Node).get_meta("coord")

@@ -1,0 +1,13 @@
+# ui/app.gd
+func screenshot_and_quit(path: String) -> void:
+	for i in 30:
+		await get_tree().process_frame
+	while is_animating():
+		await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var img: Image = get_viewport().get_texture().get_image()
+	var abs_path: String = path if path.is_absolute_path() else ProjectSettings.globalize_path("res://").path_join(path)
+	DirAccess.make_dir_recursive_absolute(abs_path.get_base_dir())
+	var err: Error = img.save_png(abs_path)
+	print("screenshot: %s (%s)" % [abs_path, error_string(err)])
+	get_tree().quit(0 if err == OK else 1)

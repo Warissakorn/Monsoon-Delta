@@ -1,0 +1,27 @@
+shader_type spatial;
+render_mode blend_mix, cull_back, depth_draw_opaque;
+
+uniform vec4 shallow_color : source_color = vec4(0.498, 0.827, 0.902, 0.55);
+uniform vec4 deep_color : source_color = vec4(0.122, 0.306, 0.475, 0.85);
+uniform float depth = 0.0;
+uniform float max_depth = 1.5;
+uniform float wave_amp = 0.02;   // world units
+uniform float preview = 0.0;
+
+void vertex() {
+	if (VERTEX.y > 0.5) {   // top ring of the unit-height prism
+		vec3 w = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+		float h = max(length(MODEL_MATRIX[1].xyz), 0.0001);   // world height of this column
+		float amp = wave_amp * clamp(h / 0.1, 0.0, 1.0);      // calm in very shallow water
+		VERTEX.y += (sin(w.x * 2.0 + TIME * 1.5) + cos(w.z * 2.3 + TIME * 1.2)) * amp / h;
+	}
+}
+
+void fragment() {
+	float t = clamp(depth / max_depth, 0.0, 1.0);
+	vec4 c = mix(shallow_color, deep_color, t);
+	float fres = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 3.0);
+	ALBEDO = c.rgb + vec3(fres * 0.15) + vec3(preview * 0.3);
+	ROUGHNESS = 0.15;
+	ALPHA = mix(c.a, 0.3, preview);
+}

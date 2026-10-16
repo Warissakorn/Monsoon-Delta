@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(godot:*)",
+      "Bash(bash tools/test.sh:*)",
+      "Bash(bash tools/run_bots.sh:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git log:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(rm -rf:*)"
+    ]
+  }
+}

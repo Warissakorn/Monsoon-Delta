@@ -1,0 +1,12 @@
+{
+  "format": "monsoon_replay", "version": 1, "godot": "4.7.2", "game_version": "0.3.0",
+  "config": { "seed": "123456", "map_type": "plains", "leader": "farmer", "difficulty": 0 },
+  "actions": [
+    { "t": "card", "i": 1 },
+    { "t": "cmd", "id": "dig", "q": 0, "r": 1, "p": -1 },
+    { "t": "undo" },
+    { "t": "end" },
+    { "t": "event", "c": 0 },
+    { "t": "continue" }
+  ]
+}

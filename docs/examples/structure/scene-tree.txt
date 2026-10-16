@@ -1,0 +1,19 @@
+root (Window)
+├── App (autoload)        settings, profile, screen switching, screenshots, input registration
+├── Audio (autoload)      buses, ambience, SFX pool
+└── <current screen>      MainMenu | NewGameScreen | GameScreen | SandboxScreen | ...
+
+GameScreen (Node)
+├── World (Node3D)
+│   ├── WorldEnvironment + DirectionalLight3D
+│   ├── Weather            sky/light tweens, rain CPUParticles3D
+│   ├── CameraRig → Pitch → Camera3D
+│   └── BoardView → TileView × 61
+├── WaterAnim (Node)
+├── Fx (Node)
+├── HUD (CanvasLayer, layer 1)
+│   └── Root (Control, full rect, mouse_filter = IGNORE)
+│       ├── TopBar + CardStrip
+│       ├── RightPanel (TileInfo + PreviewPanel)
+│       └── CommandBar
+└── Modals (CanvasLayer, layer 10)   dim ColorRect (mouse_filter = STOP) + dialog

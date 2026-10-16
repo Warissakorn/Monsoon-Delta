@@ -1,0 +1,28 @@
+# core/mods.gd  (spec: M-02)
+static func compute(s: GameState) -> Dictionary:
+	var m: Dictionary = DataDB.mods_default().duplicate()
+	_apply(m, DataDB.map_mods(s.map_type))
+	_apply(m, DataDB.leader_mods(s.leader))
+	for lvl in s.difficulty:
+		_apply(m, DataDB.difficulty_mods(lvl))       # index 0 = difficulty level 1
+	for id: String in s.cards:
+		_apply(m, DataDB.card(id)["mods"])
+	_apply(m, s.year_mods)
+	return m
+
+static func _apply(m: Dictionary, list: Array) -> void:
+	for mod: Dictionary in list:
+		var key: String = mod["key"]
+		if not m.has(key):
+			push_error("unknown mod key: " + key)
+			continue
+		var v: float = float(mod["value"])
+		match String(mod["op"]):
+			"add":
+				m[key] = float(m[key]) + v
+			"mul":
+				m[key] = float(m[key]) * v
+			"set":
+				m[key] = v
+			_:
+				push_error("unknown mod op in " + key)

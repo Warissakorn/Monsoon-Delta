@@ -1,0 +1,17 @@
+extends SceneTree
+# godot --headless --path . --script res://tools/bench.gd
+
+func _initialize() -> void:
+	var s: GameState = GameFlow.new_game({"seed": 42, "map_type": "plains", "leader": "farmer",
+		"difficulty": 0, "is_daily": false, "is_tutorial": false})
+	BotCommon.advance_to_planning(s)
+	var runs: int = 300
+	var t0: int = Time.get_ticks_usec()
+	for i in runs:
+		WaterSim.simulate(s.duplicate_state(), 4.0, false)
+	var t1: int = Time.get_ticks_usec()
+	for i in runs:
+		GameFlow.preview(s)
+	var t2: int = Time.get_ticks_usec()
+	print("simulate: %.2f ms | preview: %.2f ms" % [(t1 - t0) / 1000.0 / runs, (t2 - t1) / 1000.0 / runs])
+	quit()

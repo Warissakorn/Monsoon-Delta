@@ -1,0 +1,26 @@
+# ui/app.gd
+const KEYS: Dictionary = {
+	"cmd_dig": [KEY_1], "cmd_fill": [KEY_2], "cmd_paddy": [KEY_3], "cmd_house": [KEY_4],
+	"cmd_stilt_house": [KEY_5], "cmd_raft_house": [KEY_6], "cmd_gate": [KEY_7],
+	"cmd_reservoir": [KEY_8], "cmd_fish_trap": [KEY_9], "cmd_granary": [KEY_0],
+	"cmd_chop": [KEY_C], "cmd_plant": [KEY_P], "cmd_wheel": [KEY_B], "cmd_demolish": [KEY_X],
+	"cam_left": [KEY_A, KEY_LEFT], "cam_right": [KEY_D, KEY_RIGHT],
+	"cam_up": [KEY_W, KEY_UP], "cam_down": [KEY_S, KEY_DOWN],
+	"cam_rot_left": [KEY_Q], "cam_rot_right": [KEY_E],
+	"toggle_preview": [KEY_TAB], "toggle_numbers": [KEY_V],
+	"end_turn": [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE], "cancel": [KEY_ESCAPE],
+}
+
+func _register_inputs() -> void:
+	for action: String in KEYS:
+		if not InputMap.has_action(action):
+			InputMap.add_action(action)
+		for code: int in KEYS[action]:
+			var ev := InputEventKey.new()
+			ev.physical_keycode = code as Key    # key position, works on AZERTY etc.
+			InputMap.action_add_event(action, ev)
+	var undo := InputEventKey.new()
+	undo.keycode = KEY_Z
+	undo.command_or_control_autoremap = true    # Ctrl+Z on Windows/Linux, Cmd+Z on macOS
+	_add_event("undo", undo)
+	# + mouse: zoom_in / zoom_out = wheel up / down, cancel += right button

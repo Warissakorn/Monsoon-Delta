@@ -1,0 +1,20 @@
+# view/camera_rig.gd — yaw on this node, pitch on a child, camera at distance
+func _ready() -> void:
+	_pitch = Node3D.new()
+	_pitch.rotation_degrees.x = -50.0
+	add_child(_pitch)
+	camera = Camera3D.new()
+	camera.position = Vector3(0.0, 0.0, _dist)
+	_pitch.add_child(camera)
+
+func rotate_step(dir: int) -> void:
+	_yaw_target += deg_to_rad(60.0) * dir
+	if _tween != null and _tween.is_valid():
+		_tween.kill()
+	_tween = create_tween()
+	_tween.tween_property(self, "rotation:y", _yaw_target, 0.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+func pan(dir: Vector2, delta: float) -> void:
+	var fwd := Vector3.FORWARD.rotated(Vector3.UP, rotation.y)
+	var right := Vector3.RIGHT.rotated(Vector3.UP, rotation.y)
+	position = (position + (right * dir.x + fwd * dir.y) * 10.0 * delta).limit_length(8.0)

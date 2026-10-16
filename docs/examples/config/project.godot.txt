@@ -1,0 +1,11 @@
+[application]
+config/name="Monsoon Delta"
+config/version="0.1.0"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="MonsoonDelta"
+run/main_scene="res://ui/boot.tscn"
+
+[debug]
+gdscript/warnings/untyped_declaration=2
+gdscript/warnings/shadowed_global_identifier=2
+gdscript/warnings/unsafe_call_argument=1

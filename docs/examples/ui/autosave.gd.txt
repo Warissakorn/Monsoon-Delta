@@ -1,0 +1,12 @@
+var _saved_key: String = ""
+
+func _autosave() -> void:
+	if state.is_tutorial:
+		return
+	if state.phase == C.Phase.GAME_OVER:
+		SaveIO.delete_save()
+		return
+	var key: String = "%d:%d:%d" % [state.year, state.turn, state.phase]
+	if key != _saved_key:
+		SaveIO.write_save(state)
+		_saved_key = key

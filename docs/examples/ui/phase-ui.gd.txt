@@ -1,0 +1,13 @@
+func _show_phase_ui() -> void:
+	_close_dialogs()
+	match state.phase:
+		C.Phase.CARD_PICK:
+			_open(CardDialog.new(state))
+		C.Phase.EVENT:
+			_open(EventDialog.new(state))
+		C.Phase.HARVEST:
+			_open(YearSummaryDialog.new(state))
+		C.Phase.GAME_OVER:
+			_open(GameOverDialog.new(state, App.last_unlocks))
+		_:
+			pass  # PLANNING: board is interactive
