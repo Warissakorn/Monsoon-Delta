@@ -6,6 +6,7 @@
 - [Roadmap M0–M9](ROADMAP.md)
 - [ความคืบหน้า](PROGRESS.md)
 - [ผลทดลองต้นแบบน้ำ](PLAYTEST.md)
+- [ระบบกฎเกม M3 และผลบอท](M3_CORE.md)
 
 ## สเปกที่ได้รับ
 

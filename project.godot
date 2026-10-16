@@ -1,10 +1,10 @@
-; Monsoon Delta — Godot 4 water sandbox (M0–M2)
+; Monsoon Delta — Godot 4 water sandbox and core game rules (M0–M3)
 config_version=5
 
 [application]
 config/name="Monsoon Delta"
 run/main_scene="res://ui/boot.tscn"
-config/features=PackedStringArray("4.3", "GL Compatibility")
+config/features=PackedStringArray("4.6", "GL Compatibility")
 
 [display]
 window/size/viewport_width=1920

@@ -279,5 +279,28 @@
     "elevation_min": -3,
     "elevation_max": 4,
     "default_seed": 42
+  },
+  "forecast": {
+    "weight_min": 0.25,
+    "weight_max": 0.45
+  },
+  "scoring": {
+    "population": 10,
+    "no_houses_lost": 50,
+    "hall_dry": 30,
+    "difficulty_step": 0.1
+  },
+  "bots": {
+    "candidate_count": 8,
+    "max_actions_per_turn": 200,
+    "weights": {
+      "loss": -1000,
+      "capacity": 3,
+      "destroyed": -8,
+      "paddies_died": -3,
+      "paddy_yield": 2,
+      "food": 1,
+      "wood": 0.5
+    }
   }
 }

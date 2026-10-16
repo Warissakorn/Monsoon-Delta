@@ -24,3 +24,8 @@ jobs:
           set -o pipefail
           godot --headless --path . --quit-after 5 2>&1 | tee smoke.log
           ! grep -Eq 'SCRIPT ERROR:|^ERROR:' smoke.log
+      - name: Smoke test complete game policies
+        run: |
+          set -o pipefail
+          godot --headless --path . --script res://tools/bot_sim.gd -- --bot=all --runs=1 --candidates=4 2>&1 | tee bots.log
+          ! grep -Eq 'SCRIPT ERROR:|^ERROR:' bots.log
