@@ -1,0 +1,10 @@
+.godot/
+*.tmp
+/screenshots/*
+!/screenshots/.gdignore
+/bot_reports/*
+!/bot_reports/.gdignore
+/build/*
+!/build/.gdignore
+.DS_Store
+Thumbs.db

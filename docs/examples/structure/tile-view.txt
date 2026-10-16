@@ -1,0 +1,8 @@
+TileView (Node3D)   position = Hex.to_world(q, r) with y = 0
+├── Body (MeshInstance3D)     hex prism r0.97, y = -1.6, scale.y = top_y + 1.6
+├── Pick (StaticBody3D, layer 1) → CollisionShape3D (ConvexPolygonShape3D)
+├── Deco (Node3D)             y = top_y; forest/paddy/building meshes, rebuilt when visual key changes
+├── Water (MeshInstance3D)    hex prism r0.985, y = top_y, scale.y = max(water × 0.4, 0.02)
+├── Ghost (MeshInstance3D)    thin plate at the predicted surface (§6.5)
+├── Highlight (MeshInstance3D) thin plate, y = top_y + 0.02
+└── Label (Label3D)           numbers (V key) and preview marks

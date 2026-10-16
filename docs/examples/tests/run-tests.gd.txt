@@ -1,0 +1,43 @@
+extends SceneTree
+
+func _initialize() -> void:
+	var filter: String = ""
+	for a: String in OS.get_cmdline_user_args():
+		if a.begins_with("--filter="):
+			filter = a.trim_prefix("--filter=")
+	var files: Array[String] = []
+	for f: String in DirAccess.get_files_at("res://tests"):
+		if f.begins_with("test_") and f.ends_with(".gd") and not ["test_case.gd", "test_maps.gd"].has(f):
+			if filter == "" or f.contains(filter):
+				files.append(f)
+	files.sort()
+	var passed: int = 0
+	var failed: int = 0
+	for f: String in files:
+		var script: GDScript = load("res://tests/" + f) as GDScript
+		if script == null or not script.can_instantiate():
+			print("FAIL %s: cannot load (parse error?)" % f)
+			failed += 1
+			continue
+		var inst: Object = script.new()
+		if not (inst is TestCase):
+			continue
+		var tc: TestCase = inst as TestCase
+		var names: Array[String] = []
+		for m: Dictionary in script.get_script_method_list():
+			var n: String = m["name"]
+			if n.begins_with("test_") and not names.has(n):
+				names.append(n)
+		names.sort()
+		for n: String in names:
+			tc.before_each()
+			tc.call(n)
+			var fails: PackedStringArray = tc.take_failures()
+			if fails.is_empty():
+				passed += 1
+				print("PASS %s::%s" % [f, n])
+			else:
+				failed += 1
+				print("FAIL %s::%s: %s" % [f, n, " | ".join(fails)])
+	print("%d passed, %d failed" % [passed, failed])
+	quit(0 if failed == 0 else 1)

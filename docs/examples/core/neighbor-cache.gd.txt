@@ -1,0 +1,13 @@
+# core/game_state.gd — called by from_dict() and after map generation
+func _rebuild_cache() -> void:
+	_index.clear()
+	for i in tiles.size():
+		_index[Vector2i(tiles[i].q, tiles[i].r)] = i
+	_nb.resize(tiles.size() * 6)
+	for i in tiles.size():
+		var c := Vector2i(tiles[i].q, tiles[i].r)
+		for d in 6:
+			_nb[i * 6 + d] = _index.get(Hex.neighbor(c, d), -1)
+
+func neighbor_table() -> PackedInt32Array:
+	return _nb

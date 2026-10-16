@@ -1,0 +1,49 @@
+# view/mesh_lib.gd
+class_name MeshLib
+extends RefCounted
+
+static var _cache: Dictionary = {}
+
+## Pointy-top hex prism (one corner toward -z). Base y = 0, top y = 1.
+## Surface 0 = top, surface 1 = sides (darker toward the bottom).
+static func hex_prism(radius: float) -> ArrayMesh:
+	var key: String = "hex:%.4f" % radius
+	if _cache.has(key):
+		return _cache[key]
+	var c: Array[Vector3] = []
+	for k in 6:
+		var a: float = deg_to_rad(60.0 * k - 90.0)
+		c.append(Vector3(cos(a) * radius, 0.0, sin(a) * radius))
+	var up := Vector3(0.0, 1.0, 0.0)
+
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	st.set_normal(Vector3.UP)
+	for k in 6:
+		var k1: int = (k + 1) % 6
+		st.add_vertex(up)
+		st.add_vertex(c[k] + up)
+		st.add_vertex(c[k1] + up)
+	var mesh: ArrayMesh = st.commit()
+
+	st = SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var top_col := Color(1.0, 1.0, 1.0)
+	var bot_col := Color(0.7, 0.7, 0.7)          # fake ambient occlusion
+	for k in 6:
+		var k1: int = (k + 1) % 6
+		st.set_normal(((c[k] + c[k1]) * 0.5).normalized())
+		# Godot treats clockwise triangles as front faces
+		st.set_color(top_col)
+		st.add_vertex(c[k1] + up)
+		st.add_vertex(c[k] + up)
+		st.set_color(bot_col)
+		st.add_vertex(c[k])
+		st.set_color(top_col)
+		st.add_vertex(c[k1] + up)
+		st.set_color(bot_col)
+		st.add_vertex(c[k])
+		st.add_vertex(c[k1])
+	st.commit(mesh)
+	_cache[key] = mesh
+	return mesh

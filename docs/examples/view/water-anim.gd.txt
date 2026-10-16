@@ -1,0 +1,14 @@
+# view/water_anim.gd
+func _process(delta: float) -> void:
+	if not _playing:
+		return
+	_t = minf(_t + delta, _duration)
+	var x: float = ease(_t / _duration, 0.6) * (_snaps.size() - 1)
+	var i0: int = floori(x)
+	var i1: int = mini(i0 + 1, _snaps.size() - 1)
+	var f: float = x - i0
+	for i in _board.tile_count():
+		_board.set_water_visual(i, lerpf(_snaps[i0][i], _snaps[i1][i], f))
+	if _t >= _duration:
+		_playing = false
+		finished.emit()

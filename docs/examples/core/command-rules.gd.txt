@@ -1,0 +1,34 @@
+# core/command_rules.gd — one row per command, values copied from table 05 exactly
+const DEFS: Dictionary = {
+	"dig":        {"season": "any", "target": "earth",  "water": "any", "labor": ["dig_labor_dry", "dig_labor_rain"], "wood": "", "unlock": "", "min_labor": 1},
+	"paddy":      {"season": "dry", "target": "empty",  "water": "dry", "labor": ["paddy_labor"], "wood": "", "unlock": "", "min_labor": 0},
+	"house":      {"season": "any", "target": "empty",  "water": "dry", "labor": ["house_labor"], "wood": "house_wood", "unlock": "", "min_labor": 0},
+	"raft_house": {"season": "any", "target": "afloat", "water": "wet", "labor": ["raft_labor"], "wood": "raft_wood", "unlock": "unlock_raft_house", "min_labor": 0},
+	# ... every other command from table 05 ...
+}
+
+static func check(s: GameState, cmd: Command) -> String:
+	var def: Dictionary = DEFS.get(cmd.id, {})
+	if def.is_empty():
+		return "err.unknown"
+	if s.phase != C.Phase.PLANNING:
+		return "err.phase"
+	if String(def["unlock"]) != "" and s.mod_i(def["unlock"]) != 1:
+		return "err.locked"
+	var t: Tile = s.get_tile(cmd.coord)
+	if t == null:
+		return "err.no_tile"
+	if def["season"] == "dry" and s.is_rain():
+		return "err.season"
+	if not _target_ok(s, t, cmd.id, def["target"]):
+		return "err.target"
+	if not _water_ok(s, t, def["water"]):
+		return "err.water"
+	if not _param_ok(s, t, cmd):
+		return "err.param"
+	var c: Vector2i = cost(s, cmd)
+	if s.labor < c.x:
+		return "err.labor"
+	if s.wood < c.y:
+		return "err.wood"
+	return ""

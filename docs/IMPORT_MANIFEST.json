@@ -1,0 +1,329 @@
+{
+  "description": "Mapping of all 54 uploaded files to repository paths; SHA-256 hashes cover the unchanged source bytes.",
+  "files": [
+    {
+      "original_name": "_Claude_Code_.md",
+      "path": "docs/reference/claude-code-gdd.md",
+      "size_bytes": 5006,
+      "sha256": "e552f670fdc5960a7b8f336f63afd0d7e9c6b41abbf880388efac1cb763714a5"
+    },
+    {
+      "original_name": "_Claude_Code_ (1).md",
+      "path": "docs/GDD.md",
+      "size_bytes": 22347,
+      "sha256": "e5e7a7054f0e6c03857c0f17d7df410900395bd2f611fd949665b4fdf505aa41"
+    },
+    {
+      "original_name": "_Claude_Code_ (2).md",
+      "path": "docs/ROADMAP.md",
+      "size_bytes": 9130,
+      "sha256": "8aacd068726bc3e9b1701ac462aaf1f00cf816a761e4316f66f600acee3ecd66"
+    },
+    {
+      "original_name": "_Claude_Code_ (3).md",
+      "path": "docs/reference/claude-code-specs.md",
+      "size_bytes": 4238,
+      "sha256": "a8fe1dc7fd795403c85b933eb28603d317e054f453588bda3f5b311691e08bfe"
+    },
+    {
+      "original_name": "_Claude_Code_ (4).md",
+      "path": "docs/specs/00_README.md",
+      "size_bytes": 3660,
+      "sha256": "68a55ea83b770f7cf7fc66ddbb8adcb81b0b44cceb60c4897e3a3f6eb2b4410b"
+    },
+    {
+      "original_name": "_Claude_Code_ (5).md",
+      "path": "docs/specs/01_architecture.md",
+      "size_bytes": 7556,
+      "sha256": "632cc47fc9650623135102a7b3a18ee0618d05ad91b91e8880a4ab050e7ecf74"
+    },
+    {
+      "original_name": "_Claude_Code_ (6).md",
+      "path": "docs/specs/02_state_save.md",
+      "size_bytes": 6599,
+      "sha256": "7396a864b32fd160dcca7200be371040878d4c45a710e7f06bdc028d167b8e26"
+    },
+    {
+      "original_name": "_Claude_Code_ (7).md",
+      "path": "docs/specs/04_water.md",
+      "size_bytes": 4891,
+      "sha256": "5d1db8cf30521ff39100ef6377ee048f3ef646f93172195d318f1121522d0ed1"
+    },
+    {
+      "original_name": "_Claude_Code_ (8).md",
+      "path": "docs/specs/05_commands.md",
+      "size_bytes": 5703,
+      "sha256": "47479c3ef2f39efb3591edc140ad91b02b95198bae519f5a02715e677ea17b8c"
+    },
+    {
+      "original_name": "_Claude_Code_ (9).md",
+      "path": "docs/specs/06_turn_flow.md",
+      "size_bytes": 10462,
+      "sha256": "f586ab1a2881a19b0f600cd840efc6356d1699821731802577f978c75d085473"
+    },
+    {
+      "original_name": "_Claude_Code_ (10).md",
+      "path": "docs/specs/07_mods_cards_leaders.md",
+      "size_bytes": 10461,
+      "sha256": "30760415a836a71337ff23778ef18177cd7eb26b0208ca4b53aea79a92dbd450"
+    },
+    {
+      "original_name": "_Claude_Code_ (11).md",
+      "path": "docs/specs/08_events.md",
+      "size_bytes": 4070,
+      "sha256": "1e3d3b9dd9b1584326f7d96406d88104eefe735ebe1d3d68e85791ba9b935c73"
+    },
+    {
+      "original_name": "_Claude_Code_ (12).md",
+      "path": "docs/specs/09_meta.md",
+      "size_bytes": 2835,
+      "sha256": "0101ded955825df2143b91cd4c9463477664eed77d9ac67ce5608d10174ec174"
+    },
+    {
+      "original_name": "_Claude_Code_ (13).md",
+      "path": "docs/specs/10_ui.md",
+      "size_bytes": 10952,
+      "sha256": "66c3d0c8841c3c42758820264dc192836e8c3129b2a9803d5685a1fb85d0e475"
+    },
+    {
+      "original_name": "_Claude_Code_ (14).md",
+      "path": "docs/specs/11_visuals.md",
+      "size_bytes": 7567,
+      "sha256": "21014489dff40a57629c9044c109d2c40253d1abbe1ba53cd231fccf248c28b6"
+    },
+    {
+      "original_name": "_Claude_Code_ (15).md",
+      "path": "docs/specs/12_audio.md",
+      "size_bytes": 2436,
+      "sha256": "fe0fbbf4a76227fdf1c67b45fd5314deb459543465b39d288c4d953c62514180"
+    },
+    {
+      "original_name": "_Claude_Code_ (16).md",
+      "path": "docs/specs/13_i18n.md",
+      "size_bytes": 2574,
+      "sha256": "3995f2479d29ffc3a6e9f79bd342c75cd1b86b62438457df935a6bfcd562d0b8"
+    },
+    {
+      "original_name": "_Claude_Code_ (17).md",
+      "path": "docs/specs/14_testing_bot.md",
+      "size_bytes": 9416,
+      "sha256": "c2a6c9fe8f6f88de7d0c5a26ccf93d4ae44258ffc86037da93b7cfc1a6bb1bf0"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_.txt",
+      "path": "docs/examples/config/project.godot.txt",
+      "size_bytes": 312,
+      "sha256": "c74ecf41b64656544f6320d6e49683f2e01834b9df5f7f931ba8f7838e07e3a4"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (1).txt",
+      "path": "docs/examples/config/gitignore.txt",
+      "size_bytes": 138,
+      "sha256": "07695737945a19891623cc03d79612a8d8ff0af1290d86b9833ed752e1881cbd"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (2).txt",
+      "path": "docs/examples/config/editorconfig.txt",
+      "size_bytes": 192,
+      "sha256": "a2838f2d7327ea60d89f7365c7b27a2354a7442b1cd6485fd48cbe6593ee1cae"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (3).txt",
+      "path": "docs/examples/structure/scene-tree.txt",
+      "size_bytes": 893,
+      "sha256": "9543f890b4032bc304b845561e2e5e04cefd5d48f419bf975edac2fb203e4447"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (4).txt",
+      "path": "docs/examples/ui/phase-ui.gd.txt",
+      "size_bytes": 351,
+      "sha256": "08c49347e73248c1085741ce86dce47e349fada1baea3022851435249ffa35a6"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (5).txt",
+      "path": "docs/examples/core/duplicate-state.gd.txt",
+      "size_bytes": 751,
+      "sha256": "ddb27c723b078166b225124e11f7c1a941fa0db551110f3a5976ff0d72d50164"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (6).txt",
+      "path": "docs/examples/core/enum-conversion.gd.txt",
+      "size_bytes": 454,
+      "sha256": "11ef49da049e522d061d999da86eff15cc40143f150eafb4479293f9bc4ca096"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (7).txt",
+      "path": "docs/examples/core/atomic-save.gd.txt",
+      "size_bytes": 1072,
+      "sha256": "630818368c5b3ffe7ba7da77dc367e16c9ad85ee39909c2afcf81d098aa23a4c"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (8).txt",
+      "path": "docs/examples/core/mods.gd.txt",
+      "size_bytes": 828,
+      "sha256": "1e663a3b3438d49389490caf480dbbfbd918987bbffc53c39a483128435c94c2"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (9).txt",
+      "path": "docs/examples/core/neighbor-cache.gd.txt",
+      "size_bytes": 412,
+      "sha256": "e975dfbd04c3bf59b30c24d04502255e132f09d9f6befd19bb41a05f7acc82aa"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (10).txt",
+      "path": "docs/examples/core/water-sim.gd.txt",
+      "size_bytes": 3335,
+      "sha256": "dcb751ba07d58ee9acccb85d80c790046f5c260d60164b7207bcf666b814132e"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (11).txt",
+      "path": "docs/examples/tools/bench.gd.txt",
+      "size_bytes": 643,
+      "sha256": "297aaf5f9cf72df4fa35a8d91615f3723e2de0ca28426e16023871d447712b93"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (12).txt",
+      "path": "docs/examples/core/command-rules.gd.txt",
+      "size_bytes": 1495,
+      "sha256": "ad197a3d66f1d4cc8e4ee114d5638986892e8896d057fd49addca2c8c01d6468"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (13).txt",
+      "path": "docs/examples/structure/tile-view.txt",
+      "size_bytes": 652,
+      "sha256": "69892e887b98b438dde4fddc14bcfbe7990a6465629ef0dc555dfc1f2ff7a44a"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (14).txt",
+      "path": "docs/examples/view/mesh-lib.gd.txt",
+      "size_bytes": 1396,
+      "sha256": "9212294c25019d18f9c402eb566cdf9f5d6440124312b3e938e6e32447968193"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (15).txt",
+      "path": "docs/examples/shaders/water.gdshader.txt",
+      "size_bytes": 1043,
+      "sha256": "dc20181ad3ef20026dc1140a9f929f34c8fe125f50e4f1af37a048488be24529"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (16).txt",
+      "path": "docs/examples/view/picking.gd.txt",
+      "size_bytes": 884,
+      "sha256": "642d36b5ff0949f6f52229062cbcc15c92158cab126186f48e239b4fb077df90"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (17).txt",
+      "path": "docs/examples/view/camera-rig.gd.txt",
+      "size_bytes": 803,
+      "sha256": "9f2b52f084d4ca83234056da83f4e6ee95782debef97519dcc1169e055ec237f"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (18).txt",
+      "path": "docs/examples/view/water-anim.gd.txt",
+      "size_bytes": 435,
+      "sha256": "8b6dbab0b2f18ecf0782122bab936f8abbad518353a9d728d61eb932dd75e66d"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (19).txt",
+      "path": "docs/examples/ui/theme-builder.gd.txt",
+      "size_bytes": 706,
+      "sha256": "7626653939d9b29836af261014d417f30506cf74d1e65e3e79fae2b7209cc2ba"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (20).txt",
+      "path": "docs/examples/ui/input-map.gd.txt",
+      "size_bytes": 1236,
+      "sha256": "60bda0d9a45c33a7814db06734d49d3d42cc265af0a3a79d1e52b88a8853c4e3"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (21).txt",
+      "path": "docs/examples/ui/audio.gd.txt",
+      "size_bytes": 1505,
+      "sha256": "4ec4ed266b452362714a51db406988e2a5709b45b558225a83972d81b008a97e"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (22).txt",
+      "path": "docs/examples/ui/autosave.gd.txt",
+      "size_bytes": 295,
+      "sha256": "5351c5e10bd0a8fff2617dc9fa44ed1dfe7128c5c7d7d801d886bc89a1e3a656"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (23).txt",
+      "path": "docs/examples/tests/test-case.gd.txt",
+      "size_bytes": 873,
+      "sha256": "e41f6fb68d3ac0a3e93c0d73673c1cdb160cc26c98d8ff2e580c024d61687f0c"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (24).txt",
+      "path": "docs/examples/tests/run-tests.gd.txt",
+      "size_bytes": 1380,
+      "sha256": "c15aafe13c6597bdb1a1fe94262f54d4a13012f74e39c378e194fbc08b9c3ad1"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (25).txt",
+      "path": "docs/examples/ui/screenshot.gd.txt",
+      "size_bytes": 585,
+      "sha256": "b7d1a6bd34ca1127d3aa377bea0397f20093bad508bcce8cb83a9744a10521ce"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_.json",
+      "path": "docs/examples/claude/permissions.json",
+      "size_bytes": 355,
+      "sha256": "c63fa318e41e0d48c18cf02414073d262cdb1fc5ba5c3606b53f0c9aadf88179"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (1).json",
+      "path": "docs/examples/claude/hooks.json",
+      "size_bytes": 241,
+      "sha256": "c9ba8010993a1e4bd5811c10e7cdedfe6eac5468e136ca5b1d924066565c665a"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (2).json",
+      "path": "docs/examples/data/replay.json",
+      "size_bytes": 384,
+      "sha256": "400f6ec29a0493e2dfc78d9940a4d6d53cef371d56bdb79d68a9f6d02f5877b3"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_.sh",
+      "path": "docs/examples/scripts/install-godot.sh",
+      "size_bytes": 391,
+      "sha256": "5cf5353ba7c27688543770d26a1f888cdfec8165c74dd681f38e3cf09f615c6d"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (1).sh",
+      "path": "docs/examples/scripts/check-gd.sh",
+      "size_bytes": 550,
+      "sha256": "945db6b2313e3f795449bb9d52214a59ba9b01d20eb738cbcba1c771f08401d3"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (2).sh",
+      "path": "docs/examples/scripts/test.sh",
+      "size_bytes": 455,
+      "sha256": "63cd55be77996af7c9cf2dc62b2c2f7d78a999cf35a365270c011bc3826f26a7"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_ (3).sh",
+      "path": "docs/examples/scripts/run-bots.sh",
+      "size_bytes": 1118,
+      "sha256": "76e43a2950b6f98b771a22dbb598f459ef96852a7644ecd6bb33f6942ecdb817"
+    },
+    {
+      "original_name": "_docs_specs_15tech.md_.yaml",
+      "path": "docs/examples/ci/tests.yaml",
+      "size_bytes": 1031,
+      "sha256": "97212d395b69139c63189fa004ad38cf3c658de3a20541de1b987dd31dc5bb05"
+    },
+    {
+      "original_name": "_Claude_Code_.txt",
+      "path": "docs/reference/proposed-layout.txt",
+      "size_bytes": 983,
+      "sha256": "6f53734c653a3246e3e918281e9f7ecf2f41069713327bef6fd5d777d9b00b3f"
+    },
+    {
+      "original_name": "_Claude_Code_.json",
+      "path": "docs/examples/data/balance.json",
+      "size_bytes": 3437,
+      "sha256": "1b736bd08131fba260bb8d0ab34cfbfeeb98c2f079761067fb0686ba2885abbd"
+    }
+  ]
+}

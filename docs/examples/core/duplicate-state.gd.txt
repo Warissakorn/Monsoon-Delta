@@ -1,0 +1,20 @@
+func duplicate_state() -> GameState:
+	var n := GameState.new()
+	n.version = version
+	n.run_seed = run_seed
+	# ... copy every scalar field listed in [S-02] ...
+	for t: Tile in tiles:
+		n.tiles.append(t.clone())
+	n.cards = cards.duplicate()
+	n.card_offer = card_offer.duplicate()
+	n.year_mods = year_mods.duplicate(true)
+	n.rain_inflows = rain_inflows.duplicate()
+	n.stats = stats.duplicate(true)
+	n.harvest_report = harvest_report.duplicate(true)
+	n.rng = RandomNumberGenerator.new()
+	n.rng.seed = rng.seed        # set seed FIRST: assigning seed resets state
+	n.rng.state = rng.state
+	n._index = _index            # read-only caches may be shared
+	n._nb = _nb
+	n._mods = _mods.duplicate()
+	return n                     # the undo stack is never copied

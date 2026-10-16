@@ -1,0 +1,23 @@
+monsoon-delta/
+├── CLAUDE.md                 ← แทนที่ด้วยฉบับใหม่ด้านล่าง
+├── data/
+│   └── balance.json          ← ไฟล์ข้อมูลจริง (ให้ด้านล่าง)
+└── docs/
+    ├── ROADMAP.md            ← แทนที่ด้วยฉบับใหม่ด้านล่าง
+    ├── PROGRESS.md           ← ไฟล์เปล่า
+    └── specs/
+        ├── 00_README.md
+        ├── 01_architecture.md
+        ├── 02_state_save.md
+        ├── 03_hex_map.md
+        ├── 04_water.md
+        ├── 05_commands.md
+        ├── 06_turn_flow.md
+        ├── 07_mods_cards_leaders.md
+        ├── 08_events.md
+        ├── 09_meta.md
+        ├── 10_ui.md
+        ├── 11_visuals.md
+        ├── 12_audio.md
+        ├── 13_i18n.md
+        └── 14_testing_bot.md

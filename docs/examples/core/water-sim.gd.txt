@@ -1,0 +1,114 @@
+# core/water_sim.gd
+class_name WaterSim
+extends RefCounted
+
+static func simulate(s: GameState, inflow: float, record_snapshots: bool) -> Dictionary:
+	var n: int = s.tiles.size()
+	var nb: PackedInt32Array = s.neighbor_table()
+	var elev := PackedFloat64Array()
+	var water := PackedFloat64Array()
+	var closed := PackedByteArray()          # 1 = closed gate
+	var sea := PackedByteArray()
+	elev.resize(n)
+	water.resize(n)
+	closed.resize(n)
+	sea.resize(n)
+	var sources := PackedInt32Array()
+	var wheels := PackedInt32Array()
+	for i in n:
+		var t: Tile = s.tiles[i]
+		elev[i] = float(t.elevation)
+		water[i] = t.water
+		closed[i] = 1 if (t.building == C.Building.GATE and not t.gate_open) else 0
+		sea[i] = 1 if t.is_sea else 0
+		if t.is_source:
+			sources.append(i)
+		if t.building == C.Building.WATERWHEEL:
+			wheels.append(i)
+
+	# spec: W-03 — once, before iterations
+	var wheel_amount: float = s.mod_f("wheel_amount")
+	var wheel_moved: float = 0.0
+	for w in wheels:
+		var src: int = nb[w * 6 + s.tiles[w].wheel_dir]
+		if src < 0 or sea[src] == 1 or closed[src] == 1:
+			continue
+		var amt: float = minf(wheel_amount, water[src])
+		water[src] -= amt
+		water[w] += amt
+		wheel_moved += amt
+
+	# spec: W-04
+	var iters: int = s.mod_i("water_iterations")
+	var flow: float = clampf(s.mod_f("flow_rate"), 0.05, 0.9)
+	var sea_level: float = s.mod_f("sea_level_rain") if s.is_rain() else s.mod_f("sea_level_dry")
+	var applied_inflow: float = inflow if sources.size() > 0 else 0.0
+	var per_source: float = 0.0
+	if sources.size() > 0:
+		per_source = inflow / iters / sources.size()
+	var to_sea: float = 0.0
+	var from_sea: float = 0.0
+	var snapshots: Array[PackedFloat32Array] = []
+	if record_snapshots:
+		snapshots.append(PackedFloat32Array(Array(water)))
+	var surf := PackedFloat64Array()
+	var delta := PackedFloat64Array()
+	var low_j := PackedInt32Array()
+	var low_d := PackedFloat64Array()
+	surf.resize(n)
+	delta.resize(n)
+	low_j.resize(6)
+	low_d.resize(6)
+
+	for _it in iters:
+		for src in sources:
+			water[src] += per_source
+		for i in n:
+			surf[i] = elev[i] + water[i]
+		delta.fill(0.0)
+		for i in n:
+			var wi: float = water[i]
+			if wi <= C.EPS or closed[i] == 1:
+				continue
+			var si: float = surf[i]
+			var cnt: int = 0
+			var total: float = 0.0
+			var base: int = i * 6
+			for d in 6:
+				var j: int = nb[base + d]
+				if j < 0 or closed[j] == 1:
+					continue
+				var dd: float = si - surf[j]
+				if dd > C.EPS:                    # spec: W-09 — never uphill
+					low_j[cnt] = j
+					low_d[cnt] = dd
+					cnt += 1
+					total += dd
+			if cnt == 0:
+				continue
+			var out: float = minf(wi, total / (cnt + 1) * flow)
+			for k in cnt:
+				var j: int = low_j[k]
+				var share: float = out * low_d[k] / total
+				delta[j] += share
+				delta[i] -= share
+				if sea[i] == 0 and sea[j] == 1:
+					to_sea += share
+				elif sea[i] == 1 and sea[j] == 0:
+					from_sea += share
+		for i in n:
+			var v: float = water[i] + delta[i]
+			if v < 0.0:
+				if v < -1e-4:
+					push_error("WaterSim: negative water %f at index %d" % [v, i])
+				v = 0.0
+			water[i] = sea_level if sea[i] == 1 else v
+		if record_snapshots:
+			snapshots.append(PackedFloat32Array(Array(water)))
+
+	for i in n:
+		s.tiles[i].water = water[i]
+	return {
+		"inflow": applied_inflow, "to_sea": to_sea, "from_sea": from_sea,
+		"wheel_moved": wheel_moved, "snapshots": snapshots,
+	}

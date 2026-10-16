@@ -1,0 +1,27 @@
+class_name TestCase
+extends RefCounted
+
+var _failures: PackedStringArray = PackedStringArray()
+
+func before_each() -> void:
+	pass
+
+func assert_true(cond: bool, msg: String = "") -> void:
+	if not cond:
+		_failures.append("expected true. " + msg)
+
+func assert_eq(actual: Variant, expected: Variant, msg: String = "") -> void:
+	if typeof(actual) != typeof(expected) or actual != expected:
+		_failures.append("expected %s, got %s. %s" % [var_to_str(expected), var_to_str(actual), msg])
+
+func assert_near(actual: float, expected: float, tol: float, msg: String = "") -> void:
+	if absf(actual - expected) > tol:
+		_failures.append("expected %.9f ± %g, got %.9f. %s" % [expected, tol, actual, msg])
+
+func fail(msg: String) -> void:
+	_failures.append(msg)
+
+func take_failures() -> PackedStringArray:
+	var f: PackedStringArray = _failures
+	_failures = PackedStringArray()
+	return f

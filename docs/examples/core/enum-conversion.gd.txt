@@ -1,0 +1,12 @@
+# core/constants.gd
+static func enum_name(e: Dictionary, value: int) -> String:
+	return String(e.find_key(value)).to_lower()      # Building.STILT_HOUSE -> "stilt_house"
+
+static func enum_value(e: Dictionary, text: String) -> int:
+	var key: String = text.to_upper()
+	if not e.has(key):
+		push_error("unknown enum name: " + text)
+		return 0
+	return int(e[key])
+
+# usage: C.enum_name(C.Building, t.building) / C.enum_value(C.Building, "gate") as C.Building
