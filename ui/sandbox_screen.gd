@@ -70,8 +70,14 @@ func _button(text: String, callback: Callable) -> Button:
 	button.focus_mode = Control.FOCUS_NONE
 	button.custom_minimum_size.y = 56
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.pressed.connect(_release_text_focus)
 	button.pressed.connect(callback)
 	return button
+
+func _release_text_focus() -> void:
+	var focus := get_viewport().gui_get_focus_owner()
+	if focus is LineEdit:
+		focus.release_focus()
 
 func _panel(parent: Node) -> VBoxContainer:
 	var panel := PanelContainer.new()
@@ -300,7 +306,12 @@ func _process(delta: float) -> void:
 		_update_inspector()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if state == null or get_viewport().gui_get_focus_owner() is LineEdit:
+	if state == null:
+		return
+	if event is InputEventMouseButton and event.pressed:
+		# Text fields consume their own clicks; an unhandled click returns to the board.
+		_release_text_focus()
+	elif get_viewport().gui_get_focus_owner() is LineEdit:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:

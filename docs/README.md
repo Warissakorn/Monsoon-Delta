@@ -5,6 +5,7 @@
 - [GDD: ภาพรวมเกม](GDD.md)
 - [Roadmap M0–M9](ROADMAP.md)
 - [ความคืบหน้า](PROGRESS.md)
+- [ผลทดลองต้นแบบน้ำ](PLAYTEST.md)
 
 ## สเปกที่ได้รับ
 
