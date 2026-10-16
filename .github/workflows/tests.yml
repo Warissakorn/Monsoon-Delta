@@ -1,0 +1,26 @@
+name: Godot tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.6.3
+          use-dotnet: false
+          include-templates: false
+      - name: Import, validate scripts and run tests
+        run: scripts/test.sh
+      - name: Smoke test the sandbox
+        run: |
+          set -o pipefail
+          godot --headless --path . --quit-after 5 2>&1 | tee smoke.log
+          ! grep -Eq 'SCRIPT ERROR:|^ERROR:' smoke.log

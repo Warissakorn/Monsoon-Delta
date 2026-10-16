@@ -1,0 +1,283 @@
+{
+  "mods_default": {
+    "flow_rate": 0.5,
+    "water_iterations": 20,
+    "sea_level_dry": 0.0,
+    "sea_level_rain": 0.0,
+    "dry_inflow": 0.5,
+    "forest_absorb": 0.3,
+    "sapling_absorb": 0.0,
+    "evaporation_dry": 0.25,
+    "evaporation_multiplier": 1.0,
+    "wheel_amount": 0.5,
+    "rain_inflow_multiplier": 1.0,
+    "year5_inflow_multiplier": 1.0,
+    "forecast_range_multiplier": 1.0,
+    "storm_last_turn_add": 0.0,
+    "reveal_all_inflow": 0,
+    "dig_labor_dry": 2,
+    "dig_labor_rain": 4,
+    "fill_labor_dry": 2,
+    "fill_labor_rain": 4,
+    "paddy_labor": 1,
+    "house_labor": 2,
+    "stilt_labor": 3,
+    "raft_labor": 2,
+    "chop_labor": 1,
+    "plant_labor": 1,
+    "gate_labor": 3,
+    "reservoir_labor": 4,
+    "fish_trap_labor": 1,
+    "granary_labor": 2,
+    "wheel_labor": 2,
+    "demolish_labor": 1,
+    "house_wood": 2,
+    "stilt_wood": 3,
+    "raft_wood": 3,
+    "gate_wood": 2,
+    "fish_trap_wood": 1,
+    "granary_wood": 3,
+    "wheel_wood": 2,
+    "dig_amount": 1,
+    "fill_amount": 1,
+    "reservoir_depth": 3,
+    "chop_wood": 2,
+    "demolish_refund_fraction": 0.5,
+    "house_destroy_level": 1,
+    "stilt_destroy_level": 2,
+    "granary_destroy_level": 2,
+    "hall_lose_level": 2,
+    "paddy_death_level": 2,
+    "paddy_min_level": 1,
+    "paddy_max_level": 1,
+    "fish_trap_yield": 1,
+    "fish_trap_multiplier": 1,
+    "harvest_paddy_bonus": 0,
+    "jasmine_bonus": 0,
+    "fertile_silt_bonus": 0,
+    "dry_paddy_reservoir_min": 0.5,
+    "dry_paddy_water_use": 0.25,
+    "food_per_person": 1,
+    "food_per_growth": 2,
+    "rot_fraction": 0.5,
+    "home_capacity": 2,
+    "home_capacity_bonus": 0,
+    "season_first_turn_labor": 0,
+    "rain_turn_labor": 0,
+    "start_population": 6,
+    "start_food": 6,
+    "start_wood": 2,
+    "year_start_food": 0,
+    "year_start_wood": 0,
+    "unlock_waterwheel": 0,
+    "unlock_raft_house": 0,
+    "card_offer_count": 3,
+    "event_chance": 0.5
+  },
+  "rain_table": {
+    "1": [
+      8,
+      12
+    ],
+    "2": [
+      10,
+      15
+    ],
+    "3": [
+      12,
+      18
+    ],
+    "4": [
+      15,
+      22
+    ],
+    "5": [
+      22,
+      30
+    ]
+  },
+  "maps": {
+    "plains": {
+      "mods": []
+    },
+    "valley": {
+      "mods": [
+        {
+          "key": "flow_rate",
+          "op": "set",
+          "value": 0.7
+        }
+      ]
+    },
+    "estuary": {
+      "mods": [
+        {
+          "key": "sea_level_rain",
+          "op": "set",
+          "value": 0.6
+        }
+      ]
+    }
+  },
+  "leaders": {
+    "farmer": [
+      {
+        "key": "harvest_paddy_bonus",
+        "op": "add",
+        "value": 1
+      }
+    ],
+    "carpenter": [
+      {
+        "key": "house_wood",
+        "op": "add",
+        "value": -1
+      },
+      {
+        "key": "stilt_wood",
+        "op": "add",
+        "value": -1
+      },
+      {
+        "key": "raft_wood",
+        "op": "add",
+        "value": -1
+      }
+    ],
+    "fisher": [
+      {
+        "key": "fish_trap_yield",
+        "op": "add",
+        "value": 1
+      }
+    ],
+    "soil_doctor": [
+      {
+        "key": "dig_labor_dry",
+        "op": "add",
+        "value": -1
+      },
+      {
+        "key": "dig_labor_rain",
+        "op": "add",
+        "value": -1
+      },
+      {
+        "key": "fill_labor_dry",
+        "op": "add",
+        "value": -1
+      },
+      {
+        "key": "fill_labor_rain",
+        "op": "add",
+        "value": -1
+      }
+    ]
+  },
+  "difficulty_levels": [
+    [
+      {
+        "key": "rain_inflow_multiplier",
+        "op": "mul",
+        "value": 1.1
+      }
+    ],
+    [
+      {
+        "key": "start_food",
+        "op": "add",
+        "value": -2
+      }
+    ],
+    [
+      {
+        "key": "forecast_range_multiplier",
+        "op": "mul",
+        "value": 1.5
+      }
+    ],
+    [
+      {
+        "key": "house_wood",
+        "op": "add",
+        "value": 1
+      },
+      {
+        "key": "stilt_wood",
+        "op": "add",
+        "value": 1
+      }
+    ],
+    [
+      {
+        "key": "rain_inflow_multiplier",
+        "op": "mul",
+        "value": 1.1
+      }
+    ],
+    [
+      {
+        "key": "card_offer_count",
+        "op": "set",
+        "value": 2
+      }
+    ],
+    [
+      {
+        "key": "start_population",
+        "op": "add",
+        "value": -2
+      }
+    ],
+    [
+      {
+        "key": "rot_fraction",
+        "op": "add",
+        "value": 0.25
+      }
+    ],
+    [
+      {
+        "key": "forest_absorb",
+        "op": "mul",
+        "value": 0.5
+      }
+    ],
+    [
+      {
+        "key": "year5_inflow_multiplier",
+        "op": "mul",
+        "value": 1.2
+      }
+    ]
+  ],
+  "map_generation": {
+    "plains_top_max_r": -2,
+    "plains_middle_max_r": 1,
+    "plains_top_elevation": 3,
+    "plains_middle_elevation": 2,
+    "plains_bottom_elevation": 1,
+    "elevation_noise": 1,
+    "elevation_min": 0,
+    "elevation_max": 4,
+    "river_upper_elevation": 1,
+    "river_lower_elevation": 0,
+    "river_split_r": 0,
+    "river_initial_water": 0.3,
+    "forest_min": 8,
+    "forest_max": 12,
+    "forest_min_elevation": 2,
+    "hall_elevation": 2,
+    "hall_river_distance": 2,
+    "starting_houses": 3,
+    "house_min_elevation": 2,
+    "max_attempts": 100,
+    "sea_elevation": 0
+  },
+  "sandbox": {
+    "inflow": 4.0,
+    "elevation_min": -3,
+    "elevation_max": 4,
+    "default_seed": 42
+  }
+}
