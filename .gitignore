@@ -1,0 +1,7 @@
+.godot/
+screenshots/
+bot_reports/
+exports/
+work/
+*.tmp
+.DS_Store

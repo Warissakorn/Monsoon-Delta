@@ -1,0 +1,72 @@
+class_name GameSession
+extends RefCounted
+## A playable run and its durable checkpoint. GameFlow stays persistence-free
+## so simulations, the sandbox and previews cannot overwrite a player's run.
+
+var state: GameState
+var save_path: String = SaveIO.DEFAULT_PATH
+var last_save_error: String = ""
+
+
+func start(cfg: Dictionary) -> String:
+	var next: GameState = GameFlow.new_game(cfg)
+	if next == null:
+		return "msg.new_game_failed"
+	state = next
+	checkpoint()
+	return ""
+
+
+func load_game() -> String:
+	var result: Dictionary = SaveIO.load_game(save_path)
+	var error: String = result["error"]
+	if not error.is_empty():
+		last_save_error = error
+		return error
+	if result["state"] == null:
+		return "msg.no_save"
+	state = result["state"]
+	last_save_error = ""
+	return ""
+
+
+func apply(cmd: Command) -> String:
+	if state == null:
+		return "err.phase"
+	if cmd == null:
+		return "err.unknown"
+	var error: String = GameFlow.apply_command(state, cmd)
+	if error.is_empty():
+		checkpoint()
+	return error
+
+
+func undo() -> bool:
+	if state == null or state.phase != C.Phase.PLANNING or state.undo.is_empty():
+		return false
+	# Undo returns a replacement model. Keep the remaining live undo stack;
+	# saving intentionally serializes neither its snapshots nor its identity.
+	state = GameFlow.undo(state)
+	checkpoint()
+	return true
+
+
+func advance_turn() -> TurnReport:
+	var report: TurnReport = GameFlow.end_turn(state)
+	if report != null:
+		checkpoint()
+	return report
+
+
+func continue_year() -> bool:
+	if state == null or state.phase != C.Phase.HARVEST:
+		return false
+	GameFlow.continue_after_harvest(state)
+	checkpoint()
+	return true
+
+
+func checkpoint() -> String:
+	# SaveIO rejects null too, but keep an empty session away from persistence.
+	last_save_error = "msg.save_failed" if state == null else SaveIO.save(state, save_path)
+	return last_save_error

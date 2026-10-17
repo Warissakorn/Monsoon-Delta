@@ -1,0 +1,19 @@
+{
+  "background": "#111f26",
+  "panel": "#172b32",
+  "panel_light": "#213b40",
+  "ink": "#edf0df",
+  "muted": "#a7bbb8",
+  "accent": "#e3bc73",
+  "terrain_low": "#90a877",
+  "terrain_high": "#b4be89",
+  "earth": "#555c41",
+  "riverbed": "#6b927d",
+  "sea": "#426d7b",
+  "water_shallow": "#70c5c6",
+  "water_deep": "#246e8c",
+  "forest": "#355e4a",
+  "roof": "#c07853",
+  "house": "#dfc9a1",
+  "highlight": "#f4db9e"
+}
