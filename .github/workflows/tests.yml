@@ -19,11 +19,13 @@ jobs:
           include-templates: false
       - name: Import, validate scripts and run tests
         run: scripts/test.sh
-      - name: Smoke test the sandbox
+      - name: Smoke test menu, game and sandbox
         run: |
           set -o pipefail
-          godot --headless --path . --quit-after 5 2>&1 | tee smoke.log
-          ! grep -Eq 'SCRIPT ERROR:|^ERROR:' smoke.log
+          for scene in menu game sandbox; do
+            godot --headless --path . --quit-after 5 -- --scene="$scene" --lang=th --save-path=user://ci-smoke.json 2>&1 | tee smoke.log
+            ! grep -Eq 'SCRIPT ERROR:|^ERROR:' smoke.log
+          done
       - name: Smoke test complete game policies
         run: |
           set -o pipefail

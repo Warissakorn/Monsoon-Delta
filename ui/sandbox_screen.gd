@@ -1,6 +1,8 @@
 extends Node
 ## M2 water laboratory. All changes to terrain/water go through GameFlow.
 
+signal menu_requested
+
 var initial_seed: int = 42
 var language: String = "th"
 var state: GameState
@@ -122,6 +124,7 @@ func _build_hud() -> void:
 	var stage := _label(txt("ต้นแบบ M2   •   61 ช่อง", "M2 PROTOTYPE   •   61 TILES"), 20, "accent")
 	stage.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	header.add_child(stage)
+	header.add_child(_button(tr("action.menu"), func(): menu_requested.emit()))
 	var middle := HBoxContainer.new()
 	middle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	middle.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -315,6 +318,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:
+			KEY_ESCAPE: menu_requested.emit()
 			KEY_SPACE, KEY_ENTER: _step_water()
 			KEY_R: _next_map()
 			KEY_Q: camera_rig.rotate_step(-1)
