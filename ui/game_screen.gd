@@ -21,6 +21,7 @@ var board: BoardView
 var camera_rig: CameraRig
 var hud: Control
 var prediction: Dictionary = {}
+var harvest_prediction: Dictionary = {}
 var command_mode: String = ""
 var wheel_origin: Vector2i = BoardView.NO_COORD
 var hovered_coord: Vector2i = BoardView.NO_COORD
@@ -218,13 +219,15 @@ func refresh_state() -> void:
 	board.set_labels_visible(show_levels)
 	prediction = GameFlow.preview(state) if state.phase == C.Phase.PLANNING else {}
 	_predicted_outcome = C.Outcome.NONE
+	harvest_prediction.clear()
 	if not prediction.is_empty():
 		var predicted: GameState = prediction["state"]
 		_predicted_outcome = predicted.outcome
 		if state.turn == C.TURNS_PER_YEAR and _predicted_outcome == C.Outcome.NONE:
-			var harvest_prediction: GameState = predicted.duplicate_state()
-			Harvest.do_harvest(harvest_prediction)
-			_predicted_outcome = harvest_prediction.outcome
+			var harvested: GameState = predicted.duplicate_state()
+			Harvest.do_harvest(harvested)
+			harvest_prediction = harvested.harvest_report.duplicate(true)
+			_predicted_outcome = harvested.outcome
 	board.set_preview(prediction, preview_enabled)
 	board.hover(hovered_coord)
 	_targets.clear()
@@ -463,8 +466,10 @@ func _update_preview_text() -> void:
 		lines.append(tr("preview.paddy_gains") % report.paddy_gains.size())
 	if report.fish_food > 0:
 		lines.append(tr("preview.fish") % report.fish_food)
-	if session.state.turn == C.TURNS_PER_YEAR:
+	if not harvest_prediction.is_empty():
 		lines.append(tr("preview.harvest"))
+		for key: String in ["paddy_food", "eaten", "left_hunger", "left_housing", "born", "spoiled", "food_after", "population_after"]:
+			lines.append(tr("summary." + key) % int(harvest_prediction[key]))
 	if lines.is_empty():
 		lines.append(tr("preview.safe"))
 	_preview_label.text = "\n".join(lines)
