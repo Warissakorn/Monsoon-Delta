@@ -31,3 +31,18 @@ jobs:
           set -o pipefail
           godot --headless --path . --script res://tools/bot_sim.gd -- --bot=all --runs=1 --candidates=4 2>&1 | tee bots.log
           ! grep -Eq 'SCRIPT ERROR:|^ERROR:' bots.log
+
+      - name: Verify balance experiment CLI and reports
+        run: python3 scripts/test_balance_cli.py
+      - name: Smoke test balance scenarios
+        run: |
+          set -o pipefail
+          godot --headless --path . --script res://tools/bot_sim.gd -- --scenarios=res://tools/scenarios/m3_screen.json --bot=all --runs=2 --candidates=4 2>&1 | tee scenarios.log
+          ! grep -Eq 'SCRIPT ERROR:|^ERROR:' scenarios.log
+      - name: Upload bot experiment reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bot-experiment-reports
+          path: bot_reports/
+          if-no-files-found: ignore
