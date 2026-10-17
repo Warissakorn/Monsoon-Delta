@@ -5,6 +5,7 @@ extends RefCounted
 const Constants = preload("res://core/constants.gd")
 const TileModel = preload("res://core/tile.gd")
 const Database = preload("res://core/data_db.gd")
+const UndoHistory = preload("res://core/undo_stack.gd")
 const DIRECTIONS: Array[Vector2i] = [
 	Vector2i(1, 0), Vector2i(1, -1), Vector2i(0, -1),
 	Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, 1),
@@ -41,6 +42,9 @@ var stats: Dictionary = {
 var outcome: int = Constants.Outcome.NONE
 var harvest_report: Dictionary = {}
 var final_score: int = 0
+
+# The caller replaces the whole state after undo. This history is never saved.
+var undo: UndoHistory = UndoHistory.new()
 
 # Derived caches are rebuilt after loading, never saved.
 var index: Dictionary = {}
