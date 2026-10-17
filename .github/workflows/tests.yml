@@ -34,6 +34,8 @@ jobs:
 
       - name: Verify balance experiment CLI and reports
         run: python3 scripts/test_balance_cli.py
+      - name: Verify TS-06 balance report checker
+        run: python3 scripts/test_check_balance.py
       - name: Smoke test balance scenarios
         run: |
           set -o pipefail
