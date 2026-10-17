@@ -21,6 +21,7 @@ var board: BoardView
 var camera_rig: CameraRig
 var hud: Control
 var prediction: Dictionary = {}
+var harvest_projection: Dictionary = {}
 var command_mode: String = ""
 var wheel_origin: Vector2i = BoardView.NO_COORD
 var hovered_coord: Vector2i = BoardView.NO_COORD
@@ -217,13 +218,20 @@ func refresh_state() -> void:
 	board.set_state(state)
 	board.set_labels_visible(show_levels)
 	prediction = GameFlow.preview(state) if state.phase == C.Phase.PLANNING else {}
+	harvest_projection = {}
 	_predicted_outcome = C.Outcome.NONE
 	if not prediction.is_empty():
 		var predicted: GameState = prediction["state"]
 		_predicted_outcome = predicted.outcome
 		if state.turn == C.TURNS_PER_YEAR and _predicted_outcome == C.Outcome.NONE:
 			var harvest_prediction: GameState = predicted.duplicate_state()
+			var available_food: int = harvest_prediction.food
+			var food_needed: int = harvest_prediction.population * maxi(0, roundi(float(harvest_prediction.mod("food_per_person"))))
 			Harvest.do_harvest(harvest_prediction)
+			harvest_projection = harvest_prediction.harvest_report.duplicate(true)
+			harvest_projection["available_food"] = available_food + int(harvest_projection["paddy_food"])
+			harvest_projection["food_needed"] = food_needed
+			harvest_projection["capacity"] = harvest_prediction.capacity()
 			_predicted_outcome = harvest_prediction.outcome
 	board.set_preview(prediction, preview_enabled)
 	board.hover(hovered_coord)
@@ -287,6 +295,9 @@ func select_command(id: String) -> void:
 		return
 	if not _command_buttons.has(id) or not _command_buttons[id].visible:
 		return
+	if _command_buttons[id].disabled:
+		_status_label.text = "%s: %s" % [tr("cmd.%s.name" % id), tr(_unavailable_reason(id))]
+		return
 	command_mode = id
 	wheel_origin = BoardView.NO_COORD
 	for key: String in _command_buttons:
@@ -347,7 +358,10 @@ func apply_at(coord: Vector2i) -> void:
 	hovered_coord = coord
 	refresh_state()
 	board.select(origin)
-	_status_label.text = tr("msg.command_done") % tr("cmd.%s.name" % id)
+	if not command_mode.is_empty() and _targets.get(command_mode, []).is_empty():
+		_update_command_status()
+	else:
+		_status_label.text = tr("msg.command_done") % tr("cmd.%s.name" % id)
 
 
 func undo_command() -> void:
@@ -373,6 +387,8 @@ func _update_command_status() -> void:
 		_status_label.text = tr("tile.wheel_direction")
 	elif command_mode.is_empty():
 		_status_label.text = tr("help.goal")
+	elif _targets.get(command_mode, []).is_empty():
+		_status_label.text = "%s: %s" % [tr("cmd.%s.name" % command_mode), tr(_unavailable_reason(command_mode))]
 	else:
 		_status_label.text = tr("hud.selected") % tr("cmd.%s.name" % command_mode)
 
@@ -424,7 +440,20 @@ func _update_inspector() -> void:
 		_tile_details.text += "\n" + tr("tile.predicted") % [after.water, tr("level.%d" % predicted.level_of(after))]
 	_tile_note.text = ""
 	if tile.feature == C.Feature.PADDY:
-		_tile_note.text = tr("tile.paddy") % [tile.paddy_yield, tile.paddy_rain_turns]
+		if tile.paddy_dead:
+			_tile_note.text = tr("tile.paddy_dead")
+		else:
+			_tile_note.text = tr("tile.paddy") % [tile.paddy_yield, tile.paddy_rain_turns]
+			if preview_enabled and not prediction.is_empty() and prediction["state"].get_tile(tile.coord).paddy_dead:
+				_tile_note.text += "\n" + tr("tile.paddy_dies")
+	elif tile.building == C.Building.GATE:
+		_tile_note.text = tr("tile.gate_open" if tile.gate_open else "tile.gate_closed")
+		if command_mode.is_empty() and state.phase == C.Phase.PLANNING:
+			_tile_note.text += "\n" + tr("tile.gate_hint")
+	elif tile.building == C.Building.WATERWHEEL:
+		var intake: Tile = state.neighbor_in_dir(tile, tile.wheel_dir)
+		if intake != null:
+			_tile_note.text = tr("tile.wheel_intake") % [intake.q, intake.r]
 	if not command_mode.is_empty():
 		var origin: Vector2i = wheel_origin if wheel_origin != BoardView.NO_COORD else tile.coord
 		var parameter: int = -1
@@ -463,11 +492,25 @@ func _update_preview_text() -> void:
 		lines.append(tr("preview.paddy_gains") % report.paddy_gains.size())
 	if report.fish_food > 0:
 		lines.append(tr("preview.fish") % report.fish_food)
-	if session.state.turn == C.TURNS_PER_YEAR:
-		lines.append(tr("preview.harvest"))
+	lines.append_array(_harvest_preview_lines())
 	if lines.is_empty():
 		lines.append(tr("preview.safe"))
 	_preview_label.text = "\n".join(lines)
+
+
+func _harvest_preview_lines() -> PackedStringArray:
+	if harvest_projection.is_empty():
+		return PackedStringArray()
+	var report: Dictionary = harvest_projection
+	return PackedStringArray([
+		tr("preview.harvest_title"),
+		tr("preview.harvest_paddy") % int(report["paddy_food"]),
+		tr("preview.harvest_food") % [int(report["available_food"]), int(report["food_needed"]), int(report["eaten"])],
+		tr("preview.harvest_migration") % [int(report["left_hunger"]), int(report["left_housing"])],
+		tr("preview.harvest_growth") % [int(report["born"]), int(report["spoiled"])],
+		tr("preview.harvest_food_after") % int(report["food_after"]),
+		tr("preview.harvest_people") % [int(report["population_after"]), int(report["capacity"])],
+	])
 
 
 func _refresh_save_status() -> void:
@@ -485,16 +528,22 @@ func request_end_turn() -> void:
 	if _predicted_outcome in [C.Outcome.LOSE_HALL, C.Outcome.LOSE_POPULATION]:
 		_open_modal("confirm_loss", tr("preview.title"))
 		_modal_content.add_child(_label(tr("confirm.loss")))
-		_modal_content.add_child(_button(tr("action.confirm"), _confirm_end_turn, "ConfirmEndTurn"))
-		_modal_content.add_child(_button(tr("action.cancel"), close_modal))
+		if _predicted_outcome == C.Outcome.LOSE_HALL:
+			_modal_content.add_child(_label(tr("preview.lose_hall")))
+		elif _predicted_outcome == C.Outcome.LOSE_POPULATION:
+			_modal_content.add_child(_label(tr("preview.lose_population")))
+		for line: String in _harvest_preview_lines():
+			_modal_content.add_child(_label(line))
+		_add_modal_button(tr("action.confirm"), _confirm_end_turn, "ConfirmEndTurn")
+		_add_modal_button(tr("action.cancel"), close_modal, "CancelEndTurn", true)
 	elif confirm_unused_labor and session.state.is_rain() and session.state.labor >= 2:
 		_open_modal("confirm_labor", tr("action.end_turn"))
 		_modal_content.add_child(_label(tr("confirm.unused_labor") % session.state.labor))
 		_skip_confirmation = CheckBox.new()
 		_skip_confirmation.text = tr("confirm.dont_ask")
 		_modal_content.add_child(_skip_confirmation)
-		_modal_content.add_child(_button(tr("action.confirm"), _confirm_end_turn, "ConfirmEndTurn"))
-		_modal_content.add_child(_button(tr("action.cancel"), close_modal))
+		_add_modal_button(tr("action.confirm"), _confirm_end_turn, "ConfirmEndTurn")
+		_add_modal_button(tr("action.cancel"), close_modal, "CancelEndTurn", true)
 	else:
 		_finish_turn()
 
@@ -552,6 +601,17 @@ func close_modal() -> void:
 	_modal_content = null
 	_skip_confirmation = null
 	modal_kind = ""
+	if board != null:
+		board.hover(hovered_coord)
+
+
+func _add_modal_button(text: String, callback: Callable, node_name: String = "", preferred: bool = false) -> Button:
+	var button: Button = _button(text, callback, node_name)
+	button.focus_mode = Control.FOCUS_ALL
+	_modal_content.add_child(button)
+	if preferred:
+		button.grab_focus()
+	return button
 
 
 func _show_harvest() -> void:
@@ -559,8 +619,8 @@ func _show_harvest() -> void:
 	for key: String in ["paddy_food", "eaten", "left_hunger", "left_housing", "born", "spoiled", "food_after", "population_after"]:
 		_modal_content.add_child(_label(tr("summary." + key) % int(session.state.harvest_report[key])))
 	var caption: String = tr("action.finish") if session.state.outcome != C.Outcome.NONE else tr("action.continue")
-	_modal_content.add_child(_button(caption, continue_harvest, "ContinueHarvest"))
-	_modal_content.add_child(_button(tr("action.menu"), _return_menu))
+	_add_modal_button(caption, continue_harvest, "ContinueHarvest", true)
+	_add_modal_button(tr("action.menu"), _return_menu, "HarvestMenu")
 
 
 func continue_harvest() -> void:
@@ -582,8 +642,8 @@ func _show_game_over() -> void:
 	var hall_bonus: int = int(scoring["hall_dry"]) if state.outcome == C.Outcome.WIN and not bool(state.stats["hall_ever_wet"]) else 0
 	_modal_content.add_child(_label(tr("gameover.components") % [state.population * int(scoring["population"]), state.food, house_bonus, hall_bonus, 1.0 + state.difficulty * float(scoring["difficulty_step"])]))
 	_modal_content.add_child(_label(tr("gameover.seed") % str(state.seed)))
-	_modal_content.add_child(_button(tr("action.restart"), _restart))
-	_modal_content.add_child(_button(tr("action.menu"), _return_menu))
+	_add_modal_button(tr("action.restart"), _restart, "Restart")
+	_add_modal_button(tr("action.menu"), _return_menu, "GameOverMenu", true)
 
 
 func _restart() -> void:
@@ -595,11 +655,11 @@ func open_pause() -> void:
 		return
 	_open_modal("pause", tr("pause.title"))
 	_modal_content.add_child(_label(tr("pause.seed") % str(session.state.seed)))
-	_modal_content.add_child(_button(tr("action.resume"), close_modal, "Resume"))
+	_add_modal_button(tr("action.resume"), close_modal, "Resume", true)
 	if not session.last_save_error.is_empty():
 		_modal_content.add_child(_label(tr(session.last_save_error)))
-		_modal_content.add_child(_button(tr("action.retry_save"), _retry_save))
-	_modal_content.add_child(_button(tr("action.menu"), _return_menu))
+		_add_modal_button(tr("action.retry_save"), _retry_save, "RetrySave")
+	_add_modal_button(tr("action.menu"), _return_menu, "PauseMenu")
 
 
 func _retry_save() -> void:
@@ -624,9 +684,9 @@ func _leave_game(exit_action: Callable) -> void:
 	_refresh_save_status()
 	_open_modal("save_error", tr("msg.save_failed"))
 	_modal_content.add_child(_label(tr("msg.unsaved_progress")))
-	_modal_content.add_child(_button(tr("action.retry_save"), _leave_game.bind(exit_action)))
-	_modal_content.add_child(_button(tr("action.leave_without_save"), exit_action))
-	_modal_content.add_child(_button(tr("action.resume"), func(): close_modal(); _restore_phase_modal()))
+	_add_modal_button(tr("action.retry_save"), _leave_game.bind(exit_action), "RetryLeave")
+	_add_modal_button(tr("action.leave_without_save"), exit_action, "LeaveWithoutSave")
+	_add_modal_button(tr("action.resume"), func(): close_modal(); _restore_phase_modal(), "ResumeAfterSaveError", true)
 
 
 func _restore_phase_modal() -> void:
@@ -655,6 +715,12 @@ func _process(delta: float) -> void:
 		board.hover(hovered_coord)
 		_update_targets()
 		_update_inspector()
+
+
+func _input(event: InputEvent) -> void:
+	# Holding the key that opens a summary must not accept its next action.
+	if not modal_kind.is_empty() and event is InputEventKey and event.pressed and event.echo and event.is_action("ui_accept"):
+		get_viewport().set_input_as_handled()
 
 
 func _unhandled_input(event: InputEvent) -> void:
