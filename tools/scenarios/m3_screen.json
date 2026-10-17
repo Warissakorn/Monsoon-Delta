@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "scenarios": [
+    {
+      "id": "baseline",
+      "mods": {}
+    },
+    {
+      "id": "c3_screen",
+      "mods": {
+        "paddy_labor": 3,
+        "food_per_person": 3,
+        "harvest_paddy_bonus": -2,
+        "start_food": 18,
+        "year5_inflow_multiplier": 2,
+        "fish_trap_yield": 3
+      }
+    }
+  ]
+}
