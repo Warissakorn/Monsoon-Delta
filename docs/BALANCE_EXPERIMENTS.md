@@ -68,3 +68,24 @@ python3 scripts/test_balance_cli.py
 ```
 
 Python ใช้ stdlib และ executable จาก GODOT_BIN (ค่าเริ่มต้น godot) ทดสอบ CLI จริง: baseline ตรงกับการรันปกติ, baseline → เปลี่ยนค่า → baseline ไม่รั่วข้ามชุด, ลำดับ modifier, สรุปตรง CSV, input ผิดไม่สร้างรายงาน และ filesystem error คืน exit code ไม่เป็นศูนย์ ไฟล์ทดลองใช้ temporary directory
+
+## ตรวจเกณฑ์ตัวเลข TS-06
+
+หลังรัน farmer difficulty 0, greedy difficulty 0 และ greedy difficulty 10 ด้วยชุดค่าเดียวกันอย่างน้อยกรณีละ 200 เกม ใช้ `scripts/check_balance.py` ตรวจ manifest ทั้งสามไฟล์:
+
+```sh
+python3 scripts/check_balance.py path/to/farmer/manifest.json path/to/greedy-d0/manifest.json path/to/greedy-d10/manifest.json --scenario=your_scenario
+python3 scripts/test_check_balance.py
+```
+
+ถ้าไม่ระบุ `--scenario` จะตรวจทุก scenario ในรายงาน โปรแกรมอ่าน CSV รายเกมมาคำนวณจำนวนชนะ สาเหตุแพ้ ปี ประชากร และคะแนนใหม่ ตรวจ seed ครบไม่ซ้ำ ผลจบสอดคล้องกับปี/จำนวนเทิร์น และเทียบกับยอดใน manifest ทุกไฟล์ต้องมาจาก Git revision ที่สะอาดเดียวกัน ใช้รุ่น Godot และ seed ชุดเดียวกัน balance hash, base mods, bot configuration และ overrides ตรงกัน
+
+- exit 0: ผ่านเกณฑ์ตัวเลขของ plains ครบทั้งสามกรณี
+- exit 1: มีข้อมูลครบ แต่มีเกณฑ์ที่วัดแล้วไม่ผ่าน
+- exit 2: ไฟล์ผิด ข้อมูลไม่สอดคล้อง แหล่งโค้ด/ค่าตั้งไม่ตรง จำนวนเกมต่ำกว่า 200 หรือยังขาดกรณีที่ต้องตรวจ
+
+ตัวตรวจไม่รวมหลายรายงานสั้นให้กลายเป็น benchmark 200 เกม แต่ละ batch ต้องมีอย่างน้อย 200 เกมด้วยตัวเอง แสดงเวลาทั้ง batch และเวลาต่อ 200 เกม (`seconds × 200 / runs`) เพื่อเทียบเป้า 300 วินาที ถ้ารันเกิน 200 เกม ค่าต่อ 200 เป็นอัตราที่คำนวณจาก batch นั้น ไม่ใช่เวลาที่จับแยกอีกครั้ง
+
+ย้ายรายงานได้โดยเก็บ `manifest.json` กับโฟลเดอร์ `<scenario>/<bot>_plains_d<difficulty>.csv` ไว้ด้วยกัน ตัวตรวจให้ไฟล์ที่อยู่ข้าง manifest มีลำดับก่อน path เดิมที่บันทึกไว้ จึงตรวจสำเนาที่เผยแพร่จริง แม้ไฟล์ต้นทางยังอยู่บนเครื่อง
+
+ผลผ่านยืนยันเฉพาะเกณฑ์ตัวเลขที่มีใน plains ไม่แทนการตรวจโดยผู้เล่น ความสนุกของการบังคับน้ำ หรือแผนที่ valley/estuary ที่ยังไม่เปิดใช้งาน ดู [ผลทดลองอาหารและความยาก](M3_BALANCE_FOLLOWUP.md)
