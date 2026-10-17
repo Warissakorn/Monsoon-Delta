@@ -1,4 +1,4 @@
-; Monsoon Delta — Godot 4 water sandbox and core game rules (M0–M3)
+; Monsoon Delta — Godot 4 village strategy and water sandbox
 config_version=5
 
 [application]
@@ -21,4 +21,6 @@ anti_aliasing/quality/msaa_3d=2
 textures/default_filters/use_nearest_mipmap_filter=false
 
 [internationalization]
+locale/translations=PackedStringArray("res://translations/strings.en.translation", "res://translations/strings.th.translation")
+locale/fallback="en"
 locale/include_text_server_data=true

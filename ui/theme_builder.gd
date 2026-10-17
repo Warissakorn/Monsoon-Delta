@@ -20,7 +20,13 @@ static func build() -> Theme:
 	var p := palette()
 	var theme := Theme.new()
 	theme.default_font = load("res://assets/fonts/NotoSansThai.ttf")
-	theme.default_font_size = 22
+	theme.default_font_size = 20
+	theme.set_font_size("font_size", "Button", 20)
+	theme.set_constant("line_spacing", "Label", 4)
+	theme.set_type_variation("Title", "Label")
+	theme.set_font_size("font_size", "Title", 44)
+	theme.set_type_variation("Heading", "Label")
+	theme.set_font_size("font_size", "Heading", 28)
 	theme.set_color("font_color", "Label", Color(p.ink))
 	theme.set_color("font_color", "Button", Color(p.ink))
 	theme.set_color("font_hover_color", "Button", Color(p.accent))

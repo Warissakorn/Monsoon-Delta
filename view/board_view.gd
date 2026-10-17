@@ -5,17 +5,23 @@ extends Node3D
 const BASE_Y: float = -1.7
 const HEX_RADIUS: float = 0.96
 const NO_COORD: Vector2i = Vector2i(2147483647, 2147483647)
+const MARKER_FONT: Font = preload("res://assets/fonts/NotoSansThai.ttf")
 
 var palette: Dictionary = {}
 var state: GameState
 var _tiles_root: Node3D
 var _labels_root: Node3D
+var _targets_root: Node3D
+var _preview_root: Node3D
 var _selection: MeshInstance3D
 var _hover: MeshInstance3D
 var _selected_coord: Vector2i = NO_COORD
 var _hover_coord: Vector2i = NO_COORD
 var _labels_visible: bool = false
 var _materials: Dictionary = {}
+var _target_coords: Array[Vector2i] = []
+var _invalid_coord: Vector2i = NO_COORD
+var _prediction: Dictionary = {}
 
 
 func _ready() -> void:
@@ -26,24 +32,46 @@ func set_state(next_state: GameState) -> void:
 	state = next_state
 	_selected_coord = NO_COORD
 	_hover_coord = NO_COORD
+	_target_coords.clear()
+	_invalid_coord = NO_COORD
+	_prediction = {}
 	refresh()
 
 
 func refresh() -> void:
 	_ensure_nodes()
-	for child: Node in _tiles_root.get_children():
-		_tiles_root.remove_child(child)
-		child.queue_free()
-	for child: Node in _labels_root.get_children():
-		_labels_root.remove_child(child)
-		child.queue_free()
+	_clear_root(_tiles_root)
+	_clear_root(_labels_root)
 	if state == null:
 		_selection.hide()
 		_hover.hide()
+		_clear_root(_targets_root)
+		_clear_root(_preview_root)
 		return
 	for tile: Tile in state.tiles:
 		_build_tile(tile)
 	_update_markers()
+	_refresh_targets()
+	_refresh_preview()
+
+
+## Targets and predictions survive refresh(), but set_state() clears them.
+func set_targets(coords: Array[Vector2i], invalid_coord: Vector2i = NO_COORD) -> void:
+	_target_coords.assign(coords)
+	_invalid_coord = invalid_coord
+	_ensure_nodes()
+	_refresh_targets()
+
+
+func clear_targets() -> void:
+	set_targets([])
+
+
+## Prediction state and report are read only; overlays never edit either state.
+func set_preview(prediction: Dictionary, enabled: bool = true) -> void:
+	_prediction = prediction if enabled else {}
+	_ensure_nodes()
+	_refresh_preview()
 
 
 func select(coord: Vector2i) -> void:
@@ -106,6 +134,12 @@ func _ensure_nodes() -> void:
 	_labels_root.name = "ElevationLabels"
 	_labels_root.visible = _labels_visible
 	add_child(_labels_root)
+	_targets_root = Node3D.new()
+	_targets_root.name = "Targets"
+	add_child(_targets_root)
+	_preview_root = Node3D.new()
+	_preview_root.name = "Preview"
+	add_child(_preview_root)
 	_selection = MeshInstance3D.new()
 	_selection.name = "SelectedHex"
 	_selection.mesh = MeshLib.hex_ring(1.005, 0.935)
@@ -138,10 +172,22 @@ func _build_tile(tile: Tile) -> void:
 		_build_water(cell, tile)
 	if tile.feature == C.Feature.FOREST or tile.feature == C.Feature.SAPLING:
 		_build_forest(cell, tile)
+	elif tile.feature == C.Feature.PADDY:
+		_build_paddy(cell, tile)
 	if tile.building == C.Building.HALL:
 		_build_hall(cell)
 	elif tile.building == C.Building.HOUSE or tile.building == C.Building.STILT_HOUSE or tile.building == C.Building.RAFT_HOUSE:
 		_build_house(cell, tile)
+	elif tile.building == C.Building.GATE:
+		_build_gate(cell, tile)
+	elif tile.building == C.Building.GRANARY:
+		_build_granary(cell)
+	elif tile.building == C.Building.FISH_TRAP:
+		_build_fish_trap(cell, tile)
+	elif tile.building == C.Building.RESERVOIR:
+		_build_reservoir(cell)
+	elif tile.building == C.Building.WATERWHEEL:
+		_build_waterwheel(cell, tile)
 	if tile.is_source:
 		_build_source(cell, tile)
 	var label: Label3D = Label3D.new()
@@ -213,6 +259,127 @@ func _build_forest(cell: Node3D, tile: Tile) -> void:
 			_add_mesh(tree, lower, Vector3(0.0, 0.43, 0.0), tint.darkened(0.05))
 
 
+func _build_paddy(cell: Node3D, tile: Tile) -> void:
+	var field: Node3D = Node3D.new()
+	field.name = "Paddy"
+	cell.add_child(field)
+	var stalk_color: Color = _color("accent") if tile.paddy_yield > 0 else _color("forest").lightened(0.23)
+	if tile.paddy_dead:
+		stalk_color = _color("earth")
+	for row: int in range(3):
+		var z: float = float(row - 1) * 0.35
+		_add_box(field, Vector3(1.05, 0.035, 0.22), Vector3(0.0, 0.018, z), _color("riverbed").darkened(0.14))
+		for column: int in range(3):
+			var x: float = float(column - 1) * 0.35
+			var height: float = 0.11 if tile.paddy_dead else 0.23 + minf(float(tile.paddy_yield), 3.0) * 0.035
+			_add_box(field, Vector3(0.035, height, 0.035), Vector3(x, height * 0.5, z), stalk_color)
+			var leaf: MeshInstance3D = _add_mesh(field, _box_mesh(Vector3(0.18, 0.025, 0.045)), Vector3(x, height * 0.73, z), stalk_color)
+			leaf.rotation_degrees.z = -18.0 if column % 2 == 0 else 18.0
+
+
+func _build_gate(cell: Node3D, tile: Tile) -> void:
+	var gate: Node3D = Node3D.new()
+	gate.name = "Gate"
+	cell.add_child(gate)
+	for x: float in [-0.53, 0.53]:
+		_add_box(gate, Vector3(0.14, 0.91, 0.22), Vector3(x, 0.455, 0.0), _color("earth").lightened(0.16))
+	_add_box(gate, Vector3(1.22, 0.12, 0.22), Vector3(0.0, 0.89, 0.0), _color("accent"))
+	var panel: Node3D = Node3D.new()
+	panel.name = "GatePanel"
+	panel.position.y = 0.55 if tile.gate_open else 0.03
+	gate.add_child(panel)
+	for row: int in range(3):
+		_add_box(panel, Vector3(0.92, 0.13, 0.14), Vector3(0.0, 0.07 + float(row) * 0.15, 0.0), _color("roof").darkened(0.12))
+	for x: float in [-0.31, 0.31]:
+		_add_box(panel, Vector3(0.055, 0.44, 0.035), Vector3(x, 0.22, 0.09), _color("accent"))
+
+
+func _build_granary(cell: Node3D) -> void:
+	var granary: Node3D = Node3D.new()
+	granary.name = "Granary"
+	granary.rotation_degrees.y = 20.0
+	cell.add_child(granary)
+	for x: float in [-0.32, 0.32]:
+		for z: float in [-0.25, 0.25]:
+			_add_box(granary, Vector3(0.09, 0.29, 0.09), Vector3(x, 0.145, z), _color("earth"))
+	_add_box(granary, Vector3(0.83, 0.10, 0.70), Vector3(0.0, 0.29, 0.0), _color("earth").lightened(0.12))
+	_add_box(granary, Vector3(0.69, 0.46, 0.58), Vector3(0.0, 0.56, 0.0), _color("accent").darkened(0.10))
+	for height: float in [0.40, 0.56, 0.72]:
+		_add_box(granary, Vector3(0.71, 0.035, 0.60), Vector3(0.0, height, 0.0), _color("earth"))
+	_add_roof(granary, Vector3(0.95, 0.34, 0.79), Vector3(0.0, 0.94, 0.0), _color("roof"))
+
+
+func _build_fish_trap(cell: Node3D, tile: Tile) -> void:
+	var trap: Node3D = Node3D.new()
+	trap.name = "FishTrap"
+	cell.add_child(trap)
+	for height: float in [0.07, 0.37]:
+		var hoop: TorusMesh = TorusMesh.new()
+		hoop.inner_radius = 0.23
+		hoop.outer_radius = 0.27
+		hoop.rings = 12
+		hoop.ring_segments = 4
+		_add_mesh(trap, hoop, Vector3(0.0, height, 0.0), _color("accent"))
+	for index: int in range(8):
+		var angle: float = TAU * float(index) / 8.0
+		_add_box(trap, Vector3(0.035, 0.32, 0.035), Vector3(cos(angle) * 0.25, 0.22, sin(angle) * 0.25), _color("earth"))
+	var buoy_height: float = maxf(0.45, tile.water * C.HEIGHT_UNIT + 0.16)
+	_add_box(trap, Vector3(0.045, buoy_height, 0.045), Vector3(0.40, buoy_height * 0.5, 0.0), _color("earth"))
+	var buoy: SphereMesh = SphereMesh.new()
+	buoy.radius = 0.11
+	buoy.height = 0.22
+	buoy.radial_segments = 8
+	buoy.rings = 4
+	_add_mesh(trap, buoy, Vector3(0.40, buoy_height, 0.0), _color("accent"))
+
+
+func _build_reservoir(cell: Node3D) -> void:
+	var reservoir: Node3D = Node3D.new()
+	reservoir.name = "Reservoir"
+	cell.add_child(reservoir)
+	_add_mesh(reservoir, MeshLib.hex_ring(0.88, 0.72), Vector3(0.0, 0.07, 0.0), _color("earth").lightened(0.21))
+	for index: int in range(6):
+		var angle: float = TAU * float(index) / 6.0 + PI / 6.0
+		var block: MeshInstance3D = _add_mesh(reservoir, _box_mesh(Vector3(0.47, 0.14, 0.17)), Vector3(cos(angle) * 0.76, 0.07, sin(angle) * 0.76), _color("earth").lightened(0.21))
+		block.rotation.y = -angle + PI / 2.0
+
+
+func _build_waterwheel(cell: Node3D, tile: Tile) -> void:
+	var mill: Node3D = Node3D.new()
+	mill.name = "Waterwheel"
+	var direction: Vector3 = Hex.to_world(Hex.direction(tile.wheel_dir)).normalized()
+	mill.rotation.y = atan2(-direction.z, direction.x)
+	cell.add_child(mill)
+	for x: float in [-0.23, 0.23]:
+		_add_box(mill, Vector3(0.08, 0.59, 0.13), Vector3(x, 0.295, 0.0), _color("earth"))
+	var rim: TorusMesh = TorusMesh.new()
+	rim.inner_radius = 0.32
+	rim.outer_radius = 0.39
+	rim.rings = 16
+	rim.ring_segments = 6
+	var ring: MeshInstance3D = _add_mesh(mill, rim, Vector3(0.0, 0.58, 0.0), _color("roof"))
+	ring.rotation_degrees.z = 90.0
+	var axle: CylinderMesh = CylinderMesh.new()
+	axle.top_radius = 0.065
+	axle.bottom_radius = 0.065
+	axle.height = 0.66
+	axle.radial_segments = 8
+	var hub: MeshInstance3D = _add_mesh(mill, axle, Vector3(0.0, 0.58, 0.0), _color("accent"))
+	hub.rotation_degrees.z = 90.0
+	for index: int in range(8):
+		var angle: float = TAU * float(index) / 8.0
+		var paddle: MeshInstance3D = _add_mesh(mill, _box_mesh(Vector3(0.37, 0.10, 0.16)), Vector3(0.0, 0.58 + sin(angle) * 0.35, cos(angle) * 0.35), _color("accent"))
+		paddle.rotation.x = -angle
+	_add_box(mill, Vector3(0.35, 0.04, 0.065), Vector3(0.45, 0.075, 0.0), _color("highlight"))
+	var arrow: CylinderMesh = CylinderMesh.new()
+	arrow.top_radius = 0.0
+	arrow.bottom_radius = 0.13
+	arrow.height = 0.23
+	arrow.radial_segments = 3
+	var tip: MeshInstance3D = _add_mesh(mill, arrow, Vector3(0.70, 0.075, 0.0), _color("highlight"))
+	tip.rotation_degrees.z = -90.0
+
+
 func _build_house(cell: Node3D, tile: Tile) -> void:
 	var village: Node3D = Node3D.new()
 	village.rotation_degrees.y = 20.0
@@ -276,9 +443,13 @@ func _add_roof(parent: Node3D, size: Vector3, at: Vector3, color: Color) -> void
 
 
 func _add_box(parent: Node3D, size: Vector3, at: Vector3, color: Color) -> void:
+	_add_mesh(parent, _box_mesh(size), at, color)
+
+
+func _box_mesh(size: Vector3) -> BoxMesh:
 	var box: BoxMesh = BoxMesh.new()
 	box.size = size
-	_add_mesh(parent, box, at, color)
+	return box
 
 
 func _add_mesh(parent: Node3D, mesh: Mesh, at: Vector3, color: Color, unshaded: bool = false) -> MeshInstance3D:
@@ -323,6 +494,110 @@ func _surface_y(tile: Tile) -> float:
 	if tile.water >= 0.05 or tile.is_sea:
 		return terrain_y + maxf(tile.water * C.HEIGHT_UNIT, 0.055) + 0.015
 	return terrain_y
+
+
+func _clear_root(root: Node3D) -> void:
+	for child: Node in root.get_children():
+		root.remove_child(child)
+		child.queue_free()
+
+
+func _refresh_targets() -> void:
+	_clear_root(_targets_root)
+	if state == null:
+		return
+	var seen: Dictionary = {}
+	for coord: Vector2i in _target_coords:
+		if state.get_tile(coord) == null or seen.has(coord):
+			continue
+		seen[coord] = true
+		var ring: MeshInstance3D = _add_mesh(_targets_root, MeshLib.hex_ring(0.965, 0.915), Vector3.ZERO, _color("water_shallow").lightened(0.18), true)
+		ring.name = "Target_%d_%d" % [coord.x, coord.y]
+		ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_position_marker(ring, coord, 0.075)
+	if state.get_tile(_invalid_coord) != null:
+		var invalid: MeshInstance3D = _add_mesh(_targets_root, MeshLib.hex_ring(0.97, 0.89), Vector3.ZERO, Color("#ef8c76"), true)
+		invalid.name = "InvalidTarget"
+		invalid.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_position_marker(invalid, _invalid_coord, 0.09)
+
+
+func _refresh_preview() -> void:
+	_clear_root(_preview_root)
+	if state == null or not _prediction.get("state") is GameState or not _prediction.get("report") is TurnReport:
+		return
+	var predicted: GameState = _prediction["state"]
+	var report: TurnReport = _prediction["report"]
+	for tile: Tile in state.tiles:
+		var after: Tile = predicted.get_tile(tile.coord)
+		if after == null:
+			continue
+		var delta: float = after.water - tile.water
+		if absf(delta) > 0.05:
+			_build_ghost_water(after, delta)
+	for entry: Dictionary in report.destroyed:
+		_preview_label("!", entry["coord"], Color("#ef8c76"), "Destroyed")
+	for coord: Vector2i in report.paddies_died:
+		_preview_label("x", coord, Color("#ef8c76"), "PaddyDied")
+	for coord: Vector2i in report.paddy_gains:
+		_preview_label("+1", coord, _color("highlight"), "PaddyGain")
+	if report.fish_food <= 0:
+		return
+	var productive_traps: Array[Vector2i] = []
+	for index: int in range(predicted.tiles.size()):
+		var tile: Tile = predicted.tiles[index]
+		var level: int = report.levels_after[index] if index < report.levels_after.size() else predicted.level_of(tile)
+		if tile.building == C.Building.FISH_TRAP and level >= 1:
+			productive_traps.append(tile.coord)
+	if productive_traps.is_empty():
+		return
+	# Every productive trap has the same yield. Read the resolved total rather
+	# than evaluating modifiers here, so even the model's caches stay untouched.
+	var fish_food: int = roundi(float(report.fish_food) / float(productive_traps.size()))
+	for coord: Vector2i in productive_traps:
+		_preview_label("+%d" % fish_food, coord, _color("water_shallow"), "FishFood")
+
+
+func _build_ghost_water(tile: Tile, delta: float) -> void:
+	var ghost: Node3D = Node3D.new()
+	ghost.name = "GhostWater_%d_%d" % [tile.q, tile.r]
+	ghost.position = Hex.to_world(tile.coord, tile.elevation)
+	_preview_root.add_child(ghost)
+	var tint: Color = _color("water_shallow") if delta > 0.0 else _color("accent")
+	tint.a = 0.30
+	var surface: MeshInstance3D = _add_mesh(ghost, MeshLib.hex_prism(0.98), Vector3(0.0, maxf(0.0, tile.water * C.HEIGHT_UNIT) + 0.035, 0.0), tint, true)
+	surface.name = "PredictedSurface"
+	surface.scale.y = 0.025
+	var material: StandardMaterial3D = surface.material_override.duplicate() as StandardMaterial3D
+	material.no_depth_test = true
+	material.render_priority = 1
+	surface.material_override = material
+	surface.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	tint.a = 0.85
+	var rim: MeshInstance3D = _add_mesh(ghost, MeshLib.hex_ring(0.985, 0.955), surface.position + Vector3(0.0, 0.03, 0.0), tint, true)
+	rim.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
+func _preview_label(text: String, coord: Vector2i, color: Color, prefix: String) -> void:
+	var tile: Tile = state.get_tile(coord)
+	if tile == null:
+		return
+	var predicted: GameState = _prediction["state"]
+	var after: Tile = predicted.get_tile(coord)
+	var label: Label3D = Label3D.new()
+	label.name = "%s_%d_%d" % [prefix, coord.x, coord.y]
+	label.text = text
+	label.font = MARKER_FONT
+	label.font_size = 52
+	label.pixel_size = 0.012
+	label.position = Hex.to_world(coord)
+	label.position.y = maxf(_surface_y(tile), _surface_y(after) if after != null else _surface_y(tile)) + 0.95
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.modulate = color
+	label.outline_modulate = _color("background")
+	label.outline_size = 9
+	label.no_depth_test = true
+	_preview_root.add_child(label)
 
 
 func _update_markers() -> void:
