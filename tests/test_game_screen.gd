@@ -356,8 +356,21 @@ func test_harvest_preview_matches_real_resolution_without_writing_checkpoint() -
 			assert_eq(state.to_dict(), before, "harvest forecast preserves live state and RNG")
 			assert_eq(FileAccess.get_file_as_bytes(CHECKPOINT_PATH), saved, "forecast cannot autosave")
 			var expected: Dictionary = screen.harvest_prediction.duplicate(true)
-			for key: String in expected:
-				assert_true(screen._preview_label.text.contains(String(TranslationServer.translate("summary." + key)) % int(expected[key])))
+			# The compact forecast groups related counters while retaining every
+			# annual total, and adds available food, demand and housing capacity.
+			var projected: GameState = screen.prediction["state"]
+			var available: int = projected.food + int(expected["paddy_food"])
+			var needed: int = projected.population * maxi(0, roundi(float(projected.mod("food_per_person"))))
+			var displayed: PackedStringArray = PackedStringArray([
+				String(TranslationServer.translate("preview.harvest_paddy")) % int(expected["paddy_food"]),
+				String(TranslationServer.translate("preview.harvest_food")) % [available, needed, int(expected["eaten"])],
+				String(TranslationServer.translate("preview.harvest_migration")) % [int(expected["left_hunger"]), int(expected["left_housing"])],
+				String(TranslationServer.translate("preview.harvest_growth")) % [int(expected["born"]), int(expected["spoiled"])],
+				String(TranslationServer.translate("preview.harvest_food_after")) % int(expected["food_after"]),
+				String(TranslationServer.translate("preview.harvest_people")) % [int(expected["population_after"]), projected.capacity()],
+			])
+			for line: String in displayed:
+				assert_true(screen._preview_label.text.contains(line), "forecast displays all annual accounting totals")
 			screen.toggle_preview()
 			assert_eq(screen._preview_label.text, String(TranslationServer.translate("preview.disabled")))
 			screen.toggle_preview()
