@@ -22,6 +22,7 @@ var camera_rig: CameraRig
 var hud: Control
 var prediction: Dictionary = {}
 var harvest_projection: Dictionary = {}
+var harvest_prediction: Dictionary = {}
 var command_mode: String = ""
 var wheel_origin: Vector2i = BoardView.NO_COORD
 var hovered_coord: Vector2i = BoardView.NO_COORD
@@ -220,19 +221,21 @@ func refresh_state() -> void:
 	prediction = GameFlow.preview(state) if state.phase == C.Phase.PLANNING else {}
 	harvest_projection = {}
 	_predicted_outcome = C.Outcome.NONE
+	harvest_prediction.clear()
 	if not prediction.is_empty():
 		var predicted: GameState = prediction["state"]
 		_predicted_outcome = predicted.outcome
 		if state.turn == C.TURNS_PER_YEAR and _predicted_outcome == C.Outcome.NONE:
-			var harvest_prediction: GameState = predicted.duplicate_state()
-			var available_food: int = harvest_prediction.food
-			var food_needed: int = harvest_prediction.population * maxi(0, roundi(float(harvest_prediction.mod("food_per_person"))))
-			Harvest.do_harvest(harvest_prediction)
-			harvest_projection = harvest_prediction.harvest_report.duplicate(true)
+			var harvested: GameState = predicted.duplicate_state()
+			var available_food: int = harvested.food
+			var food_needed: int = harvested.population * maxi(0, roundi(float(harvested.mod("food_per_person"))))
+			Harvest.do_harvest(harvested)
+			harvest_prediction = harvested.harvest_report.duplicate(true)
+			harvest_projection = harvest_prediction.duplicate(true)
 			harvest_projection["available_food"] = available_food + int(harvest_projection["paddy_food"])
 			harvest_projection["food_needed"] = food_needed
-			harvest_projection["capacity"] = harvest_prediction.capacity()
-			_predicted_outcome = harvest_prediction.outcome
+			harvest_projection["capacity"] = harvested.capacity()
+			_predicted_outcome = harvested.outcome
 	board.set_preview(prediction, preview_enabled)
 	board.hover(hovered_coord)
 	_targets.clear()

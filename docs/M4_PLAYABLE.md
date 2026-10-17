@@ -58,7 +58,7 @@ scripts/test.sh --filter=i18n
 
 การตรวจสำคัญรวม autosave/undo/save failure, Continue และยืนยันเขียนทับ, modal หยุดคำสั่ง/กล้อง, waterwheel สองคลิก, gate และคำเตือนแพ้จาก harvest เทสต์ GameScreen เล่น farmer seed 1 ครบ 30 เทิร์น ผ่านสรุปปีทั้ง 5 และชนะ โดยโหลดกลับจากสรุปปีแรกแล้วได้สถานะ/คะแนนตรงเดิม ส่วน seed 42 อาจแพ้ศาลาในปีสุดท้ายตามกฎ ไม่รับประกันว่าทุก seed ชนะด้วยกลยุทธ์เดียว
 
-ชุดรวมผ่าน **174 รายการ** บน Godot 4.6.3 และ smoke ของ menu/game/sandbox ไม่มี script error ต้นฉบับนำเข้าทั้ง 54 ไฟล์ยังตรง SHA-256 ใน manifest
+ชุดรวมผ่าน **176 รายการ** บน Godot 4.6.3 และ smoke ของ menu/game/sandbox ไม่มี script error ต้นฉบับนำเข้าทั้ง 54 ไฟล์ยังตรง SHA-256 ใน manifest
 
 ทดลองหน้าต่างจริงด้วย OpenGL Compatibility บน Xvfb/Mesa และ XTest ส่งเมาส์/คีย์บอร์ดจริง โดยแยก XDG directory ออกจากเซฟปกติ:
 

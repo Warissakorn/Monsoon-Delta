@@ -332,3 +332,72 @@ func test_failed_window_close_from_harvest_can_resume_the_same_summary() -> void
 	assert_eq(screen.session.state.year, 2)
 	assert_eq(screen.session.last_save_error, "")
 	_close_screen(screen)
+
+
+func test_harvest_preview_matches_real_resolution_without_writing_checkpoint() -> void:
+	for seed_value: int in [1, 42, 100]:
+		for food: int in [0, 8, 40]:
+			var screen: GameScreen = _open_screen(seed_value)
+			Localization.setup("th" if seed_value == 42 else "en")
+			var state: GameState = screen.session.state
+			var coord: Vector2i = screen.valid_targets("paddy")[0]
+			state.turn = C.TURNS_PER_YEAR
+			state.food = food
+			state.year = C.YEARS if food == 40 else 1
+			# Keep the hall safe while exercising water, paddy production and harvest.
+			state.year_mods = [{"key": "hall_lose_level", "op": "set", "value": 100}]
+			state.recompute_mods()
+			state.get_tile(coord).feature = C.Feature.PADDY
+			state.get_tile(coord).paddy_yield = 3
+			var before: Dictionary = state.to_dict()
+			var saved: PackedByteArray = FileAccess.get_file_as_bytes(CHECKPOINT_PATH)
+			screen.refresh_state()
+			assert_true(not screen.harvest_prediction.is_empty())
+			assert_eq(state.to_dict(), before, "harvest forecast preserves live state and RNG")
+			assert_eq(FileAccess.get_file_as_bytes(CHECKPOINT_PATH), saved, "forecast cannot autosave")
+			var expected: Dictionary = screen.harvest_prediction.duplicate(true)
+			# The compact forecast groups related counters while retaining every
+			# annual total, and adds available food, demand and housing capacity.
+			var projected: GameState = screen.prediction["state"]
+			var available: int = projected.food + int(expected["paddy_food"])
+			var needed: int = projected.population * maxi(0, roundi(float(projected.mod("food_per_person"))))
+			var displayed: PackedStringArray = PackedStringArray([
+				String(TranslationServer.translate("preview.harvest_paddy")) % int(expected["paddy_food"]),
+				String(TranslationServer.translate("preview.harvest_food")) % [available, needed, int(expected["eaten"])],
+				String(TranslationServer.translate("preview.harvest_migration")) % [int(expected["left_hunger"]), int(expected["left_housing"])],
+				String(TranslationServer.translate("preview.harvest_growth")) % [int(expected["born"]), int(expected["spoiled"])],
+				String(TranslationServer.translate("preview.harvest_food_after")) % int(expected["food_after"]),
+				String(TranslationServer.translate("preview.harvest_people")) % [int(expected["population_after"]), projected.capacity()],
+			])
+			for line: String in displayed:
+				assert_true(screen._preview_label.text.contains(line), "forecast displays all annual accounting totals")
+			screen.toggle_preview()
+			assert_eq(screen._preview_label.text, String(TranslationServer.translate("preview.disabled")))
+			screen.toggle_preview()
+			screen.session.advance_turn()
+			assert_eq(state.harvest_report, expected, "forecast includes the final water/production step")
+			screen.refresh_state()
+			assert_true(screen.harvest_prediction.is_empty(), "leaving planning clears the forecast")
+			_close_screen(screen)
+
+
+func test_hall_loss_skips_harvest_forecast_and_earlier_turn_clears_it() -> void:
+	var screen: GameScreen = _open_screen()
+	var state: GameState = screen.session.state
+	state.turn = C.TURNS_PER_YEAR
+	state.year_mods = [{"key": "hall_lose_level", "op": "set", "value": 100}]
+	state.recompute_mods()
+	screen.refresh_state()
+	assert_true(not screen.harvest_prediction.is_empty())
+	state.turn = C.TURNS_PER_YEAR - 1
+	screen.refresh_state()
+	assert_true(screen.harvest_prediction.is_empty())
+	assert_true(not screen._preview_label.text.contains(String(TranslationServer.translate("preview.harvest"))))
+	state.turn = C.TURNS_PER_YEAR
+	state.year_mods = [{"key": "hall_lose_level", "op": "set", "value": 0}]
+	state.recompute_mods()
+	screen.refresh_state()
+	assert_eq(screen._predicted_outcome, C.Outcome.LOSE_HALL)
+	assert_true(screen.harvest_prediction.is_empty(), "a flooded hall ends the game before harvest")
+	assert_true(not screen._preview_label.text.contains(String(TranslationServer.translate("preview.harvest"))))
+	_close_screen(screen)
