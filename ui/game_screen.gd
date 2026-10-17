@@ -41,6 +41,7 @@ var _tile_title: Label
 var _tile_details: Label
 var _tile_note: Label
 var _preview_label: Label
+var _preview_legend: Label
 var _status_label: Label
 var _command_buttons: Dictionary = {}
 var _targets: Dictionary = {}
@@ -181,6 +182,9 @@ func _build_hud() -> void:
 	_preview_button = _button(tr("action.preview"), toggle_preview, "Preview")
 	_preview_button.toggle_mode = true
 	preview_panel.add_child(_preview_button)
+	_preview_legend = _label(tr("preview.legend"), 18, true)
+	_preview_legend.name = "PreviewLegend"
+	preview_panel.add_child(_preview_legend)
 	sidebar.add_child(_label(tr("help.goal"), 20, true))
 	sidebar.add_child(_label(tr("help.controls"), 18, true))
 	_status_label = _label("", 20)
@@ -201,6 +205,7 @@ func _build_hud() -> void:
 		button.custom_minimum_size = Vector2(150, 64)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 18)
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		button.toggle_mode = true
 		_command_buttons[id] = button
 		commands_grid.add_child(button)
@@ -447,8 +452,6 @@ func _update_inspector() -> void:
 			_tile_note.text = tr("tile.paddy_dead")
 		else:
 			_tile_note.text = tr("tile.paddy") % [tile.paddy_yield, tile.paddy_rain_turns]
-			if preview_enabled and not prediction.is_empty() and prediction["state"].get_tile(tile.coord).paddy_dead:
-				_tile_note.text += "\n" + tr("tile.paddy_dies")
 	elif tile.building == C.Building.GATE:
 		_tile_note.text = tr("tile.gate_open" if tile.gate_open else "tile.gate_closed")
 		if command_mode.is_empty() and state.phase == C.Phase.PLANNING:
@@ -457,6 +460,8 @@ func _update_inspector() -> void:
 		var intake: Tile = state.neighbor_in_dir(tile, tile.wheel_dir)
 		if intake != null:
 			_tile_note.text = tr("tile.wheel_intake") % [intake.q, intake.r]
+	for line: String in _tile_preview_lines(tile):
+		_tile_note.text += ("\n" if not _tile_note.text.is_empty() else "") + line
 	if not command_mode.is_empty():
 		var origin: Vector2i = wheel_origin if wheel_origin != BoardView.NO_COORD else tile.coord
 		var parameter: int = -1
@@ -474,7 +479,49 @@ func _update_inspector() -> void:
 			_tile_note.text += ("\n" if not _tile_note.text.is_empty() else "") + tr(error)
 
 
+func _tile_preview_lines(tile: Tile) -> PackedStringArray:
+	var lines: PackedStringArray = PackedStringArray()
+	if not preview_enabled or prediction.is_empty():
+		return lines
+	var predicted: GameState = prediction["state"]
+	var report: TurnReport = prediction["report"]
+	if tile.building == C.Building.HALL and report.outcome == C.Outcome.LOSE_HALL:
+		lines.append(tr("preview.lose_hall"))
+		lines.append(_flood_limit_line(predicted, "hall_lose_level"))
+	for entry: Dictionary in report.destroyed:
+		if entry["coord"] != tile.coord:
+			continue
+		var building: int = int(entry["building"])
+		lines.append(tr("tile.destroyed_forecast") % tr("building." + C.enum_name(C.Building, building)))
+		var limits: Dictionary = {
+			C.Building.HOUSE: "house_destroy_level",
+			C.Building.STILT_HOUSE: "stilt_destroy_level",
+			C.Building.GRANARY: "granary_destroy_level",
+		}
+		if limits.has(building):
+			lines.append(_flood_limit_line(predicted, limits[building]))
+	if report.paddies_died.has(tile.coord):
+		lines.append(tr("tile.paddy_dies"))
+		lines.append(_flood_limit_line(predicted, "paddy_death_level"))
+	# Damage is completed even on a losing flood, but production is skipped.
+	if report.outcome != C.Outcome.LOSE_HALL:
+		if report.paddy_gains.has(tile.coord):
+			lines.append(tr("tile.paddy_gain"))
+		var fish: int = int(BoardView.preview_fish_food_by_tile(predicted, report).get(tile.coord, 0))
+		if fish > 0:
+			lines.append(tr("tile.fish_gain") % fish)
+	return lines
+
+
+func _flood_limit_line(predicted: GameState, key: String) -> String:
+	var threshold: int = roundi(float(predicted.mods[key]))
+	if threshold >= 0 and threshold <= 3:
+		return tr("tile.flood_limit") % [threshold, tr("level.%d" % threshold)]
+	return tr("tile.flood_limit_number") % threshold
+
+
 func _update_preview_text() -> void:
+	_preview_legend.visible = preview_enabled and not prediction.is_empty()
 	if not preview_enabled:
 		_preview_label.text = tr("preview.disabled")
 		return
