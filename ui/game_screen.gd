@@ -45,6 +45,11 @@ var _skip_confirmation: CheckBox
 var _time_label: Label
 var _resources_label: Label
 var _water_label: Label
+var _run_label: Label
+var _goal_label: Label
+var _goal_panel: Control
+var _survival_help: Label
+var _goal_preview_achieved: bool = false
 var _save_label: Label
 var _tile_title: Label
 var _tile_details: Label
@@ -160,6 +165,8 @@ func _build_hud() -> void:
 	header.add_child(_resources_label)
 	_water_label = _label("", 20, true)
 	header.add_child(_water_label)
+	_run_label = _label("", 18, true)
+	header.add_child(_run_label)
 	_save_label = _label("", 18)
 	_save_label.add_theme_color_override("font_color", Color(_colors.accent))
 	layout.add_child(_save_label)
@@ -179,6 +186,11 @@ func _build_hud() -> void:
 	sidebar.custom_minimum_size.x = 320
 	sidebar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	side_scroll.add_child(sidebar)
+	var objective := _panel(sidebar)
+	_goal_panel = objective.get_parent()
+	objective.add_child(_label(tr("goal.title"), 22))
+	_goal_label = _label("", 18)
+	objective.add_child(_goal_label)
 	var latest := _panel(sidebar)
 	_latest_panel = latest.get_parent()
 	latest.add_child(_label(tr("history.latest"), 22))
@@ -201,7 +213,8 @@ func _build_hud() -> void:
 	_preview_legend = _label(tr("preview.legend"), 18, true)
 	_preview_legend.name = "PreviewLegend"
 	preview_panel.add_child(_preview_legend)
-	sidebar.add_child(_label(tr("help.goal"), 20, true))
+	_survival_help = _label("", 20, true)
+	sidebar.add_child(_survival_help)
 	sidebar.add_child(_label(tr("help.controls"), 18, true))
 	_status_label = _label("", 20)
 	layout.add_child(_status_label)
@@ -244,6 +257,7 @@ func refresh_state() -> void:
 	board.set_labels_visible(show_levels)
 	prediction = GameFlow.preview(state) if state.phase == C.Phase.PLANNING else {}
 	harvest_projection = {}
+	_goal_preview_achieved = false
 	_predicted_outcome = C.Outcome.NONE
 	harvest_prediction.clear()
 	if not prediction.is_empty():
@@ -254,6 +268,7 @@ func refresh_state() -> void:
 			var available_food: int = harvested.food
 			var food_needed: int = harvested.population * maxi(0, roundi(float(harvested.mod("food_per_person"))))
 			Harvest.do_harvest(harvested)
+			_goal_preview_achieved = state.goal_achieved_year == 0 and harvested.goal_achieved_year > 0
 			harvest_prediction = harvested.harvest_report.duplicate(true)
 			harvest_projection = harvest_prediction.duplicate(true)
 			harvest_projection["available_food"] = available_food + int(harvest_projection["paddy_food"])
@@ -277,7 +292,9 @@ func refresh_state() -> void:
 		if button.disabled:
 			button.tooltip_text += "\n" + tr(_unavailable_reason(id))
 		button.set_pressed_no_signal(command_mode == id)
-	_time_label.text = tr("hud.time") % [state.year, C.YEARS, tr("season.rain" if state.is_rain() else "season.dry"), state.turn, C.TURNS_PER_YEAR]
+	_time_label.text = tr("hud.time") % [state.year, state.target_years(), tr("season.rain" if state.is_rain() else "season.dry"), state.turn, C.TURNS_PER_YEAR]
+	_run_label.text = tr("run_mode." + state.run_mode + ".name")
+	_survival_help.text = tr("help.survive_years") % state.target_years()
 	_resources_label.text = tr("hud.resources") % [state.labor, state.labor_max, state.food, state.wood, state.population, state.capacity()]
 	_water_label.text = tr("hud.water") % [state.current_inflow(), state.forecast_min, state.forecast_max]
 	_undo_button.disabled = state.phase != C.Phase.PLANNING or state.undo.is_empty()
@@ -290,6 +307,28 @@ func refresh_state() -> void:
 	_update_inspector()
 	_update_command_status()
 	_refresh_turn_result()
+	_refresh_village_goal()
+
+
+func _refresh_village_goal() -> void:
+	var state: GameState = session.state
+	_goal_panel.visible = state.village_goal != "none"
+	_goal_label.text = ""
+	if state.village_goal == "none":
+		return
+	var progress: Dictionary = RunGoals.progress(state)
+	var lines := PackedStringArray([tr("goal." + state.village_goal + ".name")])
+	if progress["achieved"]:
+		lines.append(tr("goal.completed") % [int(progress["achieved_year"]), int(progress["score"])])
+	else:
+		lines.append(tr("goal.progress_population") % [int(progress["population"]), int(progress["required_population"])])
+		if int(progress["required_forests"]) > 0:
+			lines.append(tr("goal.progress_forests") % [int(progress["forests"]), int(progress["required_forests"])])
+		if int(progress["required_paddy_food"]) > 0:
+			lines.append(tr("goal.progress_rice") % [int(progress["paddy_food"]), int(progress["required_paddy_food"])])
+		lines.append(tr("goal.harvest_check"))
+		lines.append(tr("goal.reward") % int(progress["score"]))
+	_goal_label.text = "\n".join(lines)
 
 
 func _turn_stamp(entry: Dictionary) -> String:
@@ -539,7 +578,7 @@ func _update_command_status() -> void:
 	if wheel_origin != BoardView.NO_COORD:
 		_status_label.text = tr("tile.wheel_direction")
 	elif command_mode.is_empty():
-		_status_label.text = tr("help.goal")
+		_status_label.text = tr("help.survive_years") % session.state.target_years()
 	elif _targets.get(command_mode, []).is_empty():
 		_status_label.text = "%s: %s" % [tr("cmd.%s.name" % command_mode), tr(_unavailable_reason(command_mode))]
 	else:
@@ -697,7 +736,7 @@ func _harvest_preview_lines() -> PackedStringArray:
 	if harvest_projection.is_empty():
 		return PackedStringArray()
 	var report: Dictionary = harvest_projection
-	return PackedStringArray([
+	var lines := PackedStringArray([
 		tr("preview.harvest_title"),
 		tr("preview.harvest_paddy") % int(report["paddy_food"]),
 		tr("preview.harvest_food") % [int(report["available_food"]), int(report["food_needed"]), int(report["eaten"])],
@@ -706,6 +745,9 @@ func _harvest_preview_lines() -> PackedStringArray:
 		tr("preview.harvest_food_after") % int(report["food_after"]),
 		tr("preview.harvest_people") % [int(report["population_after"]), int(report["capacity"])],
 	])
+	if _goal_preview_achieved:
+		lines.append(tr("goal.preview_complete") % int(RunGoals.progress(session.state)["score"]))
+	return lines
 
 
 func _refresh_save_status() -> void:
@@ -813,6 +855,9 @@ func _show_harvest() -> void:
 	_open_modal("harvest", tr("summary.title") % session.state.year)
 	for key: String in ["paddy_food", "eaten", "left_hunger", "left_housing", "born", "spoiled", "food_after", "population_after"]:
 		_modal_content.add_child(_label(tr("summary." + key) % int(session.state.harvest_report[key])))
+	if session.state.goal_achieved_year == session.state.year and session.state.village_goal != "none":
+		_modal_content.add_child(_label(tr("goal." + session.state.village_goal + ".name"), 20))
+		_modal_content.add_child(_label(tr("goal.completed") % [session.state.goal_achieved_year, int(RunGoals.progress(session.state)["score"])], 20))
 	var caption: String = tr("action.finish") if session.state.outcome != C.Outcome.NONE else tr("action.continue")
 	_add_modal_button(caption, continue_harvest, "ContinueHarvest", true)
 	_add_modal_button(tr("action.history"), open_turn_history, "HarvestHistory")
@@ -837,6 +882,11 @@ func _show_game_over() -> void:
 	var house_bonus: int = int(scoring["no_houses_lost"]) if state.outcome == C.Outcome.WIN and int(state.stats["houses_lost"]) == 0 else 0
 	var hall_bonus: int = int(scoring["hall_dry"]) if state.outcome == C.Outcome.WIN and not bool(state.stats["hall_ever_wet"]) else 0
 	_modal_content.add_child(_label(tr("gameover.components") % [state.population * int(scoring["population"]), state.food, house_bonus, hall_bonus, 1.0 + state.difficulty * float(scoring["difficulty_step"])]))
+	_modal_content.add_child(_label(tr("run_mode." + state.run_mode + ".name"), 20, true))
+	if state.village_goal != "none":
+		var goal: Dictionary = RunGoals.progress(state)
+		_modal_content.add_child(_label(tr("goal." + state.village_goal + ".name"), 22))
+		_modal_content.add_child(_label(tr("goal.completed") % [int(goal["achieved_year"]), int(goal["score"])] if goal["achieved"] else tr("goal.unfinished"), 20))
 	_modal_content.add_child(_label(tr("gameover.seed") % str(state.seed)))
 	_add_modal_button(tr("action.history"), open_turn_history, "GameOverHistory")
 	_add_modal_button(tr("action.restart"), _restart, "Restart")
@@ -844,7 +894,7 @@ func _show_game_over() -> void:
 
 
 func _restart() -> void:
-	restart_requested.emit({"seed": session.state.seed + 1, "map_type": "plains", "leader": session.state.leader, "difficulty": session.state.difficulty})
+	restart_requested.emit({"seed": session.state.seed + 1, "map_type": "plains", "leader": session.state.leader, "difficulty": session.state.difficulty, "run_mode": session.state.run_mode, "village_goal": session.state.village_goal})
 
 
 func open_pause() -> void:

@@ -52,7 +52,7 @@ static func do_harvest(s: GameState) -> void:
 	s.stats["max_population"] = maxi(int(s.stats.get("max_population", 0)), s.population)
 	if s.population == 0:
 		s.outcome = Constants.Outcome.LOSE_POPULATION
-	elif s.year == Constants.YEARS:
+	elif s.year == s.target_years():
 		s.outcome = Constants.Outcome.WIN
 	s.harvest_report = {
 		"paddy_food": paddy_food,
@@ -64,6 +64,7 @@ static func do_harvest(s: GameState) -> void:
 		"food_after": s.food,
 		"population_after": s.population,
 	}
+	RunGoals.evaluate(s)
 
 
 static func _is_riverside(s: GameState, tile: Tile) -> bool:

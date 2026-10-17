@@ -16,6 +16,7 @@ const STATE_FIELDS: Array[String] = [
 	"cards", "card_offer", "pending_event", "year_mods", "forecast_min", "forecast_max",
 	"rain_inflows", "rng_seed", "rng_state", "stats", "outcome", "harvest_report", "final_score",
 ]
+const RUN_FIELDS: Array[String] = ["run_mode", "village_goal", "goal_achieved_year"]
 const TILE_FIELDS: Array[String] = [
 	"q", "r", "elevation", "water", "feature", "building", "gate_open", "wheel_dir",
 	"is_source", "is_sea", "is_river", "paddy_yield", "paddy_dead", "paddy_rain_turns", "start_house",
@@ -44,8 +45,15 @@ static func save(state: GameState, path: String = DEFAULT_PATH) -> String:
 	var restored: GameState = GameState.from_dict(data)
 	if not _safe_mods(restored):
 		return "msg.save_failed"
+	# Keep the original schema for an ordinary five-year run. Longer runs and
+	# optional goals need version 2 so older clients cannot silently lose them.
+	var envelope_version: int = 2
+	if data["run_mode"] == "classic" and data["village_goal"] == "none":
+		envelope_version = 1
+		for field: String in RUN_FIELDS:
+			data.erase(field)
 	var envelope: Dictionary = {
-		"format": "monsoon_save", "version": 1, "state": data, "float64": _encode_float64(data),
+		"format": "monsoon_save", "version": envelope_version, "state": data, "float64": _encode_float64(data),
 	}
 	var bytes: PackedByteArray = JSON.stringify(envelope, "", true, true).to_utf8_buffer()
 	if bytes.size() > MAX_FILE_BYTES:
@@ -101,12 +109,18 @@ static func load_game(path: String = DEFAULT_PATH) -> Dictionary:
 	var envelope: Variant = parser.data
 	if not envelope is Dictionary:
 		return _corrupt(path)
-	if not envelope.get("format") is String or envelope["format"] != "monsoon_save" or not _integer(envelope.get("version"), 1, 1):
+	if not envelope.get("format") is String or envelope["format"] != "monsoon_save" or not _integer(envelope.get("version"), 1, 2):
 		return _corrupt(path)
 	if not envelope.get("state") is Dictionary or not _valid_state(envelope["state"]):
 		return _corrupt(path)
+	var data: Dictionary = envelope["state"]
+	if int(envelope["version"]) == 2:
+		if not _has_fields(data, RUN_FIELDS):
+			return _corrupt(path)
+	elif data.get("run_mode", "classic") != "classic" or data.get("village_goal", "none") != "none":
+		return _corrupt(path)
 	# Godot's decimal JSON reader can differ by a few ULPs even when stringify
-	# uses full precision. Version 1 therefore requires this exact IEEE-754
+	# uses full precision. Both versions therefore require this exact IEEE-754
 	# companion; its hex encodes eight little-endian bytes, never object data.
 	if not _restore_float64(envelope["state"], envelope.get("float64")) or not _valid_state(envelope["state"]):
 		return _corrupt(path)
@@ -152,12 +166,15 @@ static func _can_serialize(state: GameState) -> bool:
 	for tile: Tile in state.tiles:
 		if tile == null or tile.feature not in C.Feature.values() or tile.building not in C.Building.values():
 			return false
-	return _valid_stats(state.stats) and _valid_report(state.harvest_report, state.phase == C.Phase.HARVEST) and _valid_modifiers(state.year_mods)
+	return _valid_stats(state.stats, state.target_years()) and _valid_report(state.harvest_report, state.phase == C.Phase.HARVEST) and _valid_modifiers(state.year_mods)
 
 
 static func _valid_state(data: Dictionary) -> bool:
 	if not _has_fields(data, STATE_FIELDS) or not _integer(data["version"], 1, 1):
 		return false
+	if not _valid_run_fields(data):
+		return false
+	var target_years: int = int(DataDB.balance()["run_modes"][data.get("run_mode", "classic")]["years"])
 	for key: String in ["seed", "rng_seed", "rng_state"]:
 		if not _decimal_int64(data[key]):
 			return false
@@ -165,7 +182,7 @@ static func _valid_state(data: Dictionary) -> bool:
 		return false
 	if not DataDB.balance()["leaders"].has(data["leader"]):
 		return false
-	if not _integer(data["difficulty"], 0, 10) or not _integer(data["year"], 1, C.YEARS) or not _integer(data["turn"], 1, C.TURNS_PER_YEAR):
+	if not _integer(data["difficulty"], 0, 10) or not _integer(data["year"], 1, target_years) or not _integer(data["turn"], 1, C.TURNS_PER_YEAR):
 		return false
 	for key: String in ["is_daily", "is_tutorial"]:
 		if typeof(data[key]) != TYPE_BOOL:
@@ -198,7 +215,7 @@ static func _valid_state(data: Dictionary) -> bool:
 	for inflow: Variant in data["rain_inflows"]:
 		if not _number(inflow, 0.0):
 			return false
-	if not data["stats"] is Dictionary or not _valid_stats(data["stats"]):
+	if not data["stats"] is Dictionary or not _valid_stats(data["stats"], target_years):
 		return false
 	if data["stats"]["max_population"] < data["population"]:
 		return false
@@ -209,11 +226,11 @@ static func _valid_state(data: Dictionary) -> bool:
 	if data["phase"] == "harvest":
 		if data["harvest_report"]["food_after"] != data["food"] or data["harvest_report"]["population_after"] != data["population"]:
 			return false
-		if data["outcome"] == "win" and (int(data["year"]) != C.YEARS or data["population"] == 0):
+		if data["outcome"] == "win" and (int(data["year"]) != target_years or data["population"] == 0):
 			return false
 		if data["outcome"] == "lose_population" and data["population"] != 0:
 			return false
-		if data["outcome"] == "none" and (int(data["year"]) == C.YEARS or data["population"] == 0):
+		if data["outcome"] == "none" and (int(data["year"]) == target_years or data["population"] == 0):
 			return false
 	var coords: Array[Vector2i] = Hex.coords()
 	if not data["tiles"] is Array or data["tiles"].size() != coords.size():
@@ -222,6 +239,27 @@ static func _valid_state(data: Dictionary) -> bool:
 		if not data["tiles"][index] is Dictionary or not _valid_tile(data["tiles"][index], coords[index]):
 			return false
 	return true
+
+
+static func _valid_run_fields(data: Dictionary) -> bool:
+	var present: int = 0
+	for field: String in RUN_FIELDS:
+		if data.has(field):
+			present += 1
+	# Version 1 saves predate this triplet; migrate only an entirely absent set.
+	if present == 0:
+		return true
+	if present != RUN_FIELDS.size():
+		return false
+	if not data["run_mode"] is String or data["run_mode"] not in ["classic", "long"] or not DataDB.balance()["run_modes"].has(data["run_mode"]):
+		return false
+	if not data["village_goal"] is String or data["village_goal"] not in ["none", "growth", "forest", "rice"] or not DataDB.balance()["village_goals"].has(data["village_goal"]):
+		return false
+	if not _integer(data["goal_achieved_year"], 0) or not _integer(data["year"], 1):
+		return false
+	if data["goal_achieved_year"] > data["year"]:
+		return false
+	return data["village_goal"] != "none" or data["goal_achieved_year"] == 0
 
 
 static func _valid_tile(data: Dictionary, coord: Vector2i) -> bool:
@@ -246,11 +284,11 @@ static func _valid_tile(data: Dictionary, coord: Vector2i) -> bool:
 	return true
 
 
-static func _valid_stats(data: Dictionary) -> bool:
+static func _valid_stats(data: Dictionary, target_years: int = C.YEARS) -> bool:
 	if data.size() != STAT_COUNTS.size() + 1 or not _has_fields(data, STAT_COUNTS) or typeof(data.get("hall_ever_wet")) != TYPE_BOOL:
 		return false
 	for key: String in STAT_COUNTS:
-		if not _integer(data[key], 1 if key == "reached_year" else 0, C.YEARS if key == "reached_year" else MAX_JSON_INTEGER):
+		if not _integer(data[key], 1 if key == "reached_year" else 0, target_years if key == "reached_year" else MAX_JSON_INTEGER):
 			return false
 	return true
 

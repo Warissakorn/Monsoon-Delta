@@ -16,6 +16,9 @@ var seed: int = 0
 var map_type: String = "plains"
 var leader: String = "farmer"
 var difficulty: int = 0
+var run_mode: String = "classic"
+var village_goal: String = "none"
+var goal_achieved_year: int = 0
 var is_daily: bool = false
 var is_tutorial: bool = false
 var tiles: Array[TileModel] = []
@@ -92,6 +95,12 @@ func is_rain() -> bool:
 	return season() == Constants.Season.RAIN
 
 
+func target_years() -> int:
+	var modes: Dictionary = Database.balance()["run_modes"]
+	var mode: Dictionary = modes.get(run_mode, modes["classic"])
+	return int(mode["years"])
+
+
 func mod(key: String) -> Variant:
 	if mods.is_empty():
 		recompute_mods()
@@ -106,6 +115,8 @@ func recompute_mods() -> void:
 	mods = Dictionary(balance.get("mods_default", {})).duplicate(true)
 	var map_data: Dictionary = Dictionary(balance.get("maps", {})).get(map_type, {})
 	_apply_modifiers(map_data.get("mods", []))
+	var run_data: Dictionary = Dictionary(balance.get("run_modes", {})).get(run_mode, {})
+	_apply_modifiers(run_data.get("mods", []))
 	_apply_modifiers(Dictionary(balance.get("leaders", {})).get(leader, []))
 	var levels: Array = balance.get("difficulty_levels", [])
 	for level: int in range(mini(maxi(difficulty, 0), levels.size())):
@@ -181,6 +192,9 @@ func to_dict() -> Dictionary:
 		"map_type": map_type,
 		"leader": leader,
 		"difficulty": difficulty,
+		"run_mode": run_mode,
+		"village_goal": village_goal,
+		"goal_achieved_year": goal_achieved_year,
 		"is_daily": is_daily,
 		"is_tutorial": is_tutorial,
 		"tiles": tile_data,
@@ -215,6 +229,9 @@ static func from_dict(data: Dictionary) -> GameState:
 	state.map_type = String(data.get("map_type", "plains"))
 	state.leader = String(data.get("leader", "farmer"))
 	state.difficulty = int(data.get("difficulty", 0))
+	state.run_mode = String(data.get("run_mode", "classic"))
+	state.village_goal = String(data.get("village_goal", "none"))
+	state.goal_achieved_year = int(data.get("goal_achieved_year", 0))
 	state.is_daily = bool(data.get("is_daily", false))
 	state.is_tutorial = bool(data.get("is_tutorial", false))
 	for tile_data: Dictionary in data.get("tiles", []):
