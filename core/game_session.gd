@@ -6,6 +6,7 @@ extends RefCounted
 var state: GameState
 var save_path: String = SaveIO.DEFAULT_PATH
 var last_save_error: String = ""
+var _turn_history: Array[Dictionary] = []
 
 
 func start(cfg: Dictionary) -> String:
@@ -13,6 +14,7 @@ func start(cfg: Dictionary) -> String:
 	if next == null:
 		return "msg.new_game_failed"
 	state = next
+	_turn_history.clear()
 	checkpoint()
 	return ""
 
@@ -26,6 +28,7 @@ func load_game() -> String:
 	if result["state"] == null:
 		return "msg.no_save"
 	state = result["state"]
+	_turn_history.clear()
 	last_save_error = ""
 	return ""
 
@@ -60,10 +63,43 @@ func redo() -> bool:
 
 
 func advance_turn() -> TurnReport:
+	if state == null:
+		return null
+	var year: int = state.year
+	var turn: int = state.turn
+	var season: int = state.season()
 	var report: TurnReport = GameFlow.end_turn(state)
 	if report != null:
+		# Reports describe the turn just resolved, while state may already show
+		# the next turn. Keep only player-facing results, without water snapshots.
+		var results: Dictionary = {
+			"inflow": report.inflow,
+			"destroyed": report.destroyed,
+			"paddies_died": report.paddies_died,
+			"paddy_gains": report.paddy_gains,
+			"fish_food": report.fish_food,
+			"hall_wet": report.hall_wet,
+			"dry_paddy_water_used": report.dry_paddy_water_used,
+		}
+		_turn_history.append({
+			"year": year,
+			"turn": turn,
+			"season": season,
+			"report": results.duplicate(true),
+			"harvest": state.harvest_report.duplicate(true) if state.phase == C.Phase.HARVEST else {},
+			# Harvest can decide a win or population loss after TurnReport ends.
+			"outcome": state.outcome,
+		})
+		if _turn_history.size() > C.YEARS * C.TURNS_PER_YEAR:
+			_turn_history.pop_front()
 		checkpoint()
 	return report
+
+
+func turn_history() -> Array[Dictionary]:
+	# Runtime history belongs to this session, outside the durable GameState.
+	# Callers may inspect or format a result without changing recorded facts.
+	return _turn_history.duplicate(true)
 
 
 func continue_year() -> bool:

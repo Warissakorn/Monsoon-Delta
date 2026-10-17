@@ -43,7 +43,7 @@ func test_ui_literal_keys_and_core_messages_are_translated() -> void:
 	var rows: Dictionary = _rows()
 	var literal_tr: RegEx = RegEx.create_from_string("\\btr\\(\\s*[\"']([^\"']+)[\"']\\s*\\)")
 	# UI builders also pass literal keys into shared label/button helpers.
-	var ui_key: RegEx = RegEx.create_from_string("[\"']((?:app|menu|setup|credits|language|hud|tile|preview|action|summary|gameover|confirm|pause|msg|err|help)\\.[a-z0-9_]+)[\"']")
+	var ui_key: RegEx = RegEx.create_from_string("[\"']((?:app|menu|setup|credits|language|hud|tile|preview|history|action|summary|gameover|confirm|pause|msg|err|help)\\.[a-z0-9_]+)[\"']")
 	for path: String in _scripts("res://ui"):
 		var source: String = FileAccess.get_file_as_string(path)
 		for match_result: RegExMatch in literal_tr.search_all(source):

@@ -30,6 +30,15 @@ var preview_enabled: bool = true
 var show_levels: bool = false
 var modal_kind: String = ""
 var confirm_unused_labor: bool = true
+var history_index: int = -1
+var _history_return: String = ""
+var _history_title: Label
+var _history_details: VBoxContainer
+var _history_previous: Button
+var _history_next: Button
+var _history_scroll: ScrollContainer
+var _latest_panel: Control
+var _latest_result: Label
 var _modal: Control
 var _modal_content: VBoxContainer
 var _skip_confirmation: CheckBox
@@ -145,6 +154,7 @@ func _build_hud() -> void:
 	_time_label = _label("", 28)
 	_time_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	time_row.add_child(_time_label)
+	time_row.add_child(_button(tr("action.history"), open_turn_history, "TurnHistory"))
 	time_row.add_child(_button(tr("action.pause"), open_pause, "Pause"))
 	_resources_label = _label()
 	header.add_child(_resources_label)
@@ -169,6 +179,11 @@ func _build_hud() -> void:
 	sidebar.custom_minimum_size.x = 320
 	sidebar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	side_scroll.add_child(sidebar)
+	var latest := _panel(sidebar)
+	_latest_panel = latest.get_parent()
+	latest.add_child(_label(tr("history.latest"), 22))
+	_latest_result = _label("", 18)
+	latest.add_child(_latest_result)
 	var inspector := _panel(sidebar)
 	_tile_title = _label("", 24)
 	inspector.add_child(_tile_title)
@@ -274,6 +289,123 @@ func refresh_state() -> void:
 	_update_targets()
 	_update_inspector()
 	_update_command_status()
+	_refresh_turn_result()
+
+
+func _turn_stamp(entry: Dictionary) -> String:
+	return tr("history.turn") % [int(entry["year"]), tr("season.rain" if int(entry["season"]) == C.Season.RAIN else "season.dry"), int(entry["turn"])]
+
+
+func _refresh_turn_result() -> void:
+	var entries: Array[Dictionary] = session.turn_history()
+	_latest_panel.visible = not entries.is_empty()
+	_latest_result.text = ""
+	if entries.is_empty():
+		return
+	var entry: Dictionary = entries[-1]
+	var report: Dictionary = entry["report"]
+	var lines := PackedStringArray([
+		_turn_stamp(entry),
+		tr("history.damage_summary") % [report["destroyed"].size(), report["paddies_died"].size()],
+		tr("history.production_summary") % [report["paddy_gains"].size(), int(report["fish_food"])],
+	])
+	if int(entry["outcome"]) != C.Outcome.NONE:
+		lines.append(tr("gameover." + C.enum_name(C.Outcome, int(entry["outcome"]))))
+	_latest_result.text = "\n".join(lines)
+
+
+func open_turn_history() -> void:
+	if modal_kind not in ["", "pause", "harvest", "game_over"]:
+		return
+	_history_return = modal_kind
+	_open_modal("turn_history", tr("history.title"))
+	_modal_content.add_child(_label(tr("history.session_only"), 18, true))
+	_history_title = _label("", 24)
+	_modal_content.add_child(_history_title)
+	var navigation := HBoxContainer.new()
+	_modal_content.add_child(navigation)
+	_history_previous = _button(tr("history.previous"), _change_history.bind(-1), "PreviousTurnResult")
+	_history_next = _button(tr("history.next"), _change_history.bind(1), "NextTurnResult")
+	for button: Button in [_history_previous, _history_next]:
+		button.focus_mode = Control.FOCUS_ALL
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		navigation.add_child(button)
+	_history_scroll = ScrollContainer.new()
+	_history_scroll.custom_minimum_size = Vector2(704, 420)
+	_history_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_modal_content.add_child(_history_scroll)
+	_history_details = VBoxContainer.new()
+	_history_details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_history_scroll.add_child(_history_details)
+	history_index = session.turn_history().size() - 1
+	_render_turn_history()
+	_add_modal_button(tr("action.close"), close_turn_history, "CloseTurnHistory", true)
+
+
+func close_turn_history() -> void:
+	if modal_kind != "turn_history":
+		return
+	var previous: String = _history_return
+	_history_return = ""
+	close_modal()
+	if previous == "pause":
+		open_pause()
+	elif previous in ["harvest", "game_over"]:
+		_restore_phase_modal()
+
+
+func _change_history(offset: int) -> void:
+	if modal_kind != "turn_history":
+		return
+	var count: int = session.turn_history().size()
+	if count == 0:
+		return
+	history_index = clampi(history_index + offset, 0, count - 1)
+	_render_turn_history()
+
+
+func _history_coords(coords: Array) -> String:
+	var labels := PackedStringArray()
+	for coord: Vector2i in coords:
+		labels.append("(%d, %d)" % [coord.x, coord.y])
+	return tr("history.none") if labels.is_empty() else ", ".join(labels)
+
+
+func _render_turn_history() -> void:
+	for child: Node in _history_details.get_children():
+		_history_details.remove_child(child)
+		child.queue_free()
+	_history_scroll.scroll_vertical = 0
+	var entries: Array[Dictionary] = session.turn_history()
+	_history_previous.disabled = history_index <= 0
+	_history_next.disabled = history_index < 0 or history_index >= entries.size() - 1
+	if entries.is_empty():
+		_history_title.text = tr("history.empty")
+		_history_details.add_child(_label(tr("history.empty_hint")))
+		return
+	var entry: Dictionary = entries[history_index]
+	var report: Dictionary = entry["report"]
+	_history_title.text = _turn_stamp(entry)
+	_history_details.add_child(_label(tr("history.inflow") % float(report["inflow"])))
+	_history_details.add_child(_label(tr("history.hall_wet" if report["hall_wet"] else "history.hall_dry")))
+	_history_details.add_child(_label(tr("history.buildings") % report["destroyed"].size()))
+	for item: Dictionary in report["destroyed"]:
+		var coord: Vector2i = item["coord"]
+		var building: String = tr("building." + C.enum_name(C.Building, int(item["building"])))
+		_history_details.add_child(_label(tr("history.destroyed_item") % [building, coord.x, coord.y], 18, true))
+	_history_details.add_child(_label(tr("history.paddies_died") % [report["paddies_died"].size(), _history_coords(report["paddies_died"])]))
+	_history_details.add_child(_label(tr("history.paddy_gains") % [report["paddy_gains"].size(), _history_coords(report["paddy_gains"])]))
+	if not report["paddy_gains"].is_empty():
+		_history_details.add_child(_label(tr("history.yield_note"), 18, true))
+	_history_details.add_child(_label(tr("history.fish") % int(report["fish_food"])))
+	if float(report["dry_paddy_water_used"]) > 0.0:
+		_history_details.add_child(_label(tr("history.irrigation") % float(report["dry_paddy_water_used"])))
+	if not entry["harvest"].is_empty():
+		_history_details.add_child(_label(tr("summary.title") % int(entry["year"]), 24))
+		for key: String in ["paddy_food", "eaten", "left_hunger", "left_housing", "born", "spoiled", "food_after", "population_after"]:
+			_history_details.add_child(_label(tr("summary." + key) % int(entry["harvest"][key])))
+	if int(entry["outcome"]) != C.Outcome.NONE:
+		_history_details.add_child(_label(tr("gameover." + C.enum_name(C.Outcome, int(entry["outcome"]))), 24))
 
 
 func valid_targets(id: String) -> Array[Vector2i]:
@@ -683,6 +815,7 @@ func _show_harvest() -> void:
 		_modal_content.add_child(_label(tr("summary." + key) % int(session.state.harvest_report[key])))
 	var caption: String = tr("action.finish") if session.state.outcome != C.Outcome.NONE else tr("action.continue")
 	_add_modal_button(caption, continue_harvest, "ContinueHarvest", true)
+	_add_modal_button(tr("action.history"), open_turn_history, "HarvestHistory")
 	_add_modal_button(tr("action.menu"), _return_menu, "HarvestMenu")
 
 
@@ -705,6 +838,7 @@ func _show_game_over() -> void:
 	var hall_bonus: int = int(scoring["hall_dry"]) if state.outcome == C.Outcome.WIN and not bool(state.stats["hall_ever_wet"]) else 0
 	_modal_content.add_child(_label(tr("gameover.components") % [state.population * int(scoring["population"]), state.food, house_bonus, hall_bonus, 1.0 + state.difficulty * float(scoring["difficulty_step"])]))
 	_modal_content.add_child(_label(tr("gameover.seed") % str(state.seed)))
+	_add_modal_button(tr("action.history"), open_turn_history, "GameOverHistory")
 	_add_modal_button(tr("action.restart"), _restart, "Restart")
 	_add_modal_button(tr("action.menu"), _return_menu, "GameOverMenu", true)
 
@@ -719,6 +853,7 @@ func open_pause() -> void:
 	_open_modal("pause", tr("pause.title"))
 	_modal_content.add_child(_label(tr("pause.seed") % str(session.state.seed)))
 	_add_modal_button(tr("action.resume"), close_modal, "Resume", true)
+	_add_modal_button(tr("action.history"), open_turn_history, "PauseHistory")
 	if not session.last_save_error.is_empty():
 		_modal_content.add_child(_label(tr(session.last_save_error)))
 		_add_modal_button(tr("action.retry_save"), _retry_save, "RetrySave")
@@ -790,8 +925,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if session == null or session.state == null:
 		return
 	if not modal_kind.is_empty():
-		if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE and modal_kind in ["pause", "confirm_loss", "confirm_labor"]:
-			close_modal()
+		if event is InputEventKey and event.pressed and not event.echo:
+			if event.physical_keycode == KEY_H and modal_kind in ["pause", "harvest", "game_over"]:
+				open_turn_history()
+			elif event.physical_keycode == KEY_ESCAPE:
+				if modal_kind == "turn_history":
+					close_turn_history()
+				elif modal_kind in ["pause", "confirm_loss", "confirm_labor"]:
+					close_modal()
 		get_viewport().set_input_as_handled()
 		return
 	if get_viewport().gui_get_focus_owner() is LineEdit:
@@ -808,6 +949,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			match key:
 				KEY_SPACE, KEY_ENTER: request_end_turn()
 				KEY_TAB: toggle_preview()
+				KEY_H: open_turn_history()
 				KEY_V:
 					show_levels = not show_levels
 					board.set_labels_visible(show_levels)
