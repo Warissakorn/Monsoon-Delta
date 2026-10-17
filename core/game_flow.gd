@@ -52,6 +52,7 @@ static func start_year(s: GameState) -> void:
 	if s == null or s.outcome != C.Outcome.NONE:
 		return
 	s.undo.clear()
+	s.redo.clear()
 	for tile: Tile in s.tiles:
 		if tile.feature == C.Feature.SAPLING:
 			tile.feature = C.Feature.FOREST
@@ -84,6 +85,7 @@ static func begin_turn(s: GameState) -> void:
 	s.labor = maxi(0, labor)
 	s.labor_max = s.labor
 	s.undo.clear()
+	s.redo.clear()
 
 
 static func apply_command(s: GameState, cmd: Command) -> String:
@@ -91,6 +93,7 @@ static func apply_command(s: GameState, cmd: Command) -> String:
 	if not error.is_empty():
 		return error
 	s.undo.push(s.to_dict())
+	s.redo.clear()
 	CommandRules.apply(s, cmd)
 	return ""
 
@@ -98,9 +101,22 @@ static func apply_command(s: GameState, cmd: Command) -> String:
 static func undo(s: GameState) -> GameState:
 	if s == null or s.phase != C.Phase.PLANNING or s.undo.is_empty():
 		return s
+	s.redo.push(s.to_dict())
 	var snapshot: Dictionary = s.undo.pop()
 	var restored: GameState = GameState.from_dict(snapshot)
 	restored.undo = s.undo
+	restored.redo = s.redo
+	return restored
+
+
+static func redo(s: GameState) -> GameState:
+	if s == null or s.phase != C.Phase.PLANNING or s.redo.is_empty():
+		return s
+	s.undo.push(s.to_dict())
+	var snapshot: Dictionary = s.redo.pop()
+	var restored: GameState = GameState.from_dict(snapshot)
+	restored.undo = s.undo
+	restored.redo = s.redo
 	return restored
 
 
@@ -116,6 +132,7 @@ static func end_turn(s: GameState) -> TurnReport:
 	if s == null or s.phase != C.Phase.PLANNING:
 		return null
 	s.undo.clear()
+	s.redo.clear()
 	var report: TurnReport = TurnResolver.resolve_turn(s, true)
 	if s.outcome != C.Outcome.NONE:
 		_finish_game(s)
@@ -132,6 +149,7 @@ static func continue_after_harvest(s: GameState) -> void:
 	if s == null or s.phase != C.Phase.HARVEST:
 		return
 	s.undo.clear()
+	s.redo.clear()
 	if s.outcome != C.Outcome.NONE:
 		_finish_game(s)
 	else:
@@ -143,6 +161,7 @@ static func continue_after_harvest(s: GameState) -> void:
 static func _finish_game(s: GameState) -> void:
 	s.phase = C.Phase.GAME_OVER
 	s.undo.clear()
+	s.redo.clear()
 	s.final_score = Scoring.score(s)
 
 

@@ -43,8 +43,9 @@ var outcome: int = Constants.Outcome.NONE
 var harvest_report: Dictionary = {}
 var final_score: int = 0
 
-# The caller replaces the whole state after undo. This history is never saved.
+# The caller replaces the whole state after undo/redo. Histories are never saved.
 var undo: UndoHistory = UndoHistory.new()
+var redo: UndoHistory = UndoHistory.new()
 
 # Derived caches are rebuilt after loading, never saved.
 var index: Dictionary = {}

@@ -73,6 +73,8 @@ The delta is built from a procedurally generated world.","Monsoon Delta
 "preview.fish","Fish traps: +%d food","ไซดักปลา: อาหาร +%d"
 "action.preview","Preview · Tab","พรีวิว · Tab"
 "action.undo","Undo · Ctrl+Z","ย้อน · Ctrl+Z"
+"action.redo","Redo · Ctrl+Y","ทำซ้ำ · Ctrl+Y"
+"help.redo","Restore an undone command · Ctrl+Y or Ctrl+Shift+Z. New commands and ending the turn clear redo.","เรียกคำสั่งที่ย้อนกลับคืนมา · Ctrl+Y หรือ Ctrl+Shift+Z เมื่อออกคำสั่งใหม่หรือจบเทิร์นจะทำซ้ำไม่ได้"
 "action.end_turn","End turn · Enter","จบเทิร์น · Enter"
 "action.pause","Pause","หยุดเกม"
 "action.resume","Resume","เล่นต่อ"

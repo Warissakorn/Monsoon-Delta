@@ -44,9 +44,17 @@ func apply(cmd: Command) -> String:
 func undo() -> bool:
 	if state == null or state.phase != C.Phase.PLANNING or state.undo.is_empty():
 		return false
-	# Undo returns a replacement model. Keep the remaining live undo stack;
+	# Undo returns a replacement model. Keep the remaining live history stacks;
 	# saving intentionally serializes neither its snapshots nor its identity.
 	state = GameFlow.undo(state)
+	checkpoint()
+	return true
+
+
+func redo() -> bool:
+	if state == null or state.phase != C.Phase.PLANNING or state.redo.is_empty():
+		return false
+	state = GameFlow.redo(state)
 	checkpoint()
 	return true
 

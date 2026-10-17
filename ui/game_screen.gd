@@ -47,6 +47,7 @@ var _command_buttons: Dictionary = {}
 var _targets: Dictionary = {}
 var _preview_button: Button
 var _undo_button: Button
+var _redo_button: Button
 var _end_button: Button
 var _predicted_outcome: int = C.Outcome.NONE
 var _preferences_error: String = ""
@@ -215,6 +216,9 @@ func _build_hud() -> void:
 	toolbar_row.add_child(turn_box)
 	_undo_button = _button(tr("action.undo"), undo_command, "Undo")
 	turn_box.add_child(_undo_button)
+	_redo_button = _button(tr("action.redo"), redo_command, "Redo")
+	_redo_button.tooltip_text = tr("help.redo")
+	turn_box.add_child(_redo_button)
 	_end_button = _button(tr("action.end_turn"), request_end_turn, "EndTurn")
 	turn_box.add_child(_end_button)
 
@@ -262,6 +266,7 @@ func refresh_state() -> void:
 	_resources_label.text = tr("hud.resources") % [state.labor, state.labor_max, state.food, state.wood, state.population, state.capacity()]
 	_water_label.text = tr("hud.water") % [state.current_inflow(), state.forecast_min, state.forecast_max]
 	_undo_button.disabled = state.phase != C.Phase.PLANNING or state.undo.is_empty()
+	_redo_button.disabled = state.phase != C.Phase.PLANNING or state.redo.is_empty()
 	_end_button.disabled = state.phase != C.Phase.PLANNING
 	_preview_button.set_pressed_no_signal(preview_enabled)
 	_refresh_save_status()
@@ -376,6 +381,14 @@ func undo_command() -> void:
 	if not modal_kind.is_empty():
 		return
 	if session.undo():
+		wheel_origin = BoardView.NO_COORD
+		refresh_state()
+
+
+func redo_command() -> void:
+	if not modal_kind.is_empty():
+		return
+	if session.redo():
 		wheel_origin = BoardView.NO_COORD
 		refresh_state()
 
@@ -785,7 +798,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var key: int = event.physical_keycode
-		if key == KEY_Z and event.ctrl_pressed:
+		if event.ctrl_pressed and (key == KEY_Y or (key == KEY_Z and event.shift_pressed)):
+			redo_command()
+		elif key == KEY_Z and event.ctrl_pressed:
 			undo_command()
 		elif SHORTCUTS.has(key):
 			select_command(SHORTCUTS[key])
