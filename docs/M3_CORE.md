@@ -24,6 +24,7 @@ var s := GameFlow.new_game({"seed": 42, "map_type": "plains", "leader": "farmer"
 var error := GameFlow.apply_command(s, Command.new("paddy", Vector2i(0, 0)))
 # error == "" หมายถึงสำเร็จ; กรณีผิดเงื่อนไขคืน err.* และไม่เปลี่ยน state
 s = GameFlow.undo(s)  # ต้องใช้ state ที่คืนมาแทนตัวเดิม
+s = GameFlow.redo(s)  # คืนคำสั่งที่ย้อน ภายในเทิร์นเดียวกัน
 var prediction := GameFlow.preview(s)  # {state: GameState, report: TurnReport}
 var report := GameFlow.end_turn(s)
 if s.phase == C.Phase.HARVEST:

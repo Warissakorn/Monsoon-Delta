@@ -91,6 +91,105 @@ func test_command_mode_survives_apply_and_undo_rebinds_board_and_inspector() -> 
 	_close_screen(screen)
 
 
+func test_redo_button_restores_board_inspector_preview_and_checkpoint() -> void:
+	var screen: GameScreen = _open_screen()
+	assert_true(screen._redo_button.disabled, "redo starts unavailable")
+	var coord: Vector2i = screen.valid_targets("fill")[0]
+	screen.select_command("fill")
+	screen.apply_at(coord)
+	var expected: Dictionary = screen.session.state.to_dict()
+	var predicted: Dictionary = screen.prediction["state"].to_dict()
+	var details: String = screen._tile_details.text
+	var resources: String = screen._resources_label.text
+	assert_true(screen._redo_button.disabled, "applying a command alone does not create redo")
+	screen.undo_command()
+	assert_true(not screen._redo_button.disabled)
+	assert_true(screen._undo_button.disabled)
+	var previous: GameState = screen.session.state
+	screen._redo_button.pressed.emit()
+	assert_true(screen.session.state != previous, "redo replaces the model for board rebinding")
+	assert_eq(screen.session.state.to_dict(), expected)
+	assert_true(screen.board.state == screen.session.state)
+	assert_eq(screen.hovered_coord, coord)
+	assert_eq(screen.board._hover_coord, coord)
+	assert_eq(screen._tile_details.text, details)
+	assert_eq(screen._resources_label.text, resources)
+	assert_eq(screen.prediction["state"].to_dict(), predicted, "redo recomputes the same water preview")
+	assert_eq(screen.command_mode, "fill", "redo retains the selected tool")
+	assert_true(screen._redo_button.disabled)
+	assert_true(not screen._undo_button.disabled)
+	assert_eq(SaveIO.load_game(CHECKPOINT_PATH)["state"].to_dict(), expected)
+	_close_screen(screen)
+
+
+func test_redo_shortcuts_restore_one_step_and_ignore_key_echo() -> void:
+	var screen: GameScreen = _open_screen()
+	screen.select_command("fill")
+	screen.apply_at(screen.valid_targets("fill")[0])
+	var first: Dictionary = screen.session.state.to_dict()
+	screen.apply_at(screen.valid_targets("fill")[0])
+	var second: Dictionary = screen.session.state.to_dict()
+	screen.undo_command()
+	screen.undo_command()
+	var redo: InputEventKey = _key(KEY_Z)
+	redo.ctrl_pressed = true
+	redo.shift_pressed = true
+	screen._unhandled_input(redo)
+	assert_eq(screen.session.state.to_dict(), first, "Ctrl+Shift+Z redoes instead of undoing")
+	assert_eq(screen.session.state.redo.size(), 1)
+	redo.echo = true
+	screen._unhandled_input(redo)
+	assert_eq(screen.session.state.to_dict(), first, "holding redo does not consume more history")
+	assert_eq(screen.session.state.redo.size(), 1)
+	redo = _key(KEY_Y)
+	redo.ctrl_pressed = true
+	screen._unhandled_input(redo)
+	assert_eq(screen.session.state.to_dict(), second, "Ctrl+Y restores the next command")
+	var undo: InputEventKey = _key(KEY_Z)
+	undo.ctrl_pressed = true
+	screen._unhandled_input(undo)
+	assert_eq(screen.session.state.to_dict(), first, "Ctrl+Z still undoes after using both redo shortcuts")
+	screen._unhandled_input(_key(KEY_Y))
+	assert_eq(screen.session.state.to_dict(), first, "Y without Ctrl cannot restore a command")
+	_close_screen(screen)
+
+
+func test_redo_waits_for_modal_and_text_input_and_expires_at_next_turn() -> void:
+	var screen: GameScreen = _open_screen()
+	screen.select_command("fill")
+	screen.apply_at(screen.valid_targets("fill")[0])
+	screen.undo_command()
+	var before: Dictionary = screen.session.state.to_dict()
+	var saved: PackedByteArray = FileAccess.get_file_as_bytes(CHECKPOINT_PATH)
+	var redo: InputEventKey = _key(KEY_Y)
+	redo.ctrl_pressed = true
+	screen.open_pause()
+	screen.redo_command()
+	screen._unhandled_input(redo)
+	assert_eq(screen.session.state.to_dict(), before)
+	assert_eq(screen.session.state.redo.size(), 1, "modal actions preserve pending redo")
+	assert_eq(FileAccess.get_file_as_bytes(CHECKPOINT_PATH), saved)
+	screen.close_modal()
+	var field: LineEdit = LineEdit.new()
+	screen.hud.add_child(field)
+	field.grab_focus()
+	assert_true(screen.get_viewport().gui_get_focus_owner() == field)
+	screen._unhandled_input(redo)
+	assert_eq(screen.session.state.to_dict(), before, "text editing cannot trigger game redo")
+	field.free()
+	screen._unhandled_input(redo)
+	assert_true(screen.session.state.to_dict() != before, "redo becomes available after text focus clears")
+	screen.undo_command()
+	screen.request_end_turn()
+	assert_eq(screen.session.state.turn, 2)
+	assert_true(screen.session.state.redo.is_empty())
+	assert_true(screen._redo_button.disabled)
+	var next_turn: Dictionary = screen.session.state.to_dict()
+	screen._unhandled_input(redo)
+	assert_eq(screen.session.state.to_dict(), next_turn, "previous-turn commands cannot return")
+	_close_screen(screen)
+
+
 func test_waterwheel_uses_union_of_direction_targets_then_requires_two_clicks() -> void:
 	var screen: GameScreen = _open_screen()
 	var state: GameState = screen.session.state
@@ -133,6 +232,12 @@ func test_waterwheel_uses_union_of_direction_targets_then_requires_two_clicks() 
 	screen.undo_command()
 	assert_eq(screen.session.state.to_dict(), before)
 	assert_true(screen.board.state == screen.session.state)
+	screen.apply_at(origin)
+	assert_eq(screen.wheel_origin, origin, "a new direction selection does not spend resources")
+	screen.redo_command()
+	assert_eq(screen.wheel_origin, BoardView.NO_COORD, "redo cancels the pending direction selection")
+	assert_eq(screen.session.state.get_tile(origin).building, C.Building.WATERWHEEL)
+	assert_eq(screen.session.state.get_tile(origin).wheel_dir, direction, "redo restores the chosen intake direction")
 	_close_screen(screen)
 
 
@@ -153,6 +258,9 @@ func test_gate_click_without_tool_toggles_but_right_click_only_cancels() -> void
 	assert_true(not screen.session.state.get_tile(coord).gate_open, "right click cannot toggle a gate")
 	screen.undo_command()
 	assert_true(screen.session.state.get_tile(coord).gate_open)
+	screen.redo_command()
+	assert_true(not screen.session.state.get_tile(coord).gate_open, "redo also restores zero-cost gate controls")
+	assert_eq(screen.session.state.labor, labor)
 	_close_screen(screen)
 
 
