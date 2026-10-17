@@ -60,6 +60,8 @@ godot --headless --path . --script res://tools/bot_sim.gd -- --bot=all --runs=20
 
 `--bot=farmer` ทำนาอย่างเดียว, `--bot=greedy` เลือกคำสั่งจากพรีวิว, `--bot=random` ใช้ตรวจความคงที่ ผลแต่ละรอบบันทึก CSV ใน `bot_reports/` ใช้ `--runs=200` สำหรับ benchmark และ `--candidates=40` เพื่อเพิ่มจำนวนตัวเลือกของ greedy (ค่าเริ่มต้น 8 เพื่อจำกัดเวลาประเมิน)
 
+ทดลองหลายชุดค่าด้วย `--scenarios=res://tools/scenarios/m3_screen.json` แต่ละครั้งเก็บ CSV แยกชุดพร้อม `summary.csv` และ `manifest.json` ในโฟลเดอร์รันใหม่ ดู [วิธีทดลองสมดุลและทำซ้ำผล](docs/BALANCE_EXPERIMENTS.md)
+
 ดู [API ขอบเขต M3 และผลตรวจสมดุล](docs/M3_CORE.md) ค่าเริ่มต้นของเกมยังต้องจูนให้บอททำนาอย่างเดียวแพ้ตามเป้าหมายก่อนถือว่า M3 ผ่านทุกเกณฑ์
 
 ระบบ [บันทึก–โหลดรอบเล่น](docs/SAVE_IO.md) ตรวจไฟล์เสียและรักษาค่าจำลอง/RNG เชื่อมกับ Continue และ autosave หลังคำสั่ง/undo/จบเทิร์น/เก็บเกี่ยวแล้ว sandbox และบอทไม่เขียนเซฟรอบปกติ
