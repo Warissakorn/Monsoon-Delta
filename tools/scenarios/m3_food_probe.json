@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "scenarios": [
+    {
+      "id": "h5_g3",
+      "mods": {
+        "food_per_person": 8,
+        "paddy_labor": 4,
+        "start_food": 72,
+        "fish_trap_yield": 3
+      }
+    }
+  ]
+}
