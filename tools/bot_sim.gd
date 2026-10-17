@@ -80,6 +80,9 @@ func _fits_int64(value: String) -> bool:
 
 func _experiment(settings: Dictionary, scenarios: Array, base_defaults: Dictionary) -> bool:
 	var parent: String = ProjectSettings.globalize_path(String(settings["output"]))
+	if FileAccess.file_exists(parent):
+		printerr("Output directory path is a file: " + parent)
+		return false
 	var stamp: String = Time.get_datetime_string_from_system(true).replace(":", "").replace("-", "")
 	var output: String = parent.path_join("run_%s_%d" % [stamp, Time.get_ticks_usec()])
 	if DirAccess.dir_exists_absolute(output):

@@ -79,6 +79,10 @@ def main():
         assert changed["effective_mods"]["harvest_paddy_bonus"] == -1  # farmer +1 after base overrides
         assert changed["effective_mods"]["start_food"] == 18
         assert experiment["source"]["label"] == "cli-integration"
+        if (ROOT / ".git").exists():
+            revision = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+            assert experiment["source"]["git_revision"] == revision
+            assert isinstance(experiment["source"]["git_dirty"], bool)
         assert experiment["balance_sha256"] == original_hash
         assert experiment["seed_start"] == "1" and experiment["seed_end"] == "2"
         assert experiment["bot_configuration"]["candidate_count"] == 1
