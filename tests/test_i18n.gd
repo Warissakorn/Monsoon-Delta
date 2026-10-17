@@ -43,7 +43,7 @@ func test_ui_literal_keys_and_core_messages_are_translated() -> void:
 	var rows: Dictionary = _rows()
 	var literal_tr: RegEx = RegEx.create_from_string("\\btr\\(\\s*[\"']([^\"']+)[\"']\\s*\\)")
 	# UI builders also pass literal keys into shared label/button helpers.
-	var ui_key: RegEx = RegEx.create_from_string("[\"']((?:app|menu|setup|credits|language|hud|tile|preview|history|action|summary|gameover|confirm|pause|msg|err|help)\\.[a-z0-9_]+)[\"']")
+	var ui_key: RegEx = RegEx.create_from_string("[\"']((?:app|menu|setup|credits|language|hud|tile|preview|history|goal|action|summary|gameover|confirm|pause|msg|err|help)\\.[a-z0-9_]+)[\"']")
 	for path: String in _scripts("res://ui"):
 		var source: String = FileAccess.get_file_as_string(path)
 		for match_result: RegExMatch in literal_tr.search_all(source):
@@ -65,6 +65,12 @@ func test_commands_leaders_and_dynamic_enum_names_are_translated() -> void:
 	for leader_id: String in DataDB.balance()["leaders"]:
 		assert_true(rows.has("leader.%s.name" % leader_id), "leader name: " + leader_id)
 		assert_true(rows.has("leader.%s.desc" % leader_id), "leader description: " + leader_id)
+	for mode_id: String in DataDB.balance()["run_modes"]:
+		assert_true(rows.has("run_mode.%s.name" % mode_id))
+		assert_true(rows.has("run_mode.%s.desc" % mode_id))
+	for goal_id: String in DataDB.balance()["village_goals"]:
+		assert_true(rows.has("goal.%s.name" % goal_id))
+		assert_true(rows.has("goal.%s.desc" % goal_id))
 	var enums: Dictionary = {
 		"season": C.Season, "building": C.Building, "feature": C.Feature,
 		"phase": C.Phase, "outcome": C.Outcome,

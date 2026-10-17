@@ -7,6 +7,8 @@ static func new_game(cfg: Dictionary) -> GameState:
 	var map_type: Variant = cfg.get("map_type", "plains")
 	var leader: Variant = cfg.get("leader", "farmer")
 	var difficulty: Variant = cfg.get("difficulty", 0)
+	var run_mode: Variant = cfg.get("run_mode", "classic")
+	var village_goal: Variant = cfg.get("village_goal", "none")
 	if typeof(seed_value) != TYPE_INT or typeof(map_type) != TYPE_STRING:
 		return null
 	if map_type != "plains" or typeof(leader) != TYPE_STRING:
@@ -15,6 +17,10 @@ static func new_game(cfg: Dictionary) -> GameState:
 	if not leaders.has(leader) or typeof(difficulty) != TYPE_INT:
 		return null
 	if difficulty < 0 or difficulty > 10:
+		return null
+	if typeof(run_mode) != TYPE_STRING or typeof(village_goal) != TYPE_STRING:
+		return null
+	if not DataDB.balance()["run_modes"].has(run_mode) or not DataDB.balance()["village_goals"].has(village_goal):
 		return null
 	for flag: String in ["is_daily", "is_tutorial"]:
 		if cfg.has(flag) and typeof(cfg[flag]) != TYPE_BOOL:
@@ -25,6 +31,9 @@ static func new_game(cfg: Dictionary) -> GameState:
 	state.map_type = map_type
 	state.leader = leader
 	state.difficulty = difficulty
+	state.run_mode = run_mode
+	state.village_goal = village_goal
+	state.goal_achieved_year = 0
 	state.is_daily = bool(cfg.get("is_daily", false))
 	state.is_tutorial = bool(cfg.get("is_tutorial", false))
 	state.cards.clear()

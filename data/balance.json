@@ -1,4 +1,25 @@
 {
+  "run_modes": {
+    "classic": {
+      "years": 5,
+      "mods": []
+    },
+    "long": {
+      "years": 10,
+      "rain_min_step": 2,
+      "rain_max_step": 3,
+      "mods": [
+        {"key": "unlock_waterwheel", "op": "set", "value": 1},
+        {"key": "unlock_raft_house", "op": "set", "value": 1}
+      ]
+    }
+  },
+  "village_goals": {
+    "none": {"population": 0, "forests": 0, "paddy_food": 0, "bonus": 0},
+    "growth": {"population": 12, "forests": 0, "paddy_food": 0, "bonus": 50},
+    "forest": {"population": 8, "forests": 8, "paddy_food": 0, "bonus": 50},
+    "rice": {"population": 8, "forests": 0, "paddy_food": 18, "bonus": 50}
+  },
   "mods_default": {
     "flow_rate": 0.5,
     "water_iterations": 20,

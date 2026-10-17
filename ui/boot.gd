@@ -34,7 +34,7 @@ func _ready() -> void:
 	get_tree().auto_accept_quit = false
 	match scene:
 		"menu": _show_menu()
-		"game": _start_game({"seed": _initial_seed})
+		"game": _start_game({"seed": _initial_seed, "run_mode": String(options.get("run-mode", "classic")), "village_goal": String(options.get("goal", "none"))})
 		"sandbox": _show_sandbox()
 	if options.has("screenshot"):
 		for frame in range(30):

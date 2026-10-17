@@ -15,5 +15,7 @@ static func score(state: StateModel) -> int:
 			base += float(config["no_houses_lost"])
 		if not bool(state.stats.get("hall_ever_wet", false)):
 			base += float(config["hall_dry"])
+	if state.goal_achieved_year > 0:
+		base += float(RunGoals.progress(state)["score"])
 	var multiplier: float = 1.0 + state.difficulty * float(config["difficulty_step"])
 	return roundi(base * multiplier)

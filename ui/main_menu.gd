@@ -9,6 +9,8 @@ signal language_changed(language: String)
 signal quit_requested()
 
 const LEADERS: Array[String] = ["farmer", "carpenter", "fisher", "soil_doctor"]
+const RUN_MODES: Array[String] = ["classic", "long"]
+const GOALS: Array[String] = ["none", "growth", "forest", "rice"]
 
 var save_path: String = SaveIO.DEFAULT_PATH
 var initial_seed: int = 42
@@ -22,6 +24,10 @@ var _continue_button: Button
 var _seed_input: LineEdit
 var _leader_option: OptionButton
 var _leader_description: Label
+var _run_mode_option: OptionButton
+var _run_mode_description: Label
+var _goal_option: OptionButton
+var _goal_description: Label
 var _error_panel: PanelContainer
 var _error_label: Label
 var _error_key: String = ""
@@ -160,6 +166,7 @@ func _build_ui() -> void:
 	var scroll: ScrollContainer = ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.follow_focus = true
 	content.add_child(scroll)
 	var pages: VBoxContainer = VBoxContainer.new()
 	pages.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -209,6 +216,37 @@ func _build_setup(parent: Node) -> void:
 	_leader_description.custom_minimum_size.y = 58
 	_leader_description.add_theme_font_size_override("font_size", 18)
 	_setup.add_child(_leader_description)
+	var run_options: HBoxContainer = HBoxContainer.new()
+	run_options.add_theme_constant_override("separation", 20)
+	_setup.add_child(run_options)
+	var mode_column: VBoxContainer = VBoxContainer.new()
+	mode_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	run_options.add_child(mode_column)
+	mode_column.add_child(_label("setup.run_mode", "", true))
+	_run_mode_option = OptionButton.new()
+	_run_mode_option.custom_minimum_size.y = 52
+	_run_mode_option.clip_text = true
+	for mode: String in RUN_MODES:
+		_run_mode_option.add_item(tr("run_mode." + mode + ".name"))
+	_run_mode_option.item_selected.connect(_select_run_mode)
+	mode_column.add_child(_run_mode_option)
+	_run_mode_description = _label("run_mode.classic.desc", "", true)
+	_run_mode_description.add_theme_font_size_override("font_size", 18)
+	mode_column.add_child(_run_mode_description)
+	var goal_column: VBoxContainer = VBoxContainer.new()
+	goal_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	run_options.add_child(goal_column)
+	goal_column.add_child(_label("setup.village_goal", "", true))
+	_goal_option = OptionButton.new()
+	_goal_option.custom_minimum_size.y = 52
+	_goal_option.clip_text = true
+	for goal: String in GOALS:
+		_goal_option.add_item(tr("goal." + goal + ".name"))
+	_goal_option.item_selected.connect(_select_goal)
+	goal_column.add_child(_goal_option)
+	_goal_description = _label("goal.none.desc", "", true)
+	_goal_description.add_theme_font_size_override("font_size", 18)
+	goal_column.add_child(_goal_description)
 	var map_row: HBoxContainer = HBoxContainer.new()
 	_setup.add_child(map_row)
 	map_row.add_child(_label("setup.map", "", true))
@@ -251,10 +289,20 @@ func _show_page(page: Control) -> void:
 	var focus: Control = get_viewport().gui_get_focus_owner()
 	if focus != null and not focus.is_visible_in_tree():
 		focus.release_focus()
+	if page == _setup:
+		_leader_option.grab_focus()
 
 
 func _select_leader(index: int) -> void:
 	_leader_description.text = tr("leader." + LEADERS[index] + ".desc")
+
+
+func _select_run_mode(index: int) -> void:
+	_run_mode_description.text = tr("run_mode." + RUN_MODES[index] + ".desc")
+
+
+func _select_goal(index: int) -> void:
+	_goal_description.text = tr("goal." + GOALS[index] + ".desc")
 
 
 func _change_language() -> void:
@@ -269,6 +317,8 @@ func _request_start() -> void:
 		"map_type": "plains",
 		"leader": LEADERS[_leader_option.selected],
 		"difficulty": 0,
+		"run_mode": RUN_MODES[_run_mode_option.selected],
+		"village_goal": GOALS[_goal_option.selected],
 	}
 	# Existing files are protected even if a temporary read failure disabled
 	# Continue. Opening the setup form itself never changes the checkpoint.
