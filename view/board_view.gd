@@ -537,12 +537,23 @@ func _refresh_preview() -> void:
 			_build_ghost_water(after, delta)
 	for entry: Dictionary in report.destroyed:
 		_preview_label("!", entry["coord"], Color("#ef8c76"), "Destroyed")
+	if report.outcome == C.Outcome.LOSE_HALL:
+		for tile: Tile in state.tiles:
+			if tile.building == C.Building.HALL:
+				_preview_label("!!", tile.coord, Color("#ef8c76"), "HallRisk")
 	for coord: Vector2i in report.paddies_died:
 		_preview_label("x", coord, Color("#ef8c76"), "PaddyDied")
 	for coord: Vector2i in report.paddy_gains:
-		_preview_label("+1", coord, _color("highlight"), "PaddyGain")
-	if report.fish_food <= 0:
-		return
+		_preview_label("R+1", coord, _color("highlight"), "PaddyGain")
+	var fish: Dictionary = preview_fish_food_by_tile(predicted, report)
+	for coord: Vector2i in fish:
+		_preview_label("F+%d" % int(fish[coord]), coord, _color("water_shallow"), "FishFood")
+
+
+static func preview_fish_food_by_tile(predicted: GameState, report: TurnReport) -> Dictionary:
+	var result: Dictionary = {}
+	if report.outcome == C.Outcome.LOSE_HALL or report.fish_food <= 0:
+		return result
 	var productive_traps: Array[Vector2i] = []
 	for index: int in range(predicted.tiles.size()):
 		var tile: Tile = predicted.tiles[index]
@@ -550,12 +561,13 @@ func _refresh_preview() -> void:
 		if tile.building == C.Building.FISH_TRAP and level >= 1:
 			productive_traps.append(tile.coord)
 	if productive_traps.is_empty():
-		return
+		return result
 	# Every productive trap has the same yield. Read the resolved total rather
 	# than evaluating modifiers here, so even the model's caches stay untouched.
 	var fish_food: int = roundi(float(report.fish_food) / float(productive_traps.size()))
 	for coord: Vector2i in productive_traps:
-		_preview_label("+%d" % fish_food, coord, _color("water_shallow"), "FishFood")
+		result[coord] = fish_food
+	return result
 
 
 func _build_ghost_water(tile: Tile, delta: float) -> void:
