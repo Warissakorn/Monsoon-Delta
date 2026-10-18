@@ -110,3 +110,56 @@ func test_every_new_structure_has_a_model_and_gate_opening_is_visible() -> void:
 		var coord: Vector2i = state.tiles[index].coord
 		assert_true(root.has_node("Hex_%d_%d/Paddy" % [coord.x, coord.y]))
 	board.free()
+
+
+func test_batched_geometry_references_every_terrain_top_with_indexed_buildings_and_trees() -> void:
+	# Procedural hexes start unindexed; primitive boxes and spheres have indices.
+	# A mixed batch can contain terrain vertices that no triangle references.
+	var state: GameState = TestMaps.small(1, 1)
+	state.tiles[0].feature = C.Feature.FOREST
+	state.tiles[1].building = C.Building.HOUSE
+	var before: Dictionary = state.to_dict()
+	var board: BoardView = BoardView.new()
+	board.set_state(state)
+	_assert_rendered_terrain_centers(board, state)
+	assert_eq(state.to_dict(), before, "batching only reads the simulation")
+	state.get_tile(Vector2i.ZERO).elevation = 3
+	before = state.to_dict()
+	board.refresh()
+	_assert_rendered_terrain_centers(board, state)
+	assert_eq(state.to_dict(), before, "refresh cannot edit terrain or RNG")
+	board.free()
+
+
+func _assert_rendered_terrain_centers(board: BoardView, state: GameState) -> void:
+	var rendered: Array[Vector3] = []
+	_collect_referenced_vertices(board.get_node("Tiles") as Node3D, Transform3D.IDENTITY, rendered)
+	for tile: Tile in state.tiles:
+		var expected: Vector3 = Hex.to_world(tile.coord, tile.elevation)
+		var found: bool = false
+		for point: Vector3 in rendered:
+			if point.distance_squared_to(expected) < 0.00000001:
+				found = true
+				break
+		assert_true(found, "a rendered triangle must reference the terrain top at %s" % tile.coord)
+
+
+func _collect_referenced_vertices(node: Node3D, parent_transform: Transform3D, rendered: Array[Vector3]) -> void:
+	var transform: Transform3D = parent_transform * node.transform
+	if node is MeshInstance3D:
+		var instance: MeshInstance3D = node as MeshInstance3D
+		for surface: int in range(instance.mesh.get_surface_count()):
+			var arrays: Array = instance.mesh.surface_get_arrays(surface)
+			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			var indices: PackedInt32Array = PackedInt32Array()
+			if arrays[Mesh.ARRAY_INDEX] != null:
+				indices = arrays[Mesh.ARRAY_INDEX]
+			if indices.is_empty():
+				for point: Vector3 in vertices:
+					rendered.append(transform * point)
+			else:
+				for index: int in indices:
+					rendered.append(transform * vertices[index])
+	for child: Node in node.get_children():
+		if child is Node3D:
+			_collect_referenced_vertices(child as Node3D, transform, rendered)

@@ -6,6 +6,7 @@ const BASE_Y: float = -1.7
 const HEX_RADIUS: float = 0.96
 const NO_COORD: Vector2i = Vector2i(2147483647, 2147483647)
 const MARKER_FONT: Font = preload("res://assets/fonts/NotoSansThai.ttf")
+const WATER_SHADER: Shader = preload("res://view/water_surface.gdshader")
 
 var palette: Dictionary = {}
 var state: GameState
@@ -19,6 +20,10 @@ var _selected_coord: Vector2i = NO_COORD
 var _hover_coord: Vector2i = NO_COORD
 var _labels_visible: bool = false
 var _materials: Dictionary = {}
+var _meshes: Dictionary = {}
+var _water_materials: Dictionary = {}
+var _colored_surfaces: Dictionary = {}
+var _baked_materials: Dictionary = {}
 var _target_coords: Array[Vector2i] = []
 var _invalid_coord: Vector2i = NO_COORD
 var _prediction: Dictionary = {}
@@ -50,6 +55,7 @@ func refresh() -> void:
 		return
 	for tile: Tile in state.tiles:
 		_build_tile(tile)
+	_batch_static_geometry()
 	_update_markers()
 	_refresh_targets()
 	_refresh_preview()
@@ -168,6 +174,7 @@ func _build_tile(tile: Tile) -> void:
 	terrain.set_surface_override_material(0, _material(_terrain_color(tile)))
 	terrain.set_surface_override_material(1, _material(_color("earth"), false, true))
 	cell.add_child(terrain)
+	_build_ground_details(cell, tile)
 	if tile.water >= 0.05 or tile.is_sea:
 		_build_water(cell, tile)
 	if tile.feature == C.Feature.FOREST or tile.feature == C.Feature.SAPLING:
@@ -210,14 +217,18 @@ func _build_water(cell: Node3D, tile: Tile) -> void:
 	water.mesh = MeshLib.hex_prism(0.985)
 	water.position.y = 0.015
 	water.scale.y = depth
-	var color: Color = _color("water_shallow").lerp(_color("water_deep"), clampf(tile.water / 3.5, 0.0, 1.0))
-	color.a = 0.58 + clampf(tile.water / 7.0, 0.0, 0.17)
-	var top: StandardMaterial3D = _material(color)
-	top.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	top.roughness = 0.22
-	top.metallic = 0.10
-	top.emission_enabled = true
-	top.emission = Color(color.r * 0.13, color.g * 0.13, color.b * 0.13)
+	# Nine shared tints bound the material cache during a long, changing flood.
+	var depth_bucket: int = mini(8, floori(tile.water / 3.5 * 8.0))
+	var color: Color = _color("water_shallow").lerp(_color("water_deep"), float(depth_bucket) / 8.0)
+	color.a = 0.73 + float(depth_bucket) * 0.012
+	var top: ShaderMaterial
+	if _water_materials.has(depth_bucket):
+		top = _water_materials[depth_bucket] as ShaderMaterial
+	else:
+		top = ShaderMaterial.new()
+		top.shader = WATER_SHADER
+		top.set_shader_parameter("water_color", color)
+		_water_materials[depth_bucket] = top
 	water.set_surface_override_material(0, top)
 	var side_color: Color = color.darkened(0.10)
 	side_color.a = 0.43
@@ -227,54 +238,215 @@ func _build_water(cell: Node3D, tile: Tile) -> void:
 	water.set_surface_override_material(1, side)
 	water.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	cell.add_child(water)
+	# A pale, broken margin only appears where water meets a dry bank.
+	for direction: int in range(6):
+		var neighbor: Tile = state.neighbor_in_dir(tile, direction)
+		if neighbor == null or neighbor.water >= 0.05 or neighbor.is_sea:
+			continue
+		var normal: Vector3 = Hex.to_world(Hex.direction(direction)).normalized()
+		var tangent: Vector3 = Vector3(-normal.z, 0.0, normal.x)
+		var shore: MeshInstance3D = _add_mesh(cell, _box_mesh(Vector3(0.48, 0.009, 0.022)), normal * 0.81 + Vector3.UP * (depth + 0.023), _color("water_shallow").lightened(0.35))
+		shore.rotation.y = atan2(-tangent.z, tangent.x)
+		shore.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
+func _build_ground_details(cell: Node3D, tile: Tile) -> void:
+	if tile.is_sea:
+		return
+	var earth: Color = _color("earth")
+	var strata: MeshInstance3D = _add_mesh(cell, MeshLib.hex_prism(0.962), Vector3(0.0, -0.19, 0.0), earth.lightened(0.12))
+	strata.scale.y = 0.038
+	if tile.is_river:
+		return
+	var edge_color: Color = _terrain_color(tile).darkened(0.09)
+	_add_mesh(cell, MeshLib.hex_ring(0.952, 0.925), Vector3(0.0, 0.005, 0.0), edge_color)
+	if tile.water >= 0.05 or tile.feature == C.Feature.PADDY:
+		return
+	var count: int = 2 if tile.feature == C.Feature.NONE and tile.building == C.Building.NONE else 1
+	for index: int in range(count):
+		var angle: float = _variation(tile, index + 3) * TAU
+		var at: Vector3 = Vector3(cos(angle) * 0.69, 0.01, sin(angle) * 0.69)
+		var tuft: MeshInstance3D = _add_mesh(cell, MeshLib.grass_tuft(), at, _terrain_color(tile).darkened(0.2))
+		tuft.material_override = _material(_terrain_color(tile).darkened(0.2), false, true)
+		tuft.rotation.y = angle
+	if tile.feature == C.Feature.NONE and tile.building == C.Building.NONE and _variation(tile, 9) > 0.65:
+		var pebble: MeshInstance3D = _add_mesh(cell, _sphere_mesh(0.085, 0.065), Vector3(-0.49, 0.035, 0.31), earth.lightened(0.27))
+		pebble.rotation.y = _variation(tile, 7) * TAU
+
+
+func _variation(tile: Tile, salt: int) -> float:
+	# Coordinate hashing is decorative only: it never consumes the run's RNG.
+	return float(posmod(tile.q * 73856093 + tile.r * 19349663 + salt * 83492791, 997)) / 997.0
+
+
+func _batch_static_geometry() -> void:
+	# Tiny porch rails and leaves otherwise each submit their own draw call,
+	# including every shadow cascade. Bake opaque pieces into three board-local
+	# meshes, keeping named structure containers and transparent water intact.
+	for key: String in _colored_surfaces.keys():
+		if (_colored_surfaces[key]["source"] as WeakRef).get_ref() == null:
+			_colored_surfaces.erase(key)
+	var instances: Array[MeshInstance3D] = []
+	_collect_meshes(_tiles_root, instances)
+	var batches: Dictionary = {}
+	for instance: MeshInstance3D in instances:
+		if not _can_batch(instance):
+			continue
+		var transform: Transform3D = _board_transform(instance)
+		for surface_index: int in range(instance.mesh.get_surface_count()):
+			var material: StandardMaterial3D = instance.get_active_material(surface_index) as StandardMaterial3D
+			var category: String = _batch_category(instance, transform, material)
+			if not batches.has(category):
+				var builder: SurfaceTool = SurfaceTool.new()
+				builder.begin(Mesh.PRIMITIVE_TRIANGLES)
+				batches[category] = builder
+			var builder: SurfaceTool = batches[category] as SurfaceTool
+			builder.append_from(_colored_surface(instance.mesh, surface_index, material), 0, transform)
+		instance.get_parent().remove_child(instance)
+		instance.free()
+	for category: String in batches:
+		var builder: SurfaceTool = batches[category] as SurfaceTool
+		var batch: MeshInstance3D = MeshInstance3D.new()
+		batch.name = "Baked_" + category
+		batch.mesh = builder.commit()
+		batch.material_override = _baked_material(category)
+		batch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if category == "Solids" else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_tiles_root.add_child(batch)
+
+
+func _collect_meshes(root: Node3D, instances: Array[MeshInstance3D]) -> void:
+	for child: Node in root.get_children():
+		if child is MeshInstance3D:
+			instances.append(child as MeshInstance3D)
+		elif child is Node3D:
+			_collect_meshes(child as Node3D, instances)
+
+
+func _can_batch(instance: MeshInstance3D) -> bool:
+	if instance.mesh == null:
+		return false
+	for surface_index: int in range(instance.mesh.get_surface_count()):
+		var material: Material = instance.get_active_material(surface_index)
+		if not material is StandardMaterial3D:
+			return false
+		var standard: StandardMaterial3D = material as StandardMaterial3D
+		if standard.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED or standard.albedo_texture != null:
+			return false
+	return true
+
+
+func _board_transform(instance: MeshInstance3D) -> Transform3D:
+	# Tests also build views outside SceneTree, so avoid global_transform getters.
+	var transform: Transform3D = instance.transform
+	var parent: Node = instance.get_parent()
+	while parent != self and parent is Node3D:
+		transform = (parent as Node3D).transform * transform
+		parent = parent.get_parent()
+	return transform
+
+
+func _batch_category(instance: MeshInstance3D, transform: Transform3D, material: StandardMaterial3D) -> String:
+	if material.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED:
+		return "Markers"
+	var size: Vector3 = instance.mesh.get_aabb().size * transform.basis.get_scale().abs()
+	if instance.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_OFF or minf(size.x, minf(size.y, size.z)) < 0.09 or instance.mesh.get_meta("thin_foliage", false):
+		return "Details"
+	return "Solids"
+
+
+func _colored_surface(mesh: Mesh, surface_index: int, material: StandardMaterial3D) -> ArrayMesh:
+	var key: String = "%d:%d:%d" % [mesh.get_instance_id(), surface_index, material.get_instance_id()]
+	if _colored_surfaces.has(key):
+		return _colored_surfaces[key]["mesh"] as ArrayMesh
+	var source: Array = mesh.surface_get_arrays(surface_index)
+	var vertices: PackedVector3Array = source[Mesh.ARRAY_VERTEX]
+	var colors: PackedColorArray = PackedColorArray()
+	colors.resize(vertices.size())
+	# Keep the StandardMaterial color values: an extra linear conversion here
+	# darkens vertex-colored geometry in the project's Compatibility renderer.
+	var tint: Color = material.albedo_color
+	var original_colors: PackedColorArray = PackedColorArray()
+	if material.vertex_color_use_as_albedo and source[Mesh.ARRAY_COLOR] != null:
+		original_colors = source[Mesh.ARRAY_COLOR]
+	for index: int in range(vertices.size()):
+		var color: Color = tint
+		if index < original_colors.size():
+			var original: Color = original_colors[index]
+			color *= original.srgb_to_linear() if material.vertex_color_is_srgb else original
+		colors[index] = color
+	var arrays: Array = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_NORMAL] = source[Mesh.ARRAY_NORMAL]
+	arrays[Mesh.ARRAY_COLOR] = colors
+	var indices: PackedInt32Array = PackedInt32Array()
+	if source[Mesh.ARRAY_INDEX] != null:
+		indices = source[Mesh.ARRAY_INDEX]
+	if indices.is_empty():
+		# append_from retains explicit indices from later primitive meshes. Give
+		# unindexed procedural surfaces indices too, or their faces disappear.
+		indices.resize(vertices.size())
+		for index: int in range(vertices.size()):
+			indices[index] = index
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var painted: ArrayMesh = ArrayMesh.new()
+	painted.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	_colored_surfaces[key] = {"mesh": painted, "source": weakref(mesh)}
+	return painted
+
+
+func _baked_material(category: String) -> StandardMaterial3D:
+	if not _baked_materials.has(category):
+		var material: StandardMaterial3D = StandardMaterial3D.new()
+		material.albedo_color = Color.WHITE
+		material.vertex_color_use_as_albedo = true
+		material.roughness = 0.88
+		if category == "Markers":
+			material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			material.cull_mode = BaseMaterial3D.CULL_DISABLED
+		_baked_materials[category] = material
+	return _baked_materials[category] as StandardMaterial3D
 
 
 func _build_forest(cell: Node3D, tile: Tile) -> void:
-	var offsets: Array[Vector2] = [Vector2(-0.29, 0.18), Vector2(0.29, 0.19), Vector2(0.0, -0.30)]
+	var offsets: Array[Vector2] = [Vector2(-0.30, 0.17), Vector2(0.29, 0.23), Vector2(0.01, -0.32)]
 	var young: bool = tile.feature == C.Feature.SAPLING
-	for index: int in range(3 if not young else 2):
+	for index: int in range(2 if young else 3):
 		var offset: Vector2 = offsets[index]
 		var tree: Node3D = Node3D.new()
 		tree.position = Vector3(offset.x, 0.0, offset.y)
+		tree.rotation.y = _variation(tile, index) * TAU
+		var scale_variation: float = 0.9 + _variation(tile, index + 2) * 0.22
+		tree.scale = Vector3.ONE * scale_variation * (0.63 if young else 1.0)
 		cell.add_child(tree)
-		var trunk: CylinderMesh = CylinderMesh.new()
-		trunk.top_radius = 0.045
-		trunk.bottom_radius = 0.06
-		trunk.height = 0.32
-		trunk.radial_segments = 6
-		_add_mesh(tree, trunk, Vector3(0.0, 0.16, 0.0), _color("earth").darkened(0.13))
-		var crown: CylinderMesh = CylinderMesh.new()
-		crown.top_radius = 0.0
-		crown.bottom_radius = 0.28 if not young else 0.19
-		crown.height = 0.66 if not young else 0.4
-		crown.radial_segments = 6
-		var tint: Color = _color("forest").lightened(float(index) * 0.045)
-		_add_mesh(tree, crown, Vector3(0.0, 0.60 if not young else 0.39, 0.0), tint)
-		if not young:
-			var lower: CylinderMesh = CylinderMesh.new()
-			lower.top_radius = 0.0
-			lower.bottom_radius = 0.32
-			lower.height = 0.48
-			lower.radial_segments = 6
-			_add_mesh(tree, lower, Vector3(0.0, 0.43, 0.0), tint.darkened(0.05))
+		var wood: Color = _color("earth").lerp(_color("roof"), 0.3).darkened(0.12)
+		_add_mesh(tree, _cylinder_mesh(0.035, 0.065, 0.58), Vector3(0.0, 0.29, 0.0), wood)
+		var branch: MeshInstance3D = _add_mesh(tree, _cylinder_mesh(0.023, 0.034, 0.28), Vector3(0.08, 0.46, 0.0), wood)
+		branch.rotation_degrees.z = -38.0
+		var tint: Color = _color("forest").lightened(float(index) * 0.055 + _variation(tile, index + 5) * 0.06)
+		# Broad, faceted leaf masses make a lowland canopy instead of a conifer.
+		_add_mesh(tree, _sphere_mesh(0.31, 0.46), Vector3(-0.10, 0.64, 0.03), tint.darkened(0.06))
+		_add_mesh(tree, _sphere_mesh(0.29, 0.43), Vector3(0.16, 0.72, 0.015), tint)
+		_add_mesh(tree, _sphere_mesh(0.28, 0.40), Vector3(-0.015, 0.88, -0.035), tint.lightened(0.08))
 
 
 func _build_paddy(cell: Node3D, tile: Tile) -> void:
 	var field: Node3D = Node3D.new()
 	field.name = "Paddy"
 	cell.add_child(field)
-	var stalk_color: Color = _color("accent") if tile.paddy_yield > 0 else _color("forest").lightened(0.23)
+	var stalk_color: Color = _color("forest").lerp(_color("accent"), 0.72 if tile.paddy_yield > 0 else 0.26)
 	if tile.paddy_dead:
-		stalk_color = _color("earth")
+		stalk_color = _color("earth").lightened(0.24)
+	var mud: Color = _color("riverbed").lerp(_color("earth"), 0.55)
+	_add_box(field, Vector3(1.20, 0.022, 1.05), Vector3(0.0, 0.012, 0.0), mud)
+	for x: float in [-0.64, 0.64]:
+		_add_box(field, Vector3(0.07, 0.055, 1.16), Vector3(x, 0.028, 0.0), _color("earth").lightened(0.17))
+	for z: float in [-0.56, 0.56]:
+		_add_box(field, Vector3(1.28, 0.055, 0.065), Vector3(0.0, 0.028, z), _color("earth").lightened(0.17))
 	for row: int in range(3):
-		var z: float = float(row - 1) * 0.35
-		_add_box(field, Vector3(1.05, 0.035, 0.22), Vector3(0.0, 0.018, z), _color("riverbed").darkened(0.14))
-		for column: int in range(3):
-			var x: float = float(column - 1) * 0.35
-			var height: float = 0.11 if tile.paddy_dead else 0.23 + minf(float(tile.paddy_yield), 3.0) * 0.035
-			_add_box(field, Vector3(0.035, height, 0.035), Vector3(x, height * 0.5, z), stalk_color)
-			var leaf: MeshInstance3D = _add_mesh(field, _box_mesh(Vector3(0.18, 0.025, 0.045)), Vector3(x, height * 0.73, z), stalk_color)
-			leaf.rotation_degrees.z = -18.0 if column % 2 == 0 else 18.0
+		_add_box(field, Vector3(1.15, 0.026, 0.22), Vector3(0.0, 0.032, float(row - 1) * 0.32), mud.lightened(0.10))
+	var rice: MeshInstance3D = _add_mesh(field, MeshLib.rice_field(-1 if tile.paddy_dead else mini(tile.paddy_yield, 3)), Vector3.ZERO, stalk_color)
+	rice.material_override = _material(stalk_color, false, true)
 
 
 func _build_gate(cell: Node3D, tile: Tile) -> void:
@@ -382,35 +554,71 @@ func _build_waterwheel(cell: Node3D, tile: Tile) -> void:
 
 func _build_house(cell: Node3D, tile: Tile) -> void:
 	var village: Node3D = Node3D.new()
+	village.name = "House"
 	village.rotation_degrees.y = 20.0
 	cell.add_child(village)
 	var offset: float = 0.0
+	var timber: Color = _color("earth").lerp(_color("roof"), 0.25)
 	if tile.building == C.Building.STILT_HOUSE:
-		offset = 0.35
-		for x: float in [-0.24, 0.24]:
-			for z: float in [-0.19, 0.19]:
-				_add_box(village, Vector3(0.06, 0.38, 0.06), Vector3(x, 0.19, z), _color("earth"))
+		offset = 0.41
+		for x: float in [-0.27, 0.27]:
+			for z: float in [-0.23, 0.23]:
+				_add_mesh(village, _cylinder_mesh(0.032, 0.044, offset + 0.04), Vector3(x, offset * 0.5, z), timber)
+		var brace: MeshInstance3D = _add_mesh(village, _box_mesh(Vector3(0.58, 0.035, 0.035)), Vector3(0.0, 0.21, 0.24), timber.lightened(0.18))
+		brace.rotation_degrees.z = 28.0
 	elif tile.building == C.Building.RAFT_HOUSE:
-		offset = maxf(0.0, tile.water * C.HEIGHT_UNIT) + 0.08
-		_add_box(village, Vector3(0.82, 0.10, 0.69), Vector3(0.0, offset - 0.05, 0.0), _color("earth"))
-	_add_box(village, Vector3(0.59, 0.40, 0.49), Vector3(0.0, 0.20 + offset, 0.0), _color("house"))
-	_add_box(village, Vector3(0.13, 0.23, 0.016), Vector3(0.0, 0.125 + offset, 0.252), _color("earth").darkened(0.2))
-	_add_box(village, Vector3(0.11, 0.11, 0.018), Vector3(-0.18, 0.26 + offset, 0.252), _color("sea"))
-	_add_roof(village, Vector3(0.73, 0.31, 0.65), Vector3(0.0, 0.505 + offset, 0.0), _color("roof"))
+		offset = maxf(0.0, tile.water * C.HEIGHT_UNIT) + 0.13
+		for z: float in [-0.34, -0.17, 0.0, 0.17, 0.34]:
+			var log_piece: MeshInstance3D = _add_mesh(village, _cylinder_mesh(0.072, 0.072, 0.91), Vector3(0.0, offset - 0.055, z), timber.lightened(0.17))
+			log_piece.rotation_degrees.z = 90.0
+	_add_box(village, Vector3(0.76, 0.065, 0.73), Vector3(0.0, offset + 0.03, 0.025), timber.lightened(0.17))
+	_add_box(village, Vector3(0.62, 0.43, 0.52), Vector3(0.0, 0.27 + offset, -0.035), _color("house"))
+	for y: float in [0.16, 0.29, 0.42]:
+		_add_box(village, Vector3(0.63, 0.012, 0.018), Vector3(0.0, offset + y, 0.234), _color("house").darkened(0.15))
+	_add_box(village, Vector3(0.15, 0.28, 0.025), Vector3(0.03, 0.21 + offset, 0.24), timber.darkened(0.17))
+	_add_box(village, Vector3(0.017, 0.027, 0.024), Vector3(0.076, 0.22 + offset, 0.258), _color("accent"))
+	_add_window(village, Vector3(-0.19, offset + 0.32, 0.245), 0.14, 0.16)
+	_add_window(village, Vector3(0.318, offset + 0.32, -0.045), 0.18, 0.16, true)
+	_add_roof(village, Vector3(0.82, 0.34, 0.74), Vector3(0.0, 0.61 + offset, -0.035), _color("roof").lightened(_variation(tile, 5) * 0.055))
+	for x: float in [-0.32, 0.32]:
+		_add_box(village, Vector3(0.035, 0.32, 0.035), Vector3(x, offset + 0.22, 0.35), timber)
+	_add_box(village, Vector3(0.68, 0.035, 0.04), Vector3(0.0, offset + 0.38, 0.35), timber)
+	if tile.building == C.Building.RAFT_HOUSE:
+		_add_box(village, Vector3(0.035, 0.41, 0.035), Vector3(0.42, offset + 0.14, -0.32), timber)
+	elif tile.building == C.Building.STILT_HOUSE:
+		for step: int in range(3):
+			_add_box(village, Vector3(0.25, 0.075, 0.14), Vector3(0.03, 0.07 + float(step) * 0.115, 0.71 - float(step) * 0.13), timber.lightened(0.12))
+	else:
+		_add_box(village, Vector3(0.28, 0.045, 0.14), Vector3(0.03, 0.025, 0.46), timber.lightened(0.22))
+		_build_path(village, 0.0, 0.61, 2)
 
 
 func _build_hall(cell: Node3D) -> void:
 	var hall: Node3D = Node3D.new()
+	hall.name = "Hall"
 	hall.rotation_degrees.y = 20.0
 	cell.add_child(hall)
-	_add_box(hall, Vector3(0.95, 0.12, 0.85), Vector3(0.0, 0.06, 0.0), _color("earth").lightened(0.15))
-	_add_box(hall, Vector3(0.75, 0.48, 0.65), Vector3(0.0, 0.36, 0.0), _color("house"))
-	_add_box(hall, Vector3(0.21, 0.32, 0.018), Vector3(0.0, 0.28, 0.334), _color("earth").darkened(0.17))
-	for x: float in [-0.31, 0.31]:
-		_add_box(hall, Vector3(0.055, 0.5, 0.055), Vector3(x, 0.36, 0.335), _color("accent"))
-	_add_roof(hall, Vector3(1.0, 0.35, 0.88), Vector3(0.0, 0.70, 0.0), _color("roof").darkened(0.10))
-	_add_roof(hall, Vector3(0.70, 0.30, 0.60), Vector3(0.0, 0.91, 0.0), _color("roof"))
-	_add_box(hall, Vector3(0.72, 0.035, 0.045), Vector3(0.0, 1.065, 0.0), _color("accent"))
+	var timber: Color = _color("earth").lerp(_color("roof"), 0.3)
+	_add_box(hall, Vector3(1.03, 0.12, 0.90), Vector3(0.0, 0.06, 0.0), _color("house").darkened(0.17))
+	_add_box(hall, Vector3(0.93, 0.035, 0.81), Vector3(0.0, 0.135, 0.0), _color("house").lightened(0.08))
+	_add_box(hall, Vector3(0.73, 0.46, 0.63), Vector3(0.0, 0.38, -0.025), _color("house"))
+	_add_box(hall, Vector3(0.23, 0.35, 0.025), Vector3(0.0, 0.33, 0.302), timber.darkened(0.12))
+	_add_box(hall, Vector3(0.012, 0.32, 0.03), Vector3(0.0, 0.33, 0.32), _color("accent"))
+	for x: float in [-0.39, 0.39]:
+		_add_box(hall, Vector3(0.06, 0.52, 0.06), Vector3(x, 0.39, 0.35), timber)
+		_add_box(hall, Vector3(0.085, 0.05, 0.085), Vector3(x, 0.18, 0.35), _color("accent"))
+	_add_window(hall, Vector3(-0.24, 0.42, 0.302), 0.14, 0.18)
+	_add_window(hall, Vector3(0.24, 0.42, 0.302), 0.14, 0.18)
+	_add_window(hall, Vector3(0.373, 0.43, -0.06), 0.22, 0.18, true)
+	_add_roof(hall, Vector3(1.12, 0.34, 0.99), Vector3(0.0, 0.75, -0.025), _color("roof").darkened(0.08))
+	_add_roof(hall, Vector3(0.78, 0.30, 0.72), Vector3(0.0, 0.99, -0.025), _color("roof"))
+	for z: float in [-0.39, 0.34]:
+		var finial: MeshInstance3D = _add_mesh(hall, _box_mesh(Vector3(0.04, 0.20, 0.045)), Vector3(0.0, 1.18, z), _color("accent"))
+		finial.rotation_degrees.x = -22.0 if z < 0.0 else 22.0
+	for step: int in range(2):
+		_add_box(hall, Vector3(0.40 + float(step) * 0.13, 0.055, 0.16), Vector3(0.0, 0.075 - float(step) * 0.035, 0.50 + float(step) * 0.14), _color("house").darkened(0.1))
+	_add_box(hall, Vector3(0.027, 0.84, 0.027), Vector3(-0.65, 0.42, 0.11), timber)
+	_add_box(hall, Vector3(0.19, 0.24, 0.015), Vector3(-0.55, 0.68, 0.11), _color("accent"))
 
 
 func _build_source(cell: Node3D, tile: Tile) -> void:
@@ -437,9 +645,37 @@ func _build_source(cell: Node3D, tile: Tile) -> void:
 
 
 func _add_roof(parent: Node3D, size: Vector3, at: Vector3, color: Color) -> void:
-	var prism: PrismMesh = PrismMesh.new()
-	prism.size = size
+	var key: String = "roof:" + str(size)
+	if not _meshes.has(key):
+		var roof: PrismMesh = PrismMesh.new()
+		roof.size = size
+		_meshes[key] = roof
+	var prism: PrismMesh = _meshes[key] as PrismMesh
 	_add_mesh(parent, prism, at, color)
+	# Raised terracotta courses and a timber fascia catch the low sun.
+	for course: int in range(-2, 3):
+		var x: float = float(course) * size.x * 0.16
+		var y: float = at.y + size.y * (0.5 - absf(x) / size.x * 2.0) + 0.008
+		_add_box(parent, Vector3(0.020, 0.015, size.z + 0.016), Vector3(at.x + x, y, at.z), color.lightened(0.14))
+	_add_box(parent, Vector3(0.045, 0.035, size.z + 0.065), at + Vector3.UP * (size.y * 0.5 + 0.015), _color("accent").lerp(color, 0.68))
+	for z: float in [-size.z * 0.5, size.z * 0.5]:
+		_add_box(parent, Vector3(size.x + 0.02, 0.035, 0.035), at + Vector3(0.0, -size.y * 0.5, z), _color("earth").darkened(0.08))
+
+
+func _add_window(parent: Node3D, at: Vector3, width: float, height: float, side: bool = false) -> void:
+	var window: Node3D = Node3D.new()
+	window.position = at
+	window.rotation.y = PI * 0.5 if side else 0.0
+	parent.add_child(window)
+	_add_box(window, Vector3(width + 0.035, height + 0.035, 0.023), Vector3.ZERO, _color("earth").lightened(0.18))
+	_add_box(window, Vector3(width, height, 0.026), Vector3(0.0, 0.0, 0.009), _color("sea").darkened(0.35))
+	_add_box(window, Vector3(0.016, height, 0.031), Vector3(0.0, 0.0, 0.015), _color("house"))
+	_add_box(window, Vector3(width, 0.018, 0.031), Vector3(0.0, -height * 0.10, 0.015), _color("house"))
+
+
+func _build_path(parent: Node3D, x: float, z: float, count: int) -> void:
+	for index: int in range(count):
+		_add_box(parent, Vector3(0.19, 0.018, 0.11), Vector3(x + float(index % 2) * 0.035, 0.012, z + float(index) * 0.14), _color("house").darkened(0.13))
 
 
 func _add_box(parent: Node3D, size: Vector3, at: Vector3, color: Color) -> void:
@@ -447,9 +683,36 @@ func _add_box(parent: Node3D, size: Vector3, at: Vector3, color: Color) -> void:
 
 
 func _box_mesh(size: Vector3) -> BoxMesh:
-	var box: BoxMesh = BoxMesh.new()
-	box.size = size
-	return box
+	var key: String = "box:" + str(size)
+	if not _meshes.has(key):
+		var box: BoxMesh = BoxMesh.new()
+		box.size = size
+		_meshes[key] = box
+	return _meshes[key] as BoxMesh
+
+
+func _sphere_mesh(radius: float, height: float) -> SphereMesh:
+	var key: String = "sphere:%.3f:%.3f" % [radius, height]
+	if not _meshes.has(key):
+		var sphere: SphereMesh = SphereMesh.new()
+		sphere.radius = radius
+		sphere.height = height
+		sphere.radial_segments = 8
+		sphere.rings = 4
+		_meshes[key] = sphere
+	return _meshes[key] as SphereMesh
+
+
+func _cylinder_mesh(top_radius: float, bottom_radius: float, height: float) -> CylinderMesh:
+	var key: String = "cylinder:%.3f:%.3f:%.3f" % [top_radius, bottom_radius, height]
+	if not _meshes.has(key):
+		var cylinder: CylinderMesh = CylinderMesh.new()
+		cylinder.top_radius = top_radius
+		cylinder.bottom_radius = bottom_radius
+		cylinder.height = height
+		cylinder.radial_segments = 7
+		_meshes[key] = cylinder
+	return _meshes[key] as CylinderMesh
 
 
 func _add_mesh(parent: Node3D, mesh: Mesh, at: Vector3, color: Color, unshaded: bool = false) -> MeshInstance3D:

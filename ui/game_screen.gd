@@ -66,6 +66,9 @@ var _end_button: Button
 var _predicted_outcome: int = C.Outcome.NONE
 var _preferences_error: String = ""
 var _colors: Dictionary
+var _atmosphere: DeltaAtmosphere
+var _season_icon: TextureRect
+var _turn_pips: Array[ColorRect] = []
 
 
 func _ready() -> void:
@@ -83,27 +86,15 @@ func _ready() -> void:
 
 
 func _build_world() -> void:
-	var world := WorldEnvironment.new()
-	var environment := Environment.new()
-	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color(_colors.background)
-	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color("#d7e4d2")
-	environment.ambient_light_energy = 0.4
-	world.environment = environment
-	add_child(world)
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-52, -35, 0)
-	sun.light_color = Color("#ffebc7")
-	sun.light_energy = 0.85
-	sun.shadow_enabled = true
-	add_child(sun)
+	_atmosphere = DeltaAtmosphere.new()
+	add_child(_atmosphere)
 	board = BoardView.new()
 	add_child(board)
 	camera_rig = CameraRig.new()
 	add_child(camera_rig)
 	camera_rig.setup()
-	camera_rig.get_camera().h_offset = 1.65
+	camera_rig.get_camera().h_offset = 3.8
+	camera_rig.get_camera().v_offset = -0.65
 
 
 func _label(text: String = "", font_size: int = 20, muted: bool = false) -> Label:
@@ -130,6 +121,7 @@ func _button(text: String, callback: Callable, node_name: String = "") -> Button
 
 func _panel(parent: Node) -> VBoxContainer:
 	var panel := PanelContainer.new()
+	panel.theme_type_variation = "CardPanel"
 	parent.add_child(panel)
 	var content := VBoxContainer.new()
 	panel.add_child(content)
@@ -156,19 +148,47 @@ func _build_hud() -> void:
 	var header := _panel(layout)
 	var time_row := HBoxContainer.new()
 	header.add_child(time_row)
-	_time_label = _label("", 28)
+	_season_icon = TextureRect.new()
+	_season_icon.custom_minimum_size = Vector2(30, 30)
+	_season_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_season_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	time_row.add_child(_season_icon)
+	_time_label = _label("", 26)
 	_time_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	time_row.add_child(_time_label)
-	time_row.add_child(_button(tr("action.history"), open_turn_history, "TurnHistory"))
-	time_row.add_child(_button(tr("action.pause"), open_pause, "Pause"))
-	_resources_label = _label()
-	header.add_child(_resources_label)
-	_water_label = _label("", 20, true)
-	header.add_child(_water_label)
 	_run_label = _label("", 18, true)
-	header.add_child(_run_label)
-	_save_label = _label("", 18)
-	_save_label.add_theme_color_override("font_color", Color(_colors.accent))
+	_run_label.custom_minimum_size.x = 200
+	_run_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	time_row.add_child(_run_label)
+	for button: Button in [_button(tr("action.history"), open_turn_history, "TurnHistory"), _button(tr("action.pause"), open_pause, "Pause")]:
+		button.theme_type_variation = "QuietButton"
+		time_row.add_child(button)
+	var resources_row := HBoxContainer.new()
+	resources_row.add_theme_constant_override("separation", 28)
+	header.add_child(resources_row)
+	_resources_label = _label("", 22)
+	_resources_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	resources_row.add_child(_resources_label)
+	var water_icon := TextureRect.new()
+	water_icon.texture = preload("res://assets/icons/water.svg")
+	water_icon.custom_minimum_size = Vector2(24, 24)
+	water_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	water_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	resources_row.add_child(water_icon)
+	_water_label = _label("", 20, true)
+	_water_label.custom_minimum_size.x = 480
+	resources_row.add_child(_water_label)
+	var turn_track := HBoxContainer.new()
+	turn_track.add_theme_constant_override("separation", 6)
+	header.add_child(turn_track)
+	for _turn: int in range(C.TURNS_PER_YEAR):
+		var pip := ColorRect.new()
+		pip.custom_minimum_size.y = 3
+		pip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		turn_track.add_child(pip)
+		_turn_pips.append(pip)
+	_save_label = _label("", 16, true)
 	layout.add_child(_save_label)
 	var middle := HBoxContainer.new()
 	middle.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -179,11 +199,11 @@ func _build_hud() -> void:
 	board_space.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	middle.add_child(board_space)
 	var side_scroll := ScrollContainer.new()
-	side_scroll.custom_minimum_size.x = 340
+	side_scroll.custom_minimum_size.x = 400
 	side_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	middle.add_child(side_scroll)
 	var sidebar := VBoxContainer.new()
-	sidebar.custom_minimum_size.x = 320
+	sidebar.custom_minimum_size.x = 380
 	sidebar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	side_scroll.add_child(sidebar)
 	var objective := _panel(sidebar)
@@ -213,12 +233,16 @@ func _build_hud() -> void:
 	_preview_legend = _label(tr("preview.legend"), 18, true)
 	_preview_legend.name = "PreviewLegend"
 	preview_panel.add_child(_preview_legend)
+	# Put the selected tile and immediate forecast within the first scroll view.
+	sidebar.move_child(inspector.get_parent(), 0)
+	sidebar.move_child(preview_panel.get_parent(), 1)
 	_survival_help = _label("", 20, true)
 	sidebar.add_child(_survival_help)
 	sidebar.add_child(_label(tr("help.controls"), 18, true))
-	_status_label = _label("", 20)
+	_status_label = _label("", 18, true)
 	layout.add_child(_status_label)
 	var toolbar := PanelContainer.new()
+	toolbar.theme_type_variation = "CardPanel"
 	layout.add_child(toolbar)
 	var toolbar_row := HBoxContainer.new()
 	toolbar.add_child(toolbar_row)
@@ -231,9 +255,12 @@ func _build_hud() -> void:
 	for index: int in range(COMMANDS.size()):
 		var id: String = COMMANDS[index]
 		var button := _button("", select_command.bind(id), "Command_" + id)
+		button.theme_type_variation = "CommandButton"
 		button.custom_minimum_size = Vector2(150, 64)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 18)
+		button.icon = load("res://assets/icons/%s.svg" % id)
+		button.add_theme_constant_override("icon_max_width", 22)
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		button.toggle_mode = true
 		_command_buttons[id] = button
@@ -242,17 +269,30 @@ func _build_hud() -> void:
 	turn_box.custom_minimum_size.x = 220
 	turn_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	toolbar_row.add_child(turn_box)
+	var undo_row := HBoxContainer.new()
+	turn_box.add_child(undo_row)
 	_undo_button = _button(tr("action.undo"), undo_command, "Undo")
-	turn_box.add_child(_undo_button)
+	_undo_button.theme_type_variation = "QuietButton"
+	_undo_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	undo_row.add_child(_undo_button)
 	_redo_button = _button(tr("action.redo"), redo_command, "Redo")
+	_redo_button.theme_type_variation = "QuietButton"
+	_redo_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_redo_button.tooltip_text = tr("help.redo")
-	turn_box.add_child(_redo_button)
+	undo_row.add_child(_redo_button)
 	_end_button = _button(tr("action.end_turn"), request_end_turn, "EndTurn")
+	_end_button.theme_type_variation = "PrimaryButton"
+	_end_button.icon = preload("res://assets/icons/next.svg")
+	_end_button.add_theme_constant_override("icon_max_width", 26)
 	turn_box.add_child(_end_button)
 
 
 func refresh_state() -> void:
 	var state: GameState = session.state
+	_atmosphere.set_rain(state.is_rain())
+	_season_icon.texture = load("res://assets/icons/%s.svg" % ("rain" if state.is_rain() else "sun"))
+	for index: int in range(_turn_pips.size()):
+		_turn_pips[index].color = Color(_colors.accent if index == state.turn - 1 else (_colors.success if index < state.turn - 1 else _colors.border))
 	board.set_state(state)
 	board.set_labels_visible(show_levels)
 	prediction = GameFlow.preview(state) if state.phase == C.Phase.PLANNING else {}
@@ -751,6 +791,7 @@ func _harvest_preview_lines() -> PackedStringArray:
 
 
 func _refresh_save_status() -> void:
+	_save_label.add_theme_color_override("font_color", Color(_colors.danger if not session.last_save_error.is_empty() or not _preferences_error.is_empty() else _colors.muted))
 	if not session.last_save_error.is_empty():
 		_save_label.text = tr(session.last_save_error)
 	elif not _preferences_error.is_empty():
@@ -822,6 +863,7 @@ func _open_modal(kind: String, title: String) -> void:
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_modal.add_child(center)
 	var panel := PanelContainer.new()
+	panel.theme_type_variation = "CardPanel"
 	panel.custom_minimum_size.x = 740
 	center.add_child(panel)
 	_modal_content = VBoxContainer.new()
@@ -844,6 +886,12 @@ func close_modal() -> void:
 
 func _add_modal_button(text: String, callback: Callable, node_name: String = "", preferred: bool = false) -> Button:
 	var button: Button = _button(text, callback, node_name)
+	if node_name == "ConfirmEndTurn" and modal_kind == "confirm_loss":
+		button.theme_type_variation = "DangerButton"
+	elif node_name in ["ContinueHarvest", "Restart", "ConfirmEndTurn"]:
+		button.theme_type_variation = "PrimaryButton"
+	else:
+		button.theme_type_variation = "QuietButton"
 	button.focus_mode = Control.FOCUS_ALL
 	_modal_content.add_child(button)
 	if preferred:

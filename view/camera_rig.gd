@@ -5,7 +5,7 @@ extends Node3D
 var camera: Camera3D
 var _pitch: Node3D
 var _yaw_target: float = deg_to_rad(-12.0)
-var _zoom_target: float = 19.5
+var _zoom_target: float = 22.5
 var _orbit_tween: Tween
 var _zoom_tween: Tween
 var _initialized: bool = false
