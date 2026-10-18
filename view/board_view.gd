@@ -19,6 +19,7 @@ var _hover: MeshInstance3D
 var _selected_coord: Vector2i = NO_COORD
 var _hover_coord: Vector2i = NO_COORD
 var _labels_visible: bool = false
+var _reduced_motion: bool = false
 var _materials: Dictionary = {}
 var _meshes: Dictionary = {}
 var _water_materials: Dictionary = {}
@@ -31,6 +32,12 @@ var _prediction: Dictionary = {}
 
 func _ready() -> void:
 	_ensure_nodes()
+
+
+func set_reduced_motion(enabled: bool) -> void:
+	_reduced_motion = enabled
+	for material: ShaderMaterial in _water_materials.values():
+		material.set_shader_parameter("motion_scale", 0.0 if enabled else 1.0)
 
 
 func set_state(next_state: GameState) -> void:
@@ -228,6 +235,7 @@ func _build_water(cell: Node3D, tile: Tile) -> void:
 		top = ShaderMaterial.new()
 		top.shader = WATER_SHADER
 		top.set_shader_parameter("water_color", color)
+		top.set_shader_parameter("motion_scale", 0.0 if _reduced_motion else 1.0)
 		_water_materials[depth_bucket] = top
 	water.set_surface_override_material(0, top)
 	var side_color: Color = color.darkened(0.10)

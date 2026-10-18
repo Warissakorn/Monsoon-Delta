@@ -19,7 +19,7 @@ static func write(values: Dictionary, path: String = DEFAULT_PATH) -> String:
 			"language":
 				if not values[key] is String or values[key] not in ["th", "en"]:
 					return "msg.settings_failed"
-			"confirm_unused_labor":
+			"confirm_unused_labor", "reduced_motion":
 				if typeof(values[key]) != TYPE_BOOL:
 					return "msg.settings_failed"
 			_:
@@ -57,6 +57,7 @@ static func _defaults() -> Dictionary:
 	return {
 		"language": "th" if OS.get_locale().to_lower().begins_with("th") else "en",
 		"confirm_unused_labor": true,
+		"reduced_motion": false,
 	}
 
 
@@ -66,6 +67,8 @@ static func _validated(data: Dictionary) -> Dictionary:
 		result["language"] = data["language"]
 	if typeof(data.get("confirm_unused_labor")) == TYPE_BOOL:
 		result["confirm_unused_labor"] = data["confirm_unused_labor"]
+	if typeof(data.get("reduced_motion")) == TYPE_BOOL:
+		result["reduced_motion"] = data["reduced_motion"]
 	return result
 
 
