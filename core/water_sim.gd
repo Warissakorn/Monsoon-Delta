@@ -14,6 +14,9 @@ static func simulate(s: GameState, inflow: float, record_snapshots: bool) -> Dic
 	var neighbors := PackedInt32Array()
 	var sources := PackedInt32Array()
 	var wheels := PackedInt32Array()
+	# Visual telemetry records transfers already computed by the resolver. It is
+	# never an input to the float64 water calculation or the player's checkpoint.
+	var wheel_transfers: Array[Dictionary] = []
 	var tile_index: Dictionary = {}
 	elevation.resize(count)
 	water.resize(count)
@@ -52,6 +55,8 @@ static func simulate(s: GameState, inflow: float, record_snapshots: bool) -> Dic
 		water[source] -= amount
 		water[wheel] += amount
 		wheel_moved += amount
+		if record_snapshots and amount > C.EPS:
+			wheel_transfers.append({"from": source, "to": wheel, "amount": amount})
 
 	var iterations: int = maxi(1, int(s.mod("water_iterations")))
 	var flow: float = clampf(float(s.mod("flow_rate")), 0.05, 0.9)
@@ -64,18 +69,24 @@ static func simulate(s: GameState, inflow: float, record_snapshots: bool) -> Dic
 	var to_sea: float = 0.0
 	var from_sea: float = 0.0
 	var snapshots: Array[PackedFloat32Array] = []
+	var flow_edges: Array[PackedFloat32Array] = []
 	if record_snapshots:
 		snapshots.append(PackedFloat32Array(Array(water)))
 	var surface := PackedFloat64Array()
 	var delta := PackedFloat64Array()
 	var lower_indices := PackedInt32Array()
+	var lower_directions := PackedInt32Array()
 	var lower_differences := PackedFloat64Array()
 	surface.resize(count)
 	delta.resize(count)
 	lower_indices.resize(6)
+	lower_directions.resize(6)
 	lower_differences.resize(6)
 
 	for _iteration in iterations:
+		var edge_transfers := PackedFloat32Array()
+		if record_snapshots:
+			edge_transfers.resize(count * 6)
 		for source in sources:
 			water[source] += per_source
 		for i in count:
@@ -93,6 +104,7 @@ static func simulate(s: GameState, inflow: float, record_snapshots: bool) -> Dic
 				var difference: float = surface[i] - surface[j]
 				if difference > C.EPS:
 					lower_indices[lower_count] = j
+					lower_directions[lower_count] = direction
 					lower_differences[lower_count] = difference
 					lower_count += 1
 					total_difference += difference
@@ -104,6 +116,8 @@ static func simulate(s: GameState, inflow: float, record_snapshots: bool) -> Dic
 				var share: float = outflow * lower_differences[lower] / total_difference
 				delta[i] -= share
 				delta[j] += share
+				if record_snapshots:
+					edge_transfers[i * 6 + lower_directions[lower]] = share
 				if sea[i] == 0 and sea[j] == 1:
 					to_sea += share
 				elif sea[i] == 1 and sea[j] == 0:
@@ -117,6 +131,7 @@ static func simulate(s: GameState, inflow: float, record_snapshots: bool) -> Dic
 			water[i] = sea_level if sea[i] == 1 else next_water
 		if record_snapshots:
 			snapshots.append(PackedFloat32Array(Array(water)))
+			flow_edges.append(edge_transfers)
 
 	for i in count:
 		s.tiles[i].water = water[i]
@@ -126,6 +141,8 @@ static func simulate(s: GameState, inflow: float, record_snapshots: bool) -> Dic
 		"from_sea": from_sea,
 		"wheel_moved": wheel_moved,
 		"snapshots": snapshots,
+		"flow_edges": flow_edges,
+		"wheel_transfers": wheel_transfers,
 	}
 
 

@@ -45,6 +45,8 @@ var stats: Dictionary = {
 var outcome: int = Constants.Outcome.NONE
 var harvest_report: Dictionary = {}
 var final_score: int = 0
+# Optional visual history; absent from legacy state dictionaries and saves.
+var settlement_progress: Dictionary = {}
 
 # The caller replaces the whole state after undo/redo. Histories are never saved.
 var undo: UndoHistory = UndoHistory.new()
@@ -186,7 +188,7 @@ func to_dict() -> Dictionary:
 	var tile_data: Array[Dictionary] = []
 	for tile: TileModel in tiles:
 		tile_data.append(tile.to_dict())
-	return {
+	var data: Dictionary = {
 		"version": version,
 		"seed": str(seed),
 		"map_type": map_type,
@@ -220,6 +222,9 @@ func to_dict() -> Dictionary:
 		"harvest_report": _canonical_dictionary(harvest_report),
 		"final_score": final_score,
 	}
+	if not settlement_progress.is_empty():
+		data["settlement_progress"] = _canonical_dictionary(settlement_progress)
+	return data
 
 
 static func from_dict(data: Dictionary) -> GameState:
@@ -270,6 +275,7 @@ static func from_dict(data: Dictionary) -> GameState:
 		if state.harvest_report.has(key):
 			state.harvest_report[key] = int(state.harvest_report[key])
 	state.final_score = int(data.get("final_score", 0))
+	state.settlement_progress = _canonical_dictionary(Dictionary(data.get("settlement_progress", {})))
 	state.rebuild_index()
 	state.recompute_mods()
 	return state

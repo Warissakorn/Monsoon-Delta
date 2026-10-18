@@ -92,7 +92,7 @@ func test_hall_warning_distinguishes_wet_from_losing_and_keeps_other_damage() ->
 	var report: TurnReport = screen.prediction["report"]
 	assert_eq(report.outcome, C.Outcome.LOSE_HALL)
 	assert_true(screen._tile_preview_lines(hall).has(_tr("preview.lose_hall")))
-	assert_eq((screen.board.get_node(_marker("HallRisk", hall)) as Label3D).text, "!!")
+	assert_eq((screen.board.get_node(_marker("HallRisk", hall)) as Label3D).get_meta("icon"), "hall")
 	assert_true(screen._tile_preview_lines(state.tiles[1])[0].contains("destroyed"))
 	assert_true(screen._tile_preview_lines(state.tiles[8]).has(_tr("tile.paddy_dies")))
 	assert_true(not screen._tile_preview_lines(state.tiles[8]).has(_tr("tile.paddy_gain")))
@@ -117,7 +117,7 @@ func test_fish_text_and_marker_allocate_resolved_total_only_to_wet_traps() -> vo
 	for index: int in [8, 9]:
 		var tile: Tile = state.tiles[index]
 		assert_true(screen._tile_preview_lines(tile).has(_tr("tile.fish_gain") % 3))
-		assert_eq((screen.board.get_node(_marker("FishFood", tile)) as Label3D).text, "F+3")
+		assert_eq((screen.board.get_node(_marker("FishFood", tile)) as Label3D).text, "+3")
 	assert_true(screen._tile_preview_lines(state.tiles[10]).is_empty())
 	assert_true(not screen.board.has_node(_marker("FishFood", state.tiles[10])))
 	assert_eq(screen.prediction["state"].food, state.food + 6)
@@ -138,7 +138,7 @@ func test_rain_and_irrigation_explain_yield_without_promising_immediate_food() -
 		var screen: GameScreen = _screen(state)
 		assert_true(screen.prediction["report"].paddy_gains.has(crop.coord))
 		assert_true(screen._tile_preview_lines(crop).has(_tr("tile.paddy_gain")))
-		assert_eq((screen.board.get_node(_marker("PaddyGain", crop)) as Label3D).text, "R+1")
+		assert_eq((screen.board.get_node(_marker("PaddyGain", crop)) as Label3D).text, "+1")
 		assert_eq(screen.prediction["state"].food, state.food, "crop yield waits for harvest")
 		crop.paddy_dead = true
 		screen.refresh_state()
@@ -195,8 +195,8 @@ func test_legend_and_inspector_are_translated_in_both_languages() -> void:
 		assert_true(screen._tile_note.text.contains(_tr("preview.lose_hall")))
 		assert_true(screen._tile_note.text.contains(_tr("tile.flood_limit") % [2, _tr("level.2")]))
 		assert_eq(screen._preview_legend.text, _tr("preview.legend"))
-		for symbol: String in ["!!", "!", "x", "R+1", "F+n"]:
-			assert_true(screen._preview_legend.text.contains(symbol))
+		assert_true(not screen._preview_legend.text.contains("R+1"), "legend uses localized icon names")
+		assert_true(screen._preview_legend.text.length() > 20)
 		assert_true(not screen._tile_note.text.contains("tile."))
 		_close(screen)
 	Localization.setup("en")

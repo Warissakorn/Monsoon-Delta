@@ -92,7 +92,7 @@ func test_water_updates_cached_and_future_materials_without_changing_state_or_ot
 	state.get_tile(Vector2i.ZERO).water = 2.2
 	before = state.to_dict()
 	board.refresh()
-	assert_eq(board._water_materials.size(), 2)
+	assert_eq(board._water_materials.size(), 1, "changing depth reuses the coordinate material")
 	for material: ShaderMaterial in board._water_materials.values():
 		assert_near(float(material.get_shader_parameter("motion_scale")), 1.0, 0.00001)
 	assert_eq(state.to_dict(), before)
@@ -100,9 +100,9 @@ func test_water_updates_cached_and_future_materials_without_changing_state_or_ot
 	state.get_tile(Vector2i(1, 0)).water = 3.5
 	before = state.to_dict()
 	board.set_state(state.duplicate_state())
-	assert_eq(board._water_materials.size(), 3)
+	assert_eq(board._water_materials.size(), 2, "only wet coordinates keep current materials")
 	for material: ShaderMaterial in board._water_materials.values():
-		assert_near(float(material.get_shader_parameter("motion_scale")), 0.0, 0.00001, "new depth materials inherit the current preference")
+		assert_near(float(material.get_shader_parameter("motion_scale")), 0.0, 0.00001, "new wet tile materials inherit the current preference")
 	assert_near(float(independent.get_shader_parameter("motion_scale")), 1.0, 0.00001, "shared shader resources do not share the motion setting")
 	assert_eq(state.to_dict(), before)
 	assert_eq(board.state.to_dict(), before)

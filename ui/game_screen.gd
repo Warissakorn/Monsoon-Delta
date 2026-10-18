@@ -15,6 +15,8 @@ const SHORTCUTS: Dictionary = {
 	KEY_0: "granary", KEY_C: "chop", KEY_P: "plant", KEY_B: "waterwheel", KEY_X: "demolish",
 }
 const KEY_LABELS: Array[String] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "C", "P", "B", "X"]
+const Advisor = preload("res://ui/village_advisor.gd")
+const Progress = preload("res://core/settlement_progress.gd")
 
 var session: GameSession
 var preferences_path: String = GamePreferences.DEFAULT_PATH
@@ -51,6 +53,22 @@ var _run_label: Label
 var _goal_label: Label
 var _goal_panel: Control
 var _survival_help: Label
+var _survival_progress: ProgressBar
+var _condition_icon: TextureRect
+var _condition_label: Label
+var _resource_chips: Dictionary = {}
+var _goal_bars: VBoxContainer
+var _advisor: Dictionary = {}
+var _advisor_panel: PanelContainer
+var _advisor_icon: TextureRect
+var _advisor_timing: Label
+var _advisor_text: Label
+var _advisor_button: Button
+var _advisor_command: String = ""
+var _advisor_coord: Vector2i = BoardView.NO_COORD
+var _advisor_review: bool = false
+var _inspection_focus: Vector2i = BoardView.NO_COORD
+var _inspection_pointer: Vector2 = Vector2.ZERO
 var _goal_preview_achieved: bool = false
 var _save_label: Label
 var _tile_title: Label
@@ -141,6 +159,31 @@ func _panel(parent: Node) -> VBoxContainer:
 	return content
 
 
+func _icon(id: String, width: int = 24) -> TextureRect:
+	var icon := TextureRect.new()
+	icon.texture = load("res://assets/icons/%s.svg" % id)
+	icon.custom_minimum_size = Vector2(width, width)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return icon
+
+
+func _resource_chip(parent: Node, id: String) -> void:
+	var chip := HBoxContainer.new()
+	chip.add_theme_constant_override("separation", 6)
+	chip.custom_minimum_size.x = 145
+	chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	chip.tooltip_text = tr("resource." + id)
+	parent.add_child(chip)
+	chip.add_child(_icon(id))
+	var value := _label("", 19)
+	value.autowrap_mode = TextServer.AUTOWRAP_OFF
+	value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	chip.add_child(value)
+	_resource_chips[id] = value
+
+
 func _build_hud() -> void:
 	var canvas := CanvasLayer.new()
 	add_child(canvas)
@@ -177,20 +220,35 @@ func _build_hud() -> void:
 		button.theme_type_variation = "QuietButton"
 		time_row.add_child(button)
 	var resources_row := HBoxContainer.new()
-	resources_row.add_theme_constant_override("separation", 28)
+	resources_row.add_theme_constant_override("separation", 18)
 	header.add_child(resources_row)
 	_resources_label = _label("", 22)
-	_resources_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_resources_label.hide()
 	resources_row.add_child(_resources_label)
-	var water_icon := TextureRect.new()
-	water_icon.texture = preload("res://assets/icons/water.svg")
-	water_icon.custom_minimum_size = Vector2(24, 24)
-	water_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	water_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	resources_row.add_child(water_icon)
-	_water_label = _label("", 20, true)
-	_water_label.custom_minimum_size.x = 480
+	for id: String in ["labor", "food", "wood", "people"]:
+		_resource_chip(resources_row, id)
+	resources_row.add_child(_icon("water"))
+	_water_label = _label("", 18, true)
+	_water_label.custom_minimum_size.x = 340
 	resources_row.add_child(_water_label)
+	var survival_row := HBoxContainer.new()
+	header.add_child(survival_row)
+	survival_row.add_child(_icon("hall", 22))
+	_survival_help = _label("", 18)
+	_survival_help.name = "PrimaryObjective"
+	_survival_help.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	survival_row.add_child(_survival_help)
+	_survival_progress = ProgressBar.new()
+	_survival_progress.name = "SurvivalProgress"
+	_survival_progress.custom_minimum_size = Vector2(170, 10)
+	_survival_progress.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_survival_progress.show_percentage = false
+	survival_row.add_child(_survival_progress)
+	_condition_icon = _icon("stable", 22)
+	survival_row.add_child(_condition_icon)
+	_condition_label = _label("", 18, true)
+	_condition_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	survival_row.add_child(_condition_label)
 	var turn_track := HBoxContainer.new()
 	turn_track.add_theme_constant_override("separation", 6)
 	header.add_child(turn_track)
@@ -211,19 +269,47 @@ func _build_hud() -> void:
 	board_space.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	board_space.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	middle.add_child(board_space)
+	var side_column := VBoxContainer.new()
+	side_column.custom_minimum_size.x = 400
+	middle.add_child(side_column)
+	var advice := _panel(side_column)
+	_advisor_panel = advice.get_parent() as PanelContainer
+	_advisor_panel.name = "VillageAdvisor"
+	var advice_heading := HBoxContainer.new()
+	advice.add_child(advice_heading)
+	_advisor_icon = _icon("hall", 28)
+	advice_heading.add_child(_advisor_icon)
+	_advisor_timing = _label("", 17)
+	_advisor_timing.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	advice_heading.add_child(_advisor_timing)
+	_advisor_text = _label("", 19)
+	advice.add_child(_advisor_text)
+	_advisor_button = _button("", _act_on_advice, "AdvisorAction")
+	_advisor_button.theme_type_variation = "QuietButton"
+	_advisor_button.custom_minimum_size.y = 38
+	advice.add_child(_advisor_button)
 	var side_scroll := ScrollContainer.new()
-	side_scroll.custom_minimum_size.x = 400
+	side_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	side_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	middle.add_child(side_scroll)
+	side_column.add_child(side_scroll)
 	var sidebar := VBoxContainer.new()
 	sidebar.custom_minimum_size.x = 380
 	sidebar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	side_scroll.add_child(sidebar)
 	var objective := _panel(sidebar)
 	_goal_panel = objective.get_parent()
-	objective.add_child(_label(tr("goal.title"), 22))
+	var goal_heading := HBoxContainer.new()
+	objective.add_child(goal_heading)
+	goal_heading.add_child(_icon("goal"))
+	var goal_title := _label(tr("goal.title"), 22)
+	goal_title.autowrap_mode = TextServer.AUTOWRAP_OFF
+	goal_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	goal_heading.add_child(goal_title)
 	_goal_label = _label("", 18)
 	objective.add_child(_goal_label)
+	_goal_bars = VBoxContainer.new()
+	_goal_bars.add_theme_constant_override("separation", 6)
+	objective.add_child(_goal_bars)
 	var latest := _panel(sidebar)
 	_latest_panel = latest.get_parent()
 	latest.add_child(_label(tr("history.latest"), 22))
@@ -246,11 +332,9 @@ func _build_hud() -> void:
 	_preview_legend = _label(tr("preview.legend"), 18, true)
 	_preview_legend.name = "PreviewLegend"
 	preview_panel.add_child(_preview_legend)
-	# Put the selected tile and immediate forecast within the first scroll view.
+	# The primary objective and highest priority advice stay outside this scroll.
 	sidebar.move_child(inspector.get_parent(), 0)
 	sidebar.move_child(preview_panel.get_parent(), 1)
-	_survival_help = _label("", 20, true)
-	sidebar.add_child(_survival_help)
 	sidebar.add_child(_label(tr("help.controls"), 18, true))
 	_status_label = _label("", 18, true)
 	layout.add_child(_status_label)
@@ -351,6 +435,23 @@ func refresh_state() -> void:
 	_run_label.text = tr("run_mode." + state.run_mode + ".name") + "\n" + _difficulty_caption()
 	_survival_help.text = tr("help.survive_years") % state.target_years()
 	_resources_label.text = tr("hud.resources") % [state.labor, state.labor_max, state.food, state.wood, state.population, state.capacity()]
+	_resource_chips["labor"].text = tr("resource.labor") + " %d/%d" % [state.labor, state.labor_max]
+	_resource_chips["food"].text = tr("resource.food") + " %d" % state.food
+	_resource_chips["wood"].text = tr("resource.wood") + " %d" % state.wood
+	_resource_chips["people"].text = tr("resource.people") + " %d/%d" % [state.population, state.capacity()]
+	_resource_chips["people"].get_parent().tooltip_text = tr("resource.housing_capacity")
+	_survival_progress.max_value = state.target_years() * C.TURNS_PER_YEAR
+	_survival_progress.value = (state.year - 1) * C.TURNS_PER_YEAR + state.turn - 1
+	if state.phase == C.Phase.HARVEST or state.outcome == C.Outcome.WIN:
+		_survival_progress.value += 1
+	_survival_progress.tooltip_text = tr("survival.progress") % [int(_survival_progress.value), int(_survival_progress.max_value)]
+	_condition_icon.visible = Progress.enabled(state)
+	_condition_label.visible = Progress.enabled(state)
+	if Progress.enabled(state):
+		var condition_id: String = Progress.condition_key(state).trim_prefix("settlement.")
+		_condition_icon.texture = load("res://assets/icons/%s.svg" % condition_id)
+		_condition_label.text = tr("settlement." + condition_id)
+		_condition_label.tooltip_text = tr("settlement.explanation")
 	_water_label.text = tr("hud.water") % [state.current_inflow(), state.forecast_min, state.forecast_max]
 	_undo_button.disabled = state.phase != C.Phase.PLANNING or state.undo.is_empty()
 	_redo_button.disabled = state.phase != C.Phase.PLANNING or state.redo.is_empty()
@@ -363,6 +464,7 @@ func refresh_state() -> void:
 	_update_command_status()
 	_refresh_turn_result()
 	_refresh_village_goal()
+	_refresh_advisor()
 
 
 func _difficulty_caption() -> String:
@@ -375,6 +477,9 @@ func _refresh_village_goal() -> void:
 	var state: GameState = session.state
 	_goal_panel.visible = state.village_goal != "none"
 	_goal_label.text = ""
+	for child: Node in _goal_bars.get_children():
+		_goal_bars.remove_child(child)
+		child.queue_free()
 	if state.village_goal == "none":
 		return
 	var progress: Dictionary = RunGoals.progress(state)
@@ -390,6 +495,109 @@ func _refresh_village_goal() -> void:
 		lines.append(tr("goal.harvest_check"))
 		lines.append(tr("goal.reward") % int(progress["score"]))
 	_goal_label.text = "\n".join(lines)
+	if not progress["achieved"]:
+		_goal_progress_bar("people", int(progress["population"]), int(progress["required_population"]))
+		if int(progress["required_forests"]) > 0:
+			_goal_progress_bar("forest", int(progress["forests"]), int(progress["required_forests"]))
+		if int(progress["required_paddy_food"]) > 0:
+			_goal_progress_bar("paddy", int(progress["paddy_food"]), int(progress["required_paddy_food"]))
+
+
+func _goal_progress_bar(icon: String, current: int, required: int) -> void:
+	var row := HBoxContainer.new()
+	_goal_bars.add_child(row)
+	row.add_child(_icon(icon, 20))
+	var progress := ProgressBar.new()
+	progress.max_value = maxi(1, required)
+	progress.value = current
+	progress.show_percentage = false
+	progress.custom_minimum_size.y = 8
+	progress.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	progress.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	progress.tooltip_text = "%d / %d" % [current, required]
+	row.add_child(progress)
+	var count := _label("%d/%d" % [current, required], 16, true)
+	count.autowrap_mode = TextServer.AUTOWRAP_OFF
+	row.add_child(count)
+
+
+func _refresh_advisor() -> void:
+	_advisor = Advisor.describe(session.state, prediction, harvest_projection)
+	_advisor_icon.texture = load("res://assets/icons/%s.svg" % _advisor["icon"])
+	var severity: String = _advisor["severity"]
+	var tint: Color = Color(_colors.danger if severity in ["critical", "danger"] else (_colors.accent if severity == "prepare" else _colors.success))
+	_advisor_panel.add_theme_stylebox_override("panel", ThemeBuilder.box(Color(_colors.panel_raised), 12, tint))
+	_advisor_timing.text = tr("advisor.safe_heading" if severity == "safe" else "advisor." + severity) + " · " + tr(_advisor["timing"])
+	_advisor_timing.add_theme_color_override("font_color", tint)
+	_advisor_text.text = tr(_advisor["key"])
+	var values: Array = _advisor["values"]
+	if not values.is_empty():
+		_advisor_text.text = _advisor_text.text % values
+	_advisor_command = ""
+	_advisor_coord = BoardView.NO_COORD
+	_advisor_review = false
+	var action: String = _advisor["action"]
+	if action == "focus":
+		_advisor_coord = _advisor["coord"]
+		_advisor_button.text = tr("advisor.focus")
+	else:
+		for id: String in _advisor["commands"]:
+			var productive_now: bool = harvest_projection.is_empty() or id != "fish_trap"
+			if not productive_now and not prediction.is_empty():
+				var predicted: GameState = prediction["state"]
+				for coord: Vector2i in _targets.get(id, []):
+					if predicted.level_of(predicted.get_tile(coord)) >= 1:
+						productive_now = true
+						break
+			if productive_now and not _targets.get(id, []).is_empty() and _command_buttons[id].visible:
+				_advisor_command = id
+				break
+		if not _advisor_command.is_empty():
+			_advisor_button.text = tr("advisor.plan_" + action)
+		else:
+			for tile: Tile in session.state.tiles:
+				var matches: bool = tile.feature == C.Feature.PADDY or tile.building == C.Building.FISH_TRAP
+				if action == "housing":
+					matches = tile.building in [C.Building.HOUSE, C.Building.STILT_HOUSE, C.Building.RAFT_HOUSE]
+				if matches and action in ["food", "housing"]:
+					_advisor_coord = tile.coord
+					break
+			_advisor_button.text = tr("advisor.inspect_" + action) if action in ["food", "housing"] else ""
+			if action in ["food", "housing"] and _advisor_coord == BoardView.NO_COORD:
+				_advisor_review = true
+				_advisor_button.text = tr("advisor.review")
+	_advisor_button.visible = not _advisor_command.is_empty() or _advisor_coord != BoardView.NO_COORD or _advisor_review
+	_advisor_button.tooltip_text = tr("advisor.action_help")
+
+
+func _act_on_advice() -> void:
+	if not modal_kind.is_empty():
+		return
+	if not _advisor_command.is_empty():
+		select_command(_advisor_command)
+		return
+	if _advisor_review:
+		_open_modal("advice", tr("advisor.safe_heading"))
+		_modal_content.add_child(_label(_advisor_text.text))
+		_modal_content.add_child(_label(tr("advisor.no_" + String(_advisor["action"]) + "_action")))
+		for line: String in _harvest_preview_lines():
+			_modal_content.add_child(_label(line, 18))
+		if not session.state.undo.is_empty():
+			_add_modal_button(tr("action.undo"), func(): close_modal(); undo_command(), "AdviceUndo")
+		_add_modal_button(tr("action.resume"), close_modal, "CloseAdvice", true)
+		return
+	if _advisor_coord == BoardView.NO_COORD:
+		return
+	cancel_command()
+	hovered_coord = _advisor_coord
+	_inspection_focus = _advisor_coord
+	_inspection_pointer = get_viewport().get_mouse_position()
+	board.select(_advisor_coord)
+	board.hover(_advisor_coord)
+	var at: Vector3 = Hex.to_world(_advisor_coord)
+	camera_rig.position.x = clampf(at.x, -5.0, 5.0)
+	camera_rig.position.z = clampf(at.z, -5.0, 5.0)
+	_update_inspector()
 
 
 func _turn_stamp(entry: Dictionary) -> String:
@@ -606,6 +814,7 @@ func apply_at(coord: Vector2i) -> void:
 	hovered_coord = coord
 	refresh_state()
 	board.select(origin)
+	board.show_command_activity(id, origin)
 	_show_command_feedback(id, origin, previous_elevation, previous_labor, previous_wood)
 	if not command_mode.is_empty() and _targets.get(command_mode, []).is_empty():
 		_update_command_status()
@@ -665,6 +874,7 @@ func _on_feedback_emptied() -> void:
 	if not _turn_feedback_active:
 		return
 	_turn_feedback_active = false
+	board.finish_actual_flow()
 	# Restore the current forecast, never the resolved turn's prior preview.
 	if session != null and session.state != null and session.state.phase == C.Phase.PLANNING:
 		board.set_preview(prediction, preview_enabled)
@@ -686,6 +896,7 @@ func undo_command() -> void:
 		return
 	if session.undo():
 		wheel_origin = BoardView.NO_COORD
+		board.clear_activity()
 		refresh_state()
 
 
@@ -694,6 +905,7 @@ func redo_command() -> void:
 		return
 	if session.redo():
 		wheel_origin = BoardView.NO_COORD
+		board.clear_activity()
 		refresh_state()
 
 
@@ -701,6 +913,7 @@ func toggle_preview() -> void:
 	if not modal_kind.is_empty():
 		return
 	_feedback.clear()
+	board.finish_actual_flow()
 	preview_enabled = not preview_enabled
 	_preview_button.set_pressed_no_signal(preview_enabled)
 	board.set_preview(prediction, preview_enabled)
@@ -778,6 +991,9 @@ func _update_inspector() -> void:
 		var intake: Tile = state.neighbor_in_dir(tile, tile.wheel_dir)
 		if intake != null:
 			_tile_note.text = tr("tile.wheel_intake") % [intake.q, intake.r]
+	if Progress.enabled(state) and tile.building != C.Building.NONE:
+		_tile_note.text += ("\n" if not _tile_note.text.is_empty() else "") + tr("settlement.building_age") % Progress.building_age(state, tile)
+		_tile_note.text += "\n" + tr("settlement.building_stage") % tr("settlement.stage.%d" % Progress.building_stage(state, tile))
 	for line: String in _tile_preview_lines(tile):
 		_tile_note.text += ("\n" if not _tile_note.text.is_empty() else "") + line
 	if not command_mode.is_empty():
@@ -936,6 +1152,9 @@ func _finish_turn() -> void:
 		return
 	wheel_origin = BoardView.NO_COORD
 	refresh_state()
+	board.show_actual_flow(report)
+	board.show_turn_activity(report)
+	board.show_harvest_activity(session.last_harvest_food_by_tile)
 	if session.state.phase == C.Phase.PLANNING:
 		_show_turn_feedback(report)
 	if session.state.phase == C.Phase.HARVEST:
@@ -948,6 +1167,7 @@ func _open_modal(kind: String, title: String) -> void:
 	_feedback.clear()
 	close_modal()
 	modal_kind = kind
+	board.set_activity_paused(true)
 	_modal = Control.new()
 	_modal.name = "GameModal"
 	_modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -979,6 +1199,7 @@ func close_modal() -> void:
 	_skip_confirmation = null
 	modal_kind = ""
 	if board != null:
+		board.set_activity_paused(false)
 		board.hover(hovered_coord)
 
 
@@ -1138,11 +1359,17 @@ func _process(delta: float) -> void:
 		var pan := Vector2(horizontal, vertical)
 		if pan != Vector2.ZERO:
 			camera_rig.pan(pan.normalized(), delta)
+	var pointer: Vector2 = get_viewport().get_mouse_position()
 	var next_coord: Vector2i = BoardView.NO_COORD
-	if get_viewport().gui_get_hovered_control() == null:
-		var tile: Tile = board.pick(camera_rig.get_camera(), get_viewport().get_mouse_position())
-		if tile != null:
-			next_coord = tile.coord
+	if _inspection_focus != BoardView.NO_COORD and pointer.is_equal_approx(_inspection_pointer):
+		# Camera movement must not replace a tile explicitly selected by advice.
+		next_coord = _inspection_focus
+	else:
+		_inspection_focus = BoardView.NO_COORD
+		if get_viewport().gui_get_hovered_control() == null:
+			var tile: Tile = board.pick(camera_rig.get_camera(), pointer)
+			if tile != null:
+				next_coord = tile.coord
 	if next_coord != hovered_coord:
 		hovered_coord = next_coord
 		board.hover(hovered_coord)
@@ -1151,6 +1378,9 @@ func _process(delta: float) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	# This sees motion over the HUD too, before GUI controls consume the event.
+	if event is InputEventMouseMotion and event.relative != Vector2.ZERO:
+		_inspection_focus = BoardView.NO_COORD
 	# Holding the key that opens a summary must not accept its next action.
 	if not modal_kind.is_empty() and event is InputEventKey and event.pressed and event.echo and event.is_action("ui_accept"):
 		get_viewport().set_input_as_handled()

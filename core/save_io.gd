@@ -45,10 +45,12 @@ static func save(state: GameState, path: String = DEFAULT_PATH) -> String:
 	var restored: GameState = GameState.from_dict(data)
 	if not _safe_mods(restored):
 		return "msg.save_failed"
-	# Keep the original schema for an ordinary five-year run. Longer runs and
-	# optional goals need version 2 so older clients cannot silently lose them.
+	# Keep legacy runs on their original schema. Visual history needs version 3
+	# so an older client cannot silently discard building ages or development.
 	var envelope_version: int = 2
-	if data["run_mode"] == "classic" and data["village_goal"] == "none":
+	if data.has("settlement_progress"):
+		envelope_version = 3
+	elif data["run_mode"] == "classic" and data["village_goal"] == "none":
 		envelope_version = 1
 		for field: String in RUN_FIELDS:
 			data.erase(field)
@@ -109,18 +111,24 @@ static func load_game(path: String = DEFAULT_PATH) -> Dictionary:
 	var envelope: Variant = parser.data
 	if not envelope is Dictionary:
 		return _corrupt(path)
-	if not envelope.get("format") is String or envelope["format"] != "monsoon_save" or not _integer(envelope.get("version"), 1, 2):
+	if not envelope.get("format") is String or envelope["format"] != "monsoon_save" or not _integer(envelope.get("version"), 1, 3):
 		return _corrupt(path)
 	if not envelope.get("state") is Dictionary or not _valid_state(envelope["state"]):
 		return _corrupt(path)
 	var data: Dictionary = envelope["state"]
-	if int(envelope["version"]) == 2:
+	var envelope_version: int = int(envelope["version"])
+	if envelope_version == 3:
+		if not _has_fields(data, RUN_FIELDS) or not data.has("settlement_progress"):
+			return _corrupt(path)
+	elif data.has("settlement_progress"):
+		return _corrupt(path)
+	if envelope_version == 2:
 		if not _has_fields(data, RUN_FIELDS):
 			return _corrupt(path)
-	elif data.get("run_mode", "classic") != "classic" or data.get("village_goal", "none") != "none":
+	elif envelope_version == 1 and (data.get("run_mode", "classic") != "classic" or data.get("village_goal", "none") != "none"):
 		return _corrupt(path)
 	# Godot's decimal JSON reader can differ by a few ULPs even when stringify
-	# uses full precision. Both versions therefore require this exact IEEE-754
+	# uses full precision. All versions therefore require this exact IEEE-754
 	# companion; its hex encodes eight little-endian bytes, never object data.
 	if not _restore_float64(envelope["state"], envelope.get("float64")) or not _valid_state(envelope["state"]):
 		return _corrupt(path)
@@ -238,7 +246,46 @@ static func _valid_state(data: Dictionary) -> bool:
 	for index: int in range(coords.size()):
 		if not data["tiles"][index] is Dictionary or not _valid_tile(data["tiles"][index], coords[index]):
 			return false
-	return true
+	return not data.has("settlement_progress") or _valid_settlement_progress(data)
+
+
+static func _valid_settlement_progress(data: Dictionary) -> bool:
+	var progress: Variant = data.get("settlement_progress")
+	var fields: Array[String] = ["version", "condition", "evaluated_year", "candidate", "candidate_years", "buildings"]
+	if not progress is Dictionary or progress.size() != fields.size() or not _has_fields(progress, fields):
+		return false
+	if not _integer(progress["version"], 1, 1):
+		return false
+	for field: String in ["condition", "candidate"]:
+		if not progress[field] is String or progress[field] not in SettlementProgress.CONDITION_IDS:
+			return false
+	if not _integer(progress["evaluated_year"], 0, int(data["year"])) or not _integer(progress["candidate_years"], 0, 1):
+		return false
+	if progress["candidate_years"] == 0 and progress["candidate"] != progress["condition"]:
+		return false
+	if progress["candidate_years"] == 1 and progress["candidate"] == progress["condition"]:
+		return false
+	if not progress["buildings"] is Dictionary or progress["buildings"].size() > data["tiles"].size():
+		return false
+	var count: int = 0
+	for tile: Dictionary in data["tiles"]:
+		if tile["building"] == "none":
+			continue
+		count += 1
+		var key: String = "%d,%d" % [int(tile["q"]), int(tile["r"])]
+		var record: Variant = progress["buildings"].get(key)
+		var record_fields: Array[String] = ["building", "built_year", "built_turn", "stage"]
+		if not record is Dictionary or record.size() != record_fields.size() or not _has_fields(record, record_fields):
+			return false
+		if not record["building"] is String or record["building"] != tile["building"]:
+			return false
+		if not _integer(record["built_year"], 1, int(data["year"])) or not _integer(record["built_turn"], 1, C.TURNS_PER_YEAR):
+			return false
+		if record["built_year"] == data["year"] and record["built_turn"] > data["turn"]:
+			return false
+		if not _integer(record["stage"], 0, mini(2, int(data["year"]) - int(record["built_year"]))):
+			return false
+	return count == progress["buildings"].size()
 
 
 static func _valid_run_fields(data: Dictionary) -> bool:

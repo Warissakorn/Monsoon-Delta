@@ -49,17 +49,18 @@ class BootDifficultyTests(unittest.TestCase):
     def test_default_still_starts_classic_difficulty_zero(self):
         self.invoke()
         envelope = self.read_checkpoint()
-        self.assertEqual(envelope["version"], 1)
+        self.assertEqual(envelope["version"], 3)
         self.assertEqual(envelope["state"]["difficulty"], 0)
-        self.assertNotIn("run_mode", envelope["state"])
-        self.assertNotIn("village_goal", envelope["state"])
+        self.assertEqual(envelope["state"]["settlement_progress"]["version"], 1)
+        self.assertEqual(envelope["state"]["run_mode"], "classic")
+        self.assertEqual(envelope["state"]["village_goal"], "none")
 
     def test_all_existing_levels_reach_the_checkpoint(self):
         for difficulty in range(11):
             with self.subTest(difficulty=difficulty):
                 self.invoke(f"--difficulty={difficulty}")
                 envelope = self.read_checkpoint()
-                self.assertEqual(envelope["version"], 1)
+                self.assertEqual(envelope["version"], 3)
                 self.assertEqual(envelope["state"]["difficulty"], difficulty)
 
     def test_boundary_levels_combine_with_long_runs_and_goals(self):
@@ -67,7 +68,7 @@ class BootDifficultyTests(unittest.TestCase):
             with self.subTest(difficulty=difficulty, goal=goal):
                 self.invoke(f"--difficulty={difficulty}", "--run-mode=long", f"--goal={goal}")
                 envelope = self.read_checkpoint()
-                self.assertEqual(envelope["version"], 2)
+                self.assertEqual(envelope["version"], 3)
                 self.assertEqual(envelope["state"]["difficulty"], difficulty)
                 self.assertEqual(envelope["state"]["run_mode"], "long")
                 self.assertEqual(envelope["state"]["village_goal"], goal)

@@ -105,6 +105,9 @@ static func apply(s: GameState, cmd: Command) -> void:
 				tile.wheel_dir = cmd.param
 			elif cmd.id == "reservoir":
 				tile.elevation = maxi(-3, tile.elevation - _count(s, "reservoir_depth"))
+			SettlementProgress.constructed(s, tile)
+	if cmd.id == "demolish":
+		SettlementProgress.reconcile(s)
 
 
 static func valid_targets(s: GameState, id: String, param: int = -1) -> Array[Vector2i]:

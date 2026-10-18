@@ -11,6 +11,8 @@ static func resolve_turn(s: GameState, record_snapshots: bool = true) -> TurnRep
 	report.to_sea = float(water["to_sea"])
 	report.from_sea = float(water["from_sea"])
 	report.snapshots.assign(water["snapshots"])
+	report.flow_edges.assign(water["flow_edges"])
+	report.wheel_transfers.assign(water["wheel_transfers"])
 	report.absorbed = WaterSim.absorb(s)
 	if not s.is_rain():
 		report.evaporated = WaterSim.evaporate(s)
@@ -18,8 +20,9 @@ static func resolve_turn(s: GameState, record_snapshots: bool = true) -> TurnRep
 	# a reservoir. Reservoir eligibility still reads its remaining current water.
 	var production_levels: PackedInt32Array = _levels(s)
 	_damage(s, report, production_levels)
+	SettlementProgress.reconcile(s)
 	if s.outcome == C.Outcome.NONE:
-		_produce(s, report, production_levels)
+		_produce(s, report, production_levels, record_snapshots)
 		s.stats["food_produced"] = int(s.stats.get("food_produced", 0)) + report.fish_food
 	report.levels_after = _levels(s)
 	report.outcome = s.outcome
@@ -66,7 +69,7 @@ static func _damage(s: GameState, report: TurnReport, levels: PackedInt32Array) 
 			report.paddies_died.append(tile.coord)
 
 
-static func _produce(s: GameState, report: TurnReport, levels: PackedInt32Array) -> void:
+static func _produce(s: GameState, report: TurnReport, levels: PackedInt32Array, record_visuals: bool = true) -> void:
 	var min_level: int = roundi(float(s.mod("paddy_min_level")))
 	var max_level: int = roundi(float(s.mod("paddy_max_level")))
 	var reservoir_min: float = float(s.mod("dry_paddy_reservoir_min"))
@@ -93,6 +96,8 @@ static func _produce(s: GameState, report: TurnReport, levels: PackedInt32Array)
 		if tile.building == C.Building.FISH_TRAP and level >= 1:
 			s.food += fish_food
 			report.fish_food += fish_food
+			if record_visuals:
+				report.fish_food_by_tile[tile.coord] = fish_food
 
 
 static func _best_reservoir(s: GameState, paddy: Tile, minimum: float) -> Tile:

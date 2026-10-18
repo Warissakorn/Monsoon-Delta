@@ -9,17 +9,8 @@ static func do_harvest(s: GameState) -> void:
 	s.population = maxi(0, s.population)
 	s.food = maxi(0, s.food)
 	var paddy_food: int = 0
-	for tile: Tile in s.tiles:
-		if tile.feature != Constants.Feature.PADDY or tile.paddy_dead:
-			continue
-		var produced: int = maxi(0, tile.paddy_yield)
-		if produced >= 1:
-			produced += roundi(float(s.mod("harvest_paddy_bonus")))
-			if tile.paddy_rain_turns == Constants.TURNS_PER_YEAR - Constants.DRY_TURNS:
-				produced += roundi(float(s.mod("jasmine_bonus")))
-			if _is_riverside(s, tile):
-				produced += roundi(float(s.mod("fertile_silt_bonus")))
-		paddy_food += maxi(0, produced)
+	for produced: int in paddy_food_by_tile(s).values():
+		paddy_food += produced
 	s.food += paddy_food
 	s.stats["food_produced"] = int(s.stats.get("food_produced", 0)) + paddy_food
 
@@ -65,6 +56,26 @@ static func do_harvest(s: GameState) -> void:
 		"population_after": s.population,
 	}
 	RunGoals.evaluate(s)
+	SettlementProgress.evaluate_year(s)
+
+
+static func paddy_food_by_tile(s: GameState) -> Dictionary:
+	# Exact accounting shared by harvest and transient worker presentation.
+	# Reading it never consumes RNG or awards food a second time.
+	var result: Dictionary = {}
+	for tile: Tile in s.tiles:
+		if tile.feature != Constants.Feature.PADDY or tile.paddy_dead:
+			continue
+		var produced: int = maxi(0, tile.paddy_yield)
+		if produced >= 1:
+			produced += roundi(float(s.mod("harvest_paddy_bonus")))
+			if tile.paddy_rain_turns == Constants.TURNS_PER_YEAR - Constants.DRY_TURNS:
+				produced += roundi(float(s.mod("jasmine_bonus")))
+			if _is_riverside(s, tile):
+				produced += roundi(float(s.mod("fertile_silt_bonus")))
+		if produced > 0:
+			result[tile.coord] = produced
+	return result
 
 
 static func _is_riverside(s: GameState, tile: Tile) -> bool:
