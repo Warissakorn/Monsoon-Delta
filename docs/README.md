@@ -2,6 +2,9 @@
 
 ## การออกแบบและแผนงาน
 
+- [ข้อเสนอเล่นซ้ำและจังหวะรอบ M5](design/REPLAYABILITY_PROPOSAL.md) — แบบเสนอ ยังไม่ใช่ระบบที่เปิดใช้
+- [การ์ด 30 ใบและแนวเล่น](design/CARD_CATALOG.md), [เหตุการณ์ 15 แบบ](design/EVENT_CATALOG.md), [ความยากและแผนที่](design/CHALLENGES_AND_MAPS.md)
+- [ข้อตกลงหมู่บ้านรายปี 6 แบบ](design/ANNUAL_CONTRACTS.md) — ส่วนเพิ่ม M5.2 ที่เสนอใหม่
 - [GDD: ภาพรวมเกม](GDD.md)
 - [Roadmap M0–M9](ROADMAP.md)
 - [ความคืบหน้า](PROGRESS.md)

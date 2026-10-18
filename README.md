@@ -98,6 +98,7 @@ godot --path . -- --scene=sandbox --seed=42 --lang=th --screenshot=screenshots/s
 
 ## เอกสารออกแบบ
 
+- [แบบเพิ่มความหลากหลาย: การ์ด เหตุการณ์ ข้อตกลงรายปี และแผนที่](docs/design/REPLAYABILITY_PROPOSAL.md) — ข้อเสนอ ยังไม่เปิดใช้ในเกม
 - [สารบัญเอกสารและสถานะไฟล์](docs/README.md)
 - [ภาพรวมการออกแบบเกม (GDD)](docs/GDD.md)
 - [วิธีอ่านสเปก](docs/specs/00_README.md)
