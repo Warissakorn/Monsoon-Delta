@@ -1,0 +1,486 @@
+{
+  "checks": {
+    "advisor_focus_hall": true,
+    "advisor_inspector_stays_on_hall": true,
+    "committed_job_carry_visible": true,
+    "condition_single_line": true,
+    "critical_advice_without_preview": true,
+    "developed_checkpoint": true,
+    "fixture-critical-advice-preview-hidden_screenshot": true,
+    "fixture-hall-peril-focused_screenshot": true,
+    "fixture-hall-peril_screenshot": true,
+    "fixture-recorded-water-transfers_screenshot": true,
+    "fixture-reduced-motion_screenshot": true,
+    "fixture-stable-delivery_screenshot": true,
+    "fixture-stable-outbound_screenshot": true,
+    "fixture-stable-work_screenshot": true,
+    "fixture-struggling_screenshot": true,
+    "fixture-thriving-age-two_screenshot": true,
+    "fixture-village-detail_screenshot": true,
+    "fixture_checkpoint": true,
+    "fixture_exact_load": true,
+    "hall_peril_predicted": true,
+    "isolated_settings": true,
+    "legal-after-undo-redo-load_screenshot": true,
+    "legal-chop-command_screenshot": true,
+    "legal_chop_activity": true,
+    "legal_chop_committed": true,
+    "legal_chop_target_exists": true,
+    "legal_load": true,
+    "legal_load_clears_activity": true,
+    "legal_load_exact_state": true,
+    "legal_session_start": true,
+    "native_chop_shortcut": true,
+    "native_escape_cancels_tool": true,
+    "native_pause_open": true,
+    "native_pause_resume": true,
+    "native_redo_clears_activity": true,
+    "native_redo_exact_state": true,
+    "native_undo_clears_activity": true,
+    "native_undo_exact_state": true,
+    "peril_inspection_read_only": true,
+    "reduced_motion_fixed_poses": true,
+    "resource_food_single_line": true,
+    "resource_labor_single_line": true,
+    "resource_people_single_line": true,
+    "resource_wood_single_line": true,
+    "view_checkpoint_unchanged": true,
+    "view_rng_unchanged": true,
+    "view_state_unchanged": true
+  },
+  "display": "X11",
+  "engine": "4.6.3-stable (official)",
+  "fixture": true,
+  "isolated_save": "/tmp/living-village-qa/final-en/legal-controller-checkpoint.json",
+  "isolated_settings": "/tmp/living-village-qa/final-en/fixture-settings.json",
+  "language": "en",
+  "note": "Controlled visual/integration fixtures; not a legal playthrough or human playtest. Native software-renderer timings are not a hardware benchmark.",
+  "observations": [
+    {
+      "active_jobs": [
+        {
+          "carrying": false,
+          "coord": "(-2, 2)",
+          "kind": "chop",
+          "position": "(-3.012765, 0.825, 0.780166)",
+          "stage": "outbound"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 0)",
+          "kind": "farm",
+          "position": "(-2.139457, 0.825, 1.953833)",
+          "stage": "outbound"
+        },
+        {
+          "carrying": false,
+          "coord": "(2, -1)",
+          "kind": "fish",
+          "position": "(-2.1481, 0.825, -0.719049)",
+          "stage": "outbound"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 1)",
+          "kind": "harvest",
+          "position": "(-3.012765, 0.825, 0.780166)",
+          "stage": "outbound"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 256,
+      "flow_preview_nodes": 1,
+      "id": "fixture-stable-outbound",
+      "inspector": "Land · (1, 2)",
+      "process_seconds": 0.317284,
+      "queued_jobs": 0,
+      "render_objects": 1242,
+      "road_routes": 12,
+      "screenshot": "/tmp/living-village-qa/final-en/fixture-stable-outbound.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [
+        {
+          "carrying": false,
+          "coord": "(-2, 2)",
+          "kind": "chop",
+          "position": "(-1.702818, 0.825, 2.949368)",
+          "stage": "outbound"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 0)",
+          "kind": "farm",
+          "position": "(0.755, 0.825, 0.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(2, -1)",
+          "kind": "fish",
+          "position": "(0.081612, 0.825, -0.144923)",
+          "stage": "outbound"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 1)",
+          "kind": "harvest",
+          "position": "(0.391546, 0.825, 2.094595)",
+          "stage": "outbound"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 256,
+      "flow_preview_nodes": 1,
+      "id": "fixture-stable-work",
+      "inspector": "Land · (1, 2)",
+      "process_seconds": 0.56621,
+      "queued_jobs": 0,
+      "render_objects": 1238,
+      "road_routes": 12,
+      "screenshot": "/tmp/living-village-qa/final-en/fixture-stable-work.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [
+        {
+          "carrying": false,
+          "coord": "(-2, 2)",
+          "kind": "chop",
+          "position": "(-1.702818, 0.825, 2.949368)",
+          "stage": "outbound"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 0)",
+          "kind": "farm",
+          "position": "(0.755, 0.825, 0.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(2, -1)",
+          "kind": "fish",
+          "position": "(0.081612, 0.825, -0.144923)",
+          "stage": "outbound"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 1)",
+          "kind": "harvest",
+          "position": "(0.391546, 0.825, 2.094595)",
+          "stage": "outbound"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 158,
+      "flow_preview_nodes": 1,
+      "id": "fixture-village-detail",
+      "inspector": "Land · (-1, 1)",
+      "process_seconds": 0.340739,
+      "queued_jobs": 0,
+      "render_objects": 196,
+      "road_routes": 12,
+      "screenshot": "/tmp/living-village-qa/final-en/fixture-village-detail.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [
+        {
+          "carrying": true,
+          "coord": "(-2, 2)",
+          "kind": "chop",
+          "position": "(-1.667534, 0.825, 2.888253)",
+          "stage": "deliver"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 0)",
+          "kind": "farm",
+          "position": "(0.446257, 0.825, 0.0)",
+          "stage": "deliver"
+        },
+        {
+          "carrying": false,
+          "coord": "(2, -1)",
+          "kind": "fish",
+          "position": "(1.621025, 0.825, -1.5)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 1)",
+          "kind": "harvest",
+          "position": "(1.621025, 0.825, 1.5)",
+          "stage": "work"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 258,
+      "flow_preview_nodes": 1,
+      "id": "fixture-stable-delivery",
+      "inspector": "Land · (1, 2)",
+      "process_seconds": 0.261581,
+      "queued_jobs": 0,
+      "render_objects": 1244,
+      "road_routes": 12,
+      "screenshot": "/tmp/living-village-qa/final-en/fixture-stable-delivery.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [
+        {
+          "carrying": true,
+          "coord": "(-2, 2)",
+          "kind": "chop",
+          "position": "(-1.667534, 0.825, 2.888253)",
+          "stage": "deliver"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 0)",
+          "kind": "farm",
+          "position": "(0.446257, 0.825, 0.0)",
+          "stage": "deliver"
+        },
+        {
+          "carrying": false,
+          "coord": "(2, -1)",
+          "kind": "fish",
+          "position": "(1.621025, 0.825, -1.5)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 1)",
+          "kind": "harvest",
+          "position": "(1.621025, 0.825, 1.5)",
+          "stage": "work"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 218,
+      "flow_preview_nodes": 1,
+      "id": "fixture-recorded-water-transfers",
+      "inspector": "Land · (1, 2)",
+      "process_seconds": 0.261581,
+      "queued_jobs": 0,
+      "render_objects": 1213,
+      "road_routes": 12,
+      "screenshot": "/tmp/living-village-qa/final-en/fixture-recorded-water-transfers.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [
+        {
+          "carrying": false,
+          "coord": "(-2, 2)",
+          "kind": "chop",
+          "position": "(-1.732051, 0.825, 3.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 0)",
+          "kind": "farm",
+          "position": "(0.755, 0.825, 0.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(2, -1)",
+          "kind": "fish",
+          "position": "(1.621025, 0.825, -1.5)",
+          "stage": "work"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 254,
+      "flow_preview_nodes": 1,
+      "id": "fixture-reduced-motion",
+      "inspector": "Land · (1, 2)",
+      "process_seconds": 0.416964,
+      "queued_jobs": 0,
+      "render_objects": 1239,
+      "road_routes": 12,
+      "screenshot": "/tmp/living-village-qa/final-en/fixture-reduced-motion.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [
+        {
+          "carrying": false,
+          "coord": "(-2, 2)",
+          "kind": "chop",
+          "position": "(-1.732051, 0.825, 3.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 0)",
+          "kind": "farm",
+          "position": "(0.755, 0.825, 0.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(2, -1)",
+          "kind": "fish",
+          "position": "(1.621025, 0.825, -1.5)",
+          "stage": "work"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 256,
+      "flow_preview_nodes": 1,
+      "id": "fixture-thriving-age-two",
+      "inspector": "Land · (1, 2)",
+      "process_seconds": 0.434875,
+      "queued_jobs": 0,
+      "render_objects": 1246,
+      "road_routes": 12,
+      "screenshot": "/tmp/living-village-qa/final-en/fixture-thriving-age-two.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [
+        {
+          "carrying": false,
+          "coord": "(-2, 2)",
+          "kind": "chop",
+          "position": "(-1.732051, 0.825, 3.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 0)",
+          "kind": "farm",
+          "position": "(0.755, 0.825, 0.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(2, -1)",
+          "kind": "fish",
+          "position": "(1.621025, 0.825, -1.5)",
+          "stage": "work"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "prepare_food",
+      "draw_calls": 257,
+      "flow_preview_nodes": 1,
+      "id": "fixture-struggling",
+      "inspector": "Land · (1, 2)",
+      "process_seconds": 0.434875,
+      "queued_jobs": 0,
+      "render_objects": 1261,
+      "road_routes": 12,
+      "screenshot": "/tmp/living-village-qa/final-en/fixture-struggling.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [],
+      "actor_pool": 0,
+      "advisor": "hall",
+      "draw_calls": 435,
+      "flow_preview_nodes": 1,
+      "id": "fixture-hall-peril",
+      "inspector": "Land · (1, 2)",
+      "process_seconds": 0.427993,
+      "queued_jobs": 0,
+      "render_objects": 1384,
+      "road_routes": 0,
+      "screenshot": "/tmp/living-village-qa/final-en/fixture-hall-peril.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [],
+      "actor_pool": 0,
+      "advisor": "hall",
+      "draw_calls": 432,
+      "flow_preview_nodes": 1,
+      "id": "fixture-hall-peril-focused",
+      "inspector": "Village hall · (-1, 0)",
+      "process_seconds": 0.406062,
+      "queued_jobs": 0,
+      "render_objects": 1480,
+      "road_routes": 0,
+      "screenshot": "/tmp/living-village-qa/final-en/fixture-hall-peril-focused.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [],
+      "actor_pool": 0,
+      "advisor": "hall",
+      "draw_calls": 234,
+      "flow_preview_nodes": 0,
+      "id": "fixture-critical-advice-preview-hidden",
+      "inspector": "Village hall · (-1, 0)",
+      "process_seconds": 0.280513,
+      "queued_jobs": 0,
+      "render_objects": 1201,
+      "road_routes": 0,
+      "screenshot": "/tmp/living-village-qa/final-en/fixture-critical-advice-preview-hidden.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [
+        {
+          "carrying": false,
+          "coord": "(-2, 3)",
+          "kind": "chop",
+          "position": "(0.201792, 0.825, -5.445581)",
+          "stage": "outbound"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 241,
+      "flow_preview_nodes": 1,
+      "id": "legal-chop-command",
+      "inspector": "Point at a tile to inspect it.",
+      "process_seconds": 0.400214,
+      "queued_jobs": 0,
+      "render_objects": 1051,
+      "road_routes": 8,
+      "screenshot": "/tmp/living-village-qa/final-en/legal-chop-command.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 227,
+      "flow_preview_nodes": 1,
+      "id": "legal-after-undo-redo-load",
+      "inspector": "Point at a tile to inspect it.",
+      "process_seconds": 0.329257,
+      "queued_jobs": 0,
+      "render_objects": 1080,
+      "road_routes": 8,
+      "screenshot": "/tmp/living-village-qa/final-en/legal-after-undo-redo-load.png",
+      "viewport": "(1280, 720)"
+    }
+  ],
+  "same_scene_software_comparison": {
+    "hidden": {
+      "draw_calls": 174,
+      "mean_rendered_frame_ms": 236.785,
+      "render_objects": 1159
+    },
+    "visible": {
+      "draw_calls": 256,
+      "mean_rendered_frame_ms": 284.793625,
+      "render_objects": 1241
+    }
+  }
+}

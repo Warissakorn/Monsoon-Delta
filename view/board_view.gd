@@ -28,6 +28,11 @@ var _baked_materials: Dictionary = {}
 var _target_coords: Array[Vector2i] = []
 var _invalid_coord: Vector2i = NO_COORD
 var _prediction: Dictionary = {}
+var _route_view: RouteNetworkView
+var _life_view: VillageLifeView
+var _flow_view: FlowView
+var _activity_paused: bool = false
+var _actual_flow_report: TurnReport
 
 
 func _ready() -> void:
@@ -37,16 +42,22 @@ func _ready() -> void:
 func set_reduced_motion(enabled: bool) -> void:
 	_reduced_motion = enabled
 	for material: ShaderMaterial in _water_materials.values():
-		material.set_shader_parameter("motion_scale", 0.0 if enabled else 1.0)
+		material.set_shader_parameter("motion_scale", 0.0 if enabled or _activity_paused else 1.0)
+	if _life_view != null:
+		_life_view.set_reduced_motion(enabled)
+		_flow_view.set_reduced_motion(enabled)
 
 
 func set_state(next_state: GameState) -> void:
+	if state != next_state:
+		clear_activity()
 	state = next_state
 	_selected_coord = NO_COORD
 	_hover_coord = NO_COORD
 	_target_coords.clear()
 	_invalid_coord = NO_COORD
 	_prediction = {}
+	_actual_flow_report = null
 	refresh()
 
 
@@ -59,13 +70,28 @@ func refresh() -> void:
 		_hover.hide()
 		_clear_root(_targets_root)
 		_clear_root(_preview_root)
+		_route_view.set_state(null)
+		_life_view.set_state(null, null)
+		_flow_view.set_state(null)
+		_water_materials.clear()
 		return
+	# GL Compatibility has no instance shader uniforms. One cached material per
+	# wet coordinate permits independent currents, bounded by the board size.
+	for coord: Vector2i in _water_materials.keys():
+		var tile: Tile = state.get_tile(coord)
+		if tile == null or (tile.water < 0.05 and not tile.is_sea):
+			_water_materials.erase(coord)
 	for tile: Tile in state.tiles:
 		_build_tile(tile)
 	_batch_static_geometry()
 	_update_markers()
 	_refresh_targets()
 	_refresh_preview()
+	_route_view.set_state(state)
+	_life_view.set_state(state, _route_view.graph)
+	_flow_view.set_state(state)
+	_flow_view.set_preview(_prediction, not _prediction.is_empty())
+	_update_water_flow()
 
 
 ## Targets and predictions survive refresh(), but set_state() clears them.
@@ -85,6 +111,78 @@ func set_preview(prediction: Dictionary, enabled: bool = true) -> void:
 	_prediction = prediction if enabled else {}
 	_ensure_nodes()
 	_refresh_preview()
+	_flow_view.set_preview(prediction, enabled)
+	_update_water_flow()
+
+
+func show_command_activity(id: String, coord: Vector2i) -> void:
+	_ensure_nodes()
+	_life_view.show_command(id, coord)
+
+
+func show_turn_activity(report: TurnReport) -> void:
+	_ensure_nodes()
+	_life_view.show_report(report)
+
+
+func show_harvest_activity(food_by_tile: Dictionary) -> void:
+	_ensure_nodes()
+	_life_view.show_harvest(food_by_tile)
+
+
+func show_actual_flow(report: TurnReport) -> void:
+	_ensure_nodes()
+	_actual_flow_report = report
+	_flow_view.show_report(report, state)
+	if _flow_view.is_showing_actual():
+		_clear_root(_preview_root)
+	_update_water_flow()
+
+
+func clear_activity() -> void:
+	_actual_flow_report = null
+	if _life_view != null:
+		_life_view.clear()
+		_flow_view.clear()
+	_update_water_flow()
+
+
+func finish_actual_flow() -> void:
+	_actual_flow_report = null
+	if _flow_view != null:
+		_flow_view.clear()
+		_flow_view.set_preview(_prediction, not _prediction.is_empty())
+		_refresh_preview()
+	_update_water_flow()
+
+
+func set_activity_paused(paused: bool) -> void:
+	_activity_paused = paused
+	if _life_view != null:
+		_life_view.set_paused(paused)
+		_flow_view.set_paused(paused)
+	for material: ShaderMaterial in _water_materials.values():
+		material.set_shader_parameter("motion_scale", 0.0 if paused or _reduced_motion else 1.0)
+
+
+func _on_actual_flow_finished() -> void:
+	_actual_flow_report = null
+	_refresh_preview()
+	_update_water_flow()
+
+
+func _update_water_flow() -> void:
+	if state == null:
+		return
+	var report: TurnReport = _actual_flow_report
+	if report == null and _prediction.get("report") is TurnReport:
+		report = _prediction["report"]
+	var velocities: Dictionary = FlowView.tile_velocities(state, report) if report != null else {}
+	for coord: Vector2i in _water_materials:
+		var velocity: Vector2 = velocities.get(coord, Vector2.ZERO)
+		var material: ShaderMaterial = _water_materials[coord]
+		material.set_shader_parameter("flow_velocity", velocity)
+		material.set_shader_parameter("flow_strength", clampf(velocity.length(), 0.0, 1.0))
 
 
 func select(coord: Vector2i) -> void:
@@ -153,6 +251,18 @@ func _ensure_nodes() -> void:
 	_preview_root = Node3D.new()
 	_preview_root.name = "Preview"
 	add_child(_preview_root)
+	_route_view = RouteNetworkView.new()
+	_route_view.name = "Routes"
+	add_child(_route_view)
+	_life_view = VillageLifeView.new()
+	_life_view.name = "VillageLife"
+	add_child(_life_view)
+	_flow_view = FlowView.new()
+	_flow_view.name = "Flow"
+	_flow_view.actual_finished.connect(_on_actual_flow_finished)
+	add_child(_flow_view)
+	_life_view.set_reduced_motion(_reduced_motion)
+	_flow_view.set_reduced_motion(_reduced_motion)
 	_selection = MeshInstance3D.new()
 	_selection.name = "SelectedHex"
 	_selection.mesh = MeshLib.hex_ring(1.005, 0.935)
@@ -202,6 +312,8 @@ func _build_tile(tile: Tile) -> void:
 		_build_reservoir(cell)
 	elif tile.building == C.Building.WATERWHEEL:
 		_build_waterwheel(cell, tile)
+	if tile.building != C.Building.NONE:
+		_build_settlement_details(cell, tile)
 	if tile.is_source:
 		_build_source(cell, tile)
 	var label: Label3D = Label3D.new()
@@ -224,19 +336,19 @@ func _build_water(cell: Node3D, tile: Tile) -> void:
 	water.mesh = MeshLib.hex_prism(0.985)
 	water.position.y = 0.015
 	water.scale.y = depth
-	# Nine shared tints bound the material cache during a long, changing flood.
+	# The tint remains quantized; each wet tile has its own directional current.
 	var depth_bucket: int = mini(8, floori(tile.water / 3.5 * 8.0))
 	var color: Color = _color("water_shallow").lerp(_color("water_deep"), float(depth_bucket) / 8.0)
 	color.a = 0.73 + float(depth_bucket) * 0.012
 	var top: ShaderMaterial
-	if _water_materials.has(depth_bucket):
-		top = _water_materials[depth_bucket] as ShaderMaterial
+	if _water_materials.has(tile.coord):
+		top = _water_materials[tile.coord] as ShaderMaterial
 	else:
 		top = ShaderMaterial.new()
 		top.shader = WATER_SHADER
-		top.set_shader_parameter("water_color", color)
-		top.set_shader_parameter("motion_scale", 0.0 if _reduced_motion else 1.0)
-		_water_materials[depth_bucket] = top
+		_water_materials[tile.coord] = top
+	top.set_shader_parameter("water_color", color)
+	top.set_shader_parameter("motion_scale", 0.0 if _reduced_motion or _activity_paused else 1.0)
 	water.set_surface_override_material(0, top)
 	var side_color: Color = color.darkened(0.10)
 	side_color.a = 0.43
@@ -601,6 +713,50 @@ func _build_house(cell: Node3D, tile: Tile) -> void:
 		_build_path(village, 0.0, 0.61, 2)
 
 
+func _build_settlement_details(cell: Node3D, tile: Tile) -> void:
+	if not SettlementProgress.enabled(state):
+		return
+	var stage: int = SettlementProgress.building_stage(state, tile)
+	var age: int = SettlementProgress.building_age(state, tile)
+	var condition: int = SettlementProgress.condition(state)
+	var details: Node3D = Node3D.new()
+	details.name = "SettlementDetails"
+	details.rotation_degrees.y = 20.0
+	details.set_meta("stage", stage)
+	details.set_meta("age", age)
+	details.set_meta("condition", condition)
+	cell.add_child(details)
+	var timber: Color = _color("earth").lerp(_color("roof"), 0.25)
+	if tile.building in [C.Building.HOUSE, C.Building.STILT_HOUSE, C.Building.RAFT_HOUSE]:
+		var offset: float = 0.41 if tile.building == C.Building.STILT_HOUSE else 0.0
+		if tile.building == C.Building.RAFT_HOUSE:
+			offset = maxf(0.0, tile.water * C.HEIGHT_UNIT) + 0.13
+		if condition == 0 and age > 0:
+			# Maintenance patches signal lean years without implying hit points.
+			for side: float in [-1.0, 1.0]:
+				var patch: MeshInstance3D = _add_mesh(details, _box_mesh(Vector3(0.13, 0.018, 0.14)), Vector3(side * 0.22, offset + 0.59, 0.13), timber.lightened(0.2))
+				patch.rotation_degrees.z = -side * 22.0
+		if stage >= 1:
+			_add_mesh(details, _cylinder_mesh(0.070, 0.053, 0.10), Vector3(-0.27, offset + 0.10, 0.38), _color("roof").lightened(0.15))
+			_add_mesh(details, _sphere_mesh(0.085, 0.11), Vector3(-0.27, offset + 0.19, 0.38), _color("forest").lightened(0.18))
+			_add_box(details, Vector3(0.12, 0.095, 0.13), Vector3(0.25, offset + 0.11, 0.39), _color("accent").darkened(0.2))
+		if stage >= 2:
+			_add_roof(details, Vector3(0.50, 0.12, 0.23), Vector3(0.0, offset + 0.50, 0.36), _color("roof").lightened(0.10))
+			var lamp: MeshInstance3D = _add_mesh(details, _sphere_mesh(0.045, 0.095), Vector3(0.26, offset + 0.36, 0.31), _color("highlight"), true)
+			lamp.name = "PorchLantern"
+	elif tile.building == C.Building.GRANARY:
+		# Sack count follows actual communal reserves, not fabricated income.
+		var sacks: int = mini(5, state.food / maxi(1, state.population))
+		for index: int in range(sacks):
+			_add_mesh(details, _sphere_mesh(0.10, 0.16), Vector3(-0.36 + float(index % 3) * 0.15, 0.09 + float(index / 3) * 0.11, 0.43), _color("accent").lightened(0.10))
+	elif tile.building == C.Building.HALL and stage >= 1:
+		for side: float in [-1.0, 1.0]:
+			_add_mesh(details, _cylinder_mesh(0.075, 0.055, 0.13), Vector3(side * 0.47, 0.10, 0.34), _color("roof"))
+			_add_mesh(details, _sphere_mesh(0.11, 0.16), Vector3(side * 0.47, 0.23, 0.34), _color("forest").lightened(0.13))
+		if stage >= 2:
+			_add_box(details, Vector3(0.34, 0.08, 0.018), Vector3(0.0, 0.64, 0.32), _color("highlight"))
+
+
 func _build_hall(cell: Node3D) -> void:
 	var hall: Node3D = Node3D.new()
 	hall.name = "Hall"
@@ -795,6 +951,8 @@ func _refresh_targets() -> void:
 
 func _refresh_preview() -> void:
 	_clear_root(_preview_root)
+	if _flow_view != null and _flow_view.is_showing_actual():
+		return
 	if state == null or not _prediction.get("state") is GameState or not _prediction.get("report") is TurnReport:
 		return
 	var predicted: GameState = _prediction["state"]
@@ -807,21 +965,23 @@ func _refresh_preview() -> void:
 		if absf(delta) > 0.05:
 			_build_ghost_water(after, delta)
 	for entry: Dictionary in report.destroyed:
-		_preview_label("!", entry["coord"], Color("#ef8c76"), "Destroyed")
+		_preview_label("", entry["coord"], Color("#ef8c76"), "Destroyed", "broken_house")
 	if report.outcome == C.Outcome.LOSE_HALL:
 		for tile: Tile in state.tiles:
 			if tile.building == C.Building.HALL:
-				_preview_label("!!", tile.coord, Color("#ef8c76"), "HallRisk")
+				_preview_label("", tile.coord, Color("#ef8c76"), "HallRisk", "hall")
 	for coord: Vector2i in report.paddies_died:
-		_preview_label("x", coord, Color("#ef8c76"), "PaddyDied")
+		_preview_label("", coord, Color("#ef8c76"), "PaddyDied", "dead_rice")
 	for coord: Vector2i in report.paddy_gains:
-		_preview_label("R+1", coord, _color("highlight"), "PaddyGain")
+		_preview_label("+1", coord, _color("highlight"), "PaddyGain", "paddy")
 	var fish: Dictionary = preview_fish_food_by_tile(predicted, report)
 	for coord: Vector2i in fish:
-		_preview_label("F+%d" % int(fish[coord]), coord, _color("water_shallow"), "FishFood")
+		_preview_label("+%d" % int(fish[coord]), coord, _color("water_shallow"), "FishFood", "fish")
 
 
 static func preview_fish_food_by_tile(predicted: GameState, report: TurnReport) -> Dictionary:
+	if not report.fish_food_by_tile.is_empty():
+		return report.fish_food_by_tile.duplicate()
 	var result: Dictionary = {}
 	if report.outcome == C.Outcome.LOSE_HALL or report.fish_food <= 0:
 		return result
@@ -861,7 +1021,7 @@ func _build_ghost_water(tile: Tile, delta: float) -> void:
 	rim.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
-func _preview_label(text: String, coord: Vector2i, color: Color, prefix: String) -> void:
+func _preview_label(text: String, coord: Vector2i, color: Color, prefix: String, icon: String = "warning") -> void:
 	var tile: Tile = state.get_tile(coord)
 	if tile == null:
 		return
@@ -871,7 +1031,7 @@ func _preview_label(text: String, coord: Vector2i, color: Color, prefix: String)
 	label.name = "%s_%d_%d" % [prefix, coord.x, coord.y]
 	label.text = text
 	label.font = MARKER_FONT
-	label.font_size = 52
+	label.font_size = 36
 	label.pixel_size = 0.012
 	label.position = Hex.to_world(coord)
 	label.position.y = maxf(_surface_y(tile), _surface_y(after) if after != null else _surface_y(tile)) + 0.95
@@ -880,6 +1040,37 @@ func _preview_label(text: String, coord: Vector2i, color: Color, prefix: String)
 	label.outline_modulate = _color("background")
 	label.outline_size = 9
 	label.no_depth_test = true
+	label.set_meta("icon", icon)
+	var plate: Sprite3D = Sprite3D.new()
+	plate.name = "Backplate"
+	plate.texture = preload("res://assets/icons/marker_plate.svg")
+	plate.pixel_size = 0.019 if text.is_empty() else 0.015
+	plate.position = Vector3(0.0 if text.is_empty() else -0.36, 0.06, 0.0)
+	plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	plate.no_depth_test = true
+	plate.render_priority = 1
+	label.add_child(plate)
+	var pictogram: Sprite3D = Sprite3D.new()
+	pictogram.name = "Icon"
+	pictogram.texture = load("res://assets/icons/%s.svg" % icon)
+	pictogram.pixel_size = 0.026 if text.is_empty() else 0.019
+	pictogram.position = plate.position
+	pictogram.modulate = color
+	pictogram.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	pictogram.no_depth_test = true
+	pictogram.shaded = false
+	pictogram.render_priority = 2
+	label.add_child(pictogram)
+	if prefix == "HallRisk":
+		var warning: Sprite3D = Sprite3D.new()
+		warning.name = "Warning"
+		warning.texture = load("res://assets/icons/warning.svg")
+		warning.pixel_size = 0.019
+		warning.position = Vector3(0.37, 0.34, 0.0)
+		warning.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		warning.no_depth_test = true
+		warning.render_priority = 3
+		label.add_child(warning)
 	_preview_root.add_child(label)
 
 

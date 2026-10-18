@@ -22,7 +22,7 @@ static func new_game(cfg: Dictionary) -> GameState:
 		return null
 	if not DataDB.balance()["run_modes"].has(run_mode) or not DataDB.balance()["village_goals"].has(village_goal):
 		return null
-	for flag: String in ["is_daily", "is_tutorial"]:
+	for flag: String in ["is_daily", "is_tutorial", "living_village"]:
 		if cfg.has(flag) and typeof(cfg[flag]) != TYPE_BOOL:
 			return null
 	var state: GameState = MapGen.generate(seed_value)
@@ -54,6 +54,8 @@ static func new_game(cfg: Dictionary) -> GameState:
 	state.harvest_report.clear()
 	state.final_score = 0
 	start_year(state)
+	if bool(cfg.get("living_village", false)):
+		SettlementProgress.initialize(state)
 	return state
 
 

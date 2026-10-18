@@ -106,7 +106,9 @@ func _show_menu(error: String = "") -> void:
 func _start_game(config: Dictionary) -> void:
 	var next := GameSession.new()
 	next.save_path = _save_path
-	var error: String = next.start(config)
+	var new_run: Dictionary = config.duplicate(true)
+	new_run["living_village"] = true
+	var error: String = next.start(new_run)
 	if not error.is_empty():
 		_show_menu(error)
 		return

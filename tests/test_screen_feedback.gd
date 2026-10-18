@@ -108,7 +108,7 @@ func _assert_motion(screen: GameScreen, enabled: bool) -> void:
 		assert_true(not screen._atmosphere._rain.visible)
 		assert_true(not screen._atmosphere._rain.emitting)
 	for material: ShaderMaterial in screen.board._water_materials.values():
-		assert_near(float(material.get_shader_parameter("motion_scale")), 0.0 if enabled else 1.0, 0.00001)
+		assert_near(float(material.get_shader_parameter("motion_scale")), 0.0 if enabled or not screen.modal_kind.is_empty() else 1.0, 0.00001)
 
 
 func test_only_committed_commands_emit_feedback_and_waterwheel_waits_for_direction() -> void:

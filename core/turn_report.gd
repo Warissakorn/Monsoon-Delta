@@ -17,6 +17,13 @@ var levels_before: PackedInt32Array = PackedInt32Array()
 var levels_after: PackedInt32Array = PackedInt32Array()
 var snapshots: Array[PackedFloat32Array] = []
 
+# Transient presentation data. Like snapshots, these do not enter GameState,
+# checkpoint envelopes or the session's compact turn history.
+# Each iteration has tile_count * 6 directed transfers in Hex.DIRECTIONS order.
+var flow_edges: Array[PackedFloat32Array] = []
+var wheel_transfers: Array[Dictionary] = []
+var fish_food_by_tile: Dictionary = {}
+
 # Irrigation consumes water after simulation and its ordinary water sinks.
 var dry_paddy_water_used: float = 0.0
 

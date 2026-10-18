@@ -6,6 +6,7 @@ extends RefCounted
 var state: GameState
 var save_path: String = SaveIO.DEFAULT_PATH
 var last_save_error: String = ""
+var last_harvest_food_by_tile: Dictionary = {}
 var _turn_history: Array[Dictionary] = []
 
 
@@ -15,6 +16,7 @@ func start(cfg: Dictionary) -> String:
 		return "msg.new_game_failed"
 	state = next
 	_turn_history.clear()
+	last_harvest_food_by_tile.clear()
 	checkpoint()
 	return ""
 
@@ -29,6 +31,7 @@ func load_game() -> String:
 		return "msg.no_save"
 	state = result["state"]
 	_turn_history.clear()
+	last_harvest_food_by_tile.clear()
 	last_save_error = ""
 	return ""
 
@@ -63,6 +66,7 @@ func redo() -> bool:
 
 
 func advance_turn() -> TurnReport:
+	last_harvest_food_by_tile.clear()
 	if state == null:
 		return null
 	var year: int = state.year
@@ -70,6 +74,8 @@ func advance_turn() -> TurnReport:
 	var season: int = state.season()
 	var report: TurnReport = GameFlow.end_turn(state)
 	if report != null:
+		if state.phase == C.Phase.HARVEST:
+			last_harvest_food_by_tile = Harvest.paddy_food_by_tile(state)
 		# Reports describe the turn just resolved, while state may already show
 		# the next turn. Keep only player-facing results, without water snapshots.
 		var results: Dictionary = {

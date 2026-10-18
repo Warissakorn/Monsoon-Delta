@@ -3,6 +3,10 @@ render_mode blend_mix, cull_back, depth_draw_opaque;
 
 uniform vec4 water_color : source_color = vec4(0.21, 0.58, 0.62, 0.76);
 uniform float motion_scale : hint_range(0.0, 1.0) = 1.0;
+// Ordinary uniforms work with the project's Compatibility renderer. Materials
+// carrying a tile's flow must be distinct; the default stays a quiet surface.
+uniform vec2 flow_velocity = vec2(0.0);
+uniform float flow_strength : hint_range(0.0, 1.0) = 0.0;
 varying vec3 world_position;
 
 void vertex() {
@@ -12,13 +16,18 @@ void vertex() {
 void fragment() {
 	// World space keeps the quiet ripples continuous across neighboring hexes.
 	// The surface never moves, so rendered water and picking share one height.
-	vec2 p = world_position.xz;
 	float time = TIME * motion_scale;
+	vec2 p = world_position.xz - flow_velocity * time * 0.65;
 	float ripple = sin(p.x * 18.0 + p.y * 10.0 + time * 0.9);
 	float cross_wave = sin(p.y * 15.0 - p.x * 5.0 - time * 0.6);
 	float glint = smoothstep(0.87, 0.99, ripple) * smoothstep(0.1, 0.85, cross_wave);
 	float slow_wave = sin(p.x * 2.3 + p.y * 3.1 + time * 0.35) * 0.025;
-	ALBEDO = water_color.rgb * (0.96 + slow_wave) + vec3(0.28, 0.38, 0.32) * glint * 0.34;
+	vec2 axis = flow_velocity / max(length(flow_velocity), 0.0001);
+	vec2 across = vec2(-axis.y, axis.x);
+	float streak = smoothstep(0.72, 0.98, sin(dot(p, across) * 25.0))
+		* smoothstep(0.35, 0.96, sin(dot(p, axis) * 12.0));
+	ALBEDO = water_color.rgb * (0.96 + slow_wave) + vec3(0.28, 0.38, 0.32) * glint * 0.34
+		+ vec3(0.22, 0.28, 0.25) * streak * flow_strength * 0.28;
 	ROUGHNESS = 0.27 - glint * 0.08;
 	METALLIC = 0.08;
 	SPECULAR = 0.52;
