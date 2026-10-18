@@ -17,6 +17,8 @@ const SHORTCUTS: Dictionary = {
 const KEY_LABELS: Array[String] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "C", "P", "B", "X"]
 
 var session: GameSession
+var preferences_path: String = GamePreferences.DEFAULT_PATH
+var reduced_motion: bool = false
 var board: BoardView
 var camera_rig: CameraRig
 var hud: Control
@@ -69,13 +71,20 @@ var _colors: Dictionary
 var _atmosphere: DeltaAtmosphere
 var _season_icon: TextureRect
 var _turn_pips: Array[ColorRect] = []
+var _feedback: ActionFeedback
+var _motion_toggle: CheckBox
+var _motion_error: Label
+var _turn_feedback_active: bool = false
 
 
 func _ready() -> void:
 	_colors = ThemeBuilder.palette()
-	confirm_unused_labor = bool(GamePreferences.read()["confirm_unused_labor"])
+	var preferences: Dictionary = GamePreferences.read(preferences_path)
+	confirm_unused_labor = bool(preferences["confirm_unused_labor"])
+	reduced_motion = bool(preferences.get("reduced_motion", false))
 	_build_world()
 	_build_hud()
+	_apply_motion_preference()
 	if session == null or session.state == null:
 		return
 	refresh_state()
@@ -90,6 +99,10 @@ func _build_world() -> void:
 	add_child(_atmosphere)
 	board = BoardView.new()
 	add_child(board)
+	_feedback = ActionFeedback.new()
+	_feedback.name = "ActionFeedback"
+	board.add_child(_feedback)
+	_feedback.emptied.connect(_on_feedback_emptied)
 	camera_rig = CameraRig.new()
 	add_child(camera_rig)
 	camera_rig.setup()
@@ -289,6 +302,8 @@ func _build_hud() -> void:
 
 func refresh_state() -> void:
 	var state: GameState = session.state
+	_turn_feedback_active = false
+	_feedback.clear()
 	_atmosphere.set_rain(state.is_rain())
 	_season_icon.texture = load("res://assets/icons/%s.svg" % ("rain" if state.is_rain() else "sun"))
 	for index: int in range(_turn_pips.size()):
@@ -574,6 +589,9 @@ func apply_at(coord: Vector2i) -> void:
 		if parameter < 0:
 			_status_label.text = tr("err.param")
 			return
+	var previous_elevation: int = state.get_tile(origin).elevation
+	var previous_labor: int = state.labor
+	var previous_wood: int = state.wood
 	var error: String = session.apply(Command.new(id, origin, parameter))
 	if not error.is_empty():
 		_status_label.text = tr(error)
@@ -582,10 +600,79 @@ func apply_at(coord: Vector2i) -> void:
 	hovered_coord = coord
 	refresh_state()
 	board.select(origin)
+	_show_command_feedback(id, origin, previous_elevation, previous_labor, previous_wood)
 	if not command_mode.is_empty() and _targets.get(command_mode, []).is_empty():
 		_update_command_status()
 	else:
 		_status_label.text = tr("msg.command_done") % tr("cmd.%s.name" % id)
+
+
+func _feedback_position(coord: Vector2i) -> Vector3:
+	var tile: Tile = session.state.get_tile(coord)
+	var at: Vector3 = Hex.to_world(coord)
+	at.y = board._surface_y(tile) + 0.08
+	return at
+
+
+func _show_command_feedback(id: String, coord: Vector2i, elevation_before: int, labor_before: int, wood_before: int) -> void:
+	var state: GameState = session.state
+	var title: String = tr("cmd.%s.name" % id)
+	var height_change: int = state.get_tile(coord).elevation - elevation_before
+	if height_change != 0:
+		title += " · " + tr("feedback.height") % height_change
+	var changes := PackedStringArray()
+	if state.labor != labor_before:
+		changes.append(tr("feedback.labor") % (state.labor - labor_before))
+	if state.wood != wood_before:
+		changes.append(tr("feedback.wood") % (state.wood - wood_before))
+	var text: String = title if changes.is_empty() else title + "\n" + " · ".join(changes)
+	_feedback.show_marker(_feedback_position(coord), text, Color(_colors.accent))
+
+
+func _show_turn_feedback(report: TurnReport) -> void:
+	# Read the committed report. Never replay a preview or re-evaluate production.
+	var events: Dictionary = {}
+	for item: Dictionary in report.destroyed:
+		var name: String = tr("building." + C.enum_name(C.Building, int(item["building"])))
+		_add_feedback_event(events, item["coord"], tr("feedback.destroyed") % name, true)
+	for coord: Vector2i in report.paddies_died:
+		_add_feedback_event(events, coord, tr("feedback.rice_lost"), true)
+	for coord: Vector2i in report.paddy_gains:
+		_add_feedback_event(events, coord, tr("feedback.rice_gain"))
+	var fish: Dictionary = BoardView.preview_fish_food_by_tile(session.state, report)
+	for coord: Vector2i in fish:
+		_add_feedback_event(events, coord, tr("feedback.food_gain") % int(fish[coord]))
+	var shown: int = 0
+	for coord: Vector2i in events:
+		if shown >= ActionFeedback.MAX_MARKERS:
+			break
+		var event: Dictionary = events[coord]
+		var danger: bool = event["danger"]
+		_feedback.show_marker(_feedback_position(coord), "\n".join(event["lines"]), Color(_colors.danger if danger else _colors.success), "danger" if danger else "success")
+		shown += 1
+	if shown > 0:
+		_turn_feedback_active = true
+		board.set_preview({}, false)
+
+
+func _on_feedback_emptied() -> void:
+	if not _turn_feedback_active:
+		return
+	_turn_feedback_active = false
+	# Restore the current forecast, never the resolved turn's prior preview.
+	if session != null and session.state != null and session.state.phase == C.Phase.PLANNING:
+		board.set_preview(prediction, preview_enabled)
+
+
+func _add_feedback_event(events: Dictionary, coord: Vector2i, text: String, danger: bool = false) -> void:
+	if session.state.get_tile(coord) == null:
+		return
+	if not events.has(coord):
+		events[coord] = {"lines": PackedStringArray(), "danger": false}
+	var lines: PackedStringArray = events[coord]["lines"]
+	lines.append(text)
+	events[coord]["lines"] = lines
+	events[coord]["danger"] = bool(events[coord]["danger"]) or danger
 
 
 func undo_command() -> void:
@@ -607,6 +694,7 @@ func redo_command() -> void:
 func toggle_preview() -> void:
 	if not modal_kind.is_empty():
 		return
+	_feedback.clear()
 	preview_enabled = not preview_enabled
 	_preview_button.set_pressed_no_signal(preview_enabled)
 	board.set_preview(prediction, preview_enabled)
@@ -831,16 +919,19 @@ func _confirm_end_turn() -> void:
 		return
 	if modal_kind == "confirm_labor" and _skip_confirmation.button_pressed:
 		confirm_unused_labor = false
-		_preferences_error = GamePreferences.write({"confirm_unused_labor": false})
+		_preferences_error = _save_game_preferences()
 	close_modal()
 	_finish_turn()
 
 
 func _finish_turn() -> void:
-	if session.advance_turn() == null:
+	var report: TurnReport = session.advance_turn()
+	if report == null:
 		return
 	wheel_origin = BoardView.NO_COORD
 	refresh_state()
+	if session.state.phase == C.Phase.PLANNING:
+		_show_turn_feedback(report)
 	if session.state.phase == C.Phase.HARVEST:
 		_show_harvest()
 	elif session.state.phase == C.Phase.GAME_OVER:
@@ -848,6 +939,7 @@ func _finish_turn() -> void:
 
 
 func _open_modal(kind: String, title: String) -> void:
+	_feedback.clear()
 	close_modal()
 	modal_kind = kind
 	_modal = Control.new()
@@ -950,12 +1042,49 @@ func open_pause() -> void:
 		return
 	_open_modal("pause", tr("pause.title"))
 	_modal_content.add_child(_label(tr("pause.seed") % str(session.state.seed)))
+	_motion_toggle = CheckBox.new()
+	_motion_toggle.name = "ReducedMotion"
+	_motion_toggle.text = tr("pause.reduced_motion")
+	_motion_toggle.tooltip_text = tr("pause.reduced_motion_hint")
+	_motion_toggle.set_pressed_no_signal(reduced_motion)
+	_motion_toggle.toggled.connect(_on_motion_toggled)
+	_modal_content.add_child(_motion_toggle)
+	_motion_error = _label("", 18)
+	_motion_error.add_theme_color_override("font_color", Color(_colors.danger))
+	_motion_error.visible = false
+	_modal_content.add_child(_motion_error)
 	_add_modal_button(tr("action.resume"), close_modal, "Resume", true)
 	_add_modal_button(tr("action.history"), open_turn_history, "PauseHistory")
 	if not session.last_save_error.is_empty():
 		_modal_content.add_child(_label(tr(session.last_save_error)))
 		_add_modal_button(tr("action.retry_save"), _retry_save, "RetrySave")
 	_add_modal_button(tr("action.menu"), _return_menu, "PauseMenu")
+
+
+func _apply_motion_preference() -> void:
+	_feedback.set_reduced_motion(reduced_motion)
+	_atmosphere.set_reduced_motion(reduced_motion)
+	camera_rig.set_reduced_motion(reduced_motion)
+	board.set_reduced_motion(reduced_motion)
+
+
+func _on_motion_toggled(enabled: bool) -> void:
+	reduced_motion = enabled
+	_apply_motion_preference()
+	_preferences_error = _save_game_preferences()
+	_refresh_save_status()
+	if is_instance_valid(_motion_error):
+		_motion_error.text = tr(_preferences_error) if not _preferences_error.is_empty() else ""
+		_motion_error.visible = not _preferences_error.is_empty()
+
+
+func _save_game_preferences() -> String:
+	# A successful retry also preserves any other live choice whose earlier
+	# settings write failed; game progress remains in its separate checkpoint.
+	return GamePreferences.write({
+		"confirm_unused_labor": confirm_unused_labor,
+		"reduced_motion": reduced_motion,
+	}, preferences_path)
 
 
 func _retry_save() -> void:

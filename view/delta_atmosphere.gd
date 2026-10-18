@@ -11,6 +11,7 @@ var _rainy: bool = false
 var _initialized: bool = false
 var _weather_set: bool = false
 var _weather_weight: float = 0.0
+var _reduced_motion: bool = false
 
 
 func _ready() -> void:
@@ -88,13 +89,26 @@ func set_rain(rainy: bool) -> void:
 	_rainy = rainy
 	if _weather_tween != null and _weather_tween.is_valid():
 		_weather_tween.kill()
-	_rain.emitting = rainy
-	if not _weather_set:
+	_rain.emitting = rainy and not _reduced_motion
+	if not _weather_set or _reduced_motion:
 		_blend_weather(1.0 if rainy else 0.0)
 	else:
 		_weather_tween = create_tween()
 		_weather_tween.tween_method(_blend_weather, _weather_weight, 1.0 if rainy else 0.0, 1.4)
 	_weather_set = true
+
+
+func set_reduced_motion(enabled: bool) -> void:
+	_setup()
+	_reduced_motion = enabled
+	# Hiding also removes particles already in flight, without changing season.
+	_rain.visible = not enabled
+	_rain.emitting = _rainy and not enabled
+	if enabled:
+		if _weather_tween != null and _weather_tween.is_valid():
+			_weather_tween.kill()
+		_weather_tween = null
+		_blend_weather(1.0 if _rainy else 0.0)
 
 
 func _blend_weather(weight: float) -> void:

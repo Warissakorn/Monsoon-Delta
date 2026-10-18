@@ -36,10 +36,15 @@ func _ready() -> void:
 	_new_map(initial_seed)
 
 func _build_world() -> void:
-	add_child(DeltaAtmosphere.new())
+	var reduced_motion: bool = bool(GamePreferences.read().get("reduced_motion", false))
+	var atmosphere := DeltaAtmosphere.new()
+	add_child(atmosphere)
+	atmosphere.set_reduced_motion(reduced_motion)
 	board = BoardView.new()
+	board.set_reduced_motion(reduced_motion)
 	add_child(board)
 	camera_rig = CameraRig.new()
+	camera_rig.set_reduced_motion(reduced_motion)
 	add_child(camera_rig)
 	camera_rig.setup()
 	camera_rig.get_camera().h_offset = 1.9
