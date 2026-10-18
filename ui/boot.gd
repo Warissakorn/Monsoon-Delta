@@ -3,6 +3,7 @@ extends Node
 var _screen: Node
 var _session: GameSession
 var _initial_seed: int = 42
+var _initial_difficulty: int = 0
 var _language: String = "en"
 var _save_path: String = SaveIO.DEFAULT_PATH
 
@@ -10,8 +11,17 @@ var _save_path: String = SaveIO.DEFAULT_PATH
 func _ready() -> void:
 	var options: Dictionary = {}
 	for arg in OS.get_cmdline_user_args():
+		if arg == "--difficulty":
+			_reject_difficulty("")
+			return
 		if arg.begins_with("--") and "=" in arg:
 			var parts := arg.substr(2).split("=", true, 1)
+			if parts[0] == "difficulty":
+				var difficulty: int = _parse_difficulty(parts[1])
+				if difficulty < 0:
+					_reject_difficulty(parts[1])
+					return
+				_initial_difficulty = difficulty
 			options[parts[0]] = parts[1]
 	if options.has("screenshot") and DisplayServer.get_name() == "headless":
 		push_error("Screenshots require a rendering display. Use a normal window or a virtual display.")
@@ -29,12 +39,12 @@ func _ready() -> void:
 		return
 	Localization.setup(_language)
 	get_window().min_size = Vector2i(1280, 720)
-	_initial_seed = SeedUtil.parse_seed_text(String(options.get("seed", str(DataDB.balance().sandbox.default_seed))))
+	_initial_seed = SeedUtil.parse_seed_text(String(options.get("seed", str(int(DataDB.balance().sandbox.default_seed)))))
 	_save_path = String(options.get("save-path", SaveIO.DEFAULT_PATH))
 	get_tree().auto_accept_quit = false
 	match scene:
 		"menu": _show_menu()
-		"game": _start_game({"seed": _initial_seed, "run_mode": String(options.get("run-mode", "classic")), "village_goal": String(options.get("goal", "none"))})
+		"game": _start_game({"seed": _initial_seed, "difficulty": _initial_difficulty, "run_mode": String(options.get("run-mode", "classic")), "village_goal": String(options.get("goal", "none"))})
 		"sandbox": _show_sandbox()
 	if options.has("screenshot"):
 		for frame in range(30):
@@ -45,6 +55,28 @@ func _ready() -> void:
 		if result != OK:
 			push_error("Screenshot failed: %s" % error_string(result))
 		get_tree().quit(0 if result == OK else 1)
+
+
+static func _parse_difficulty(value: String) -> int:
+	# Check decimal syntax and bounds before converting: int() alone truncates
+	# malformed text and can overflow on a very long command-line value.
+	if value.is_empty():
+		return -1
+	for position: int in range(value.length()):
+		var character: int = value.unicode_at(position)
+		if character < 48 or character > 57:
+			return -1
+	var digits: String = value.lstrip("0")
+	if digits.is_empty():
+		return 0
+	if digits.length() > 2 or (digits.length() == 2 and digits != "10"):
+		return -1
+	return int(digits)
+
+
+func _reject_difficulty(value: String) -> void:
+	printerr("Invalid --difficulty=%s. Use --difficulty=N with an integer from 0 to 10." % value)
+	get_tree().quit(2)
 
 
 func _replace_screen(next: Node) -> void:
@@ -58,6 +90,7 @@ func _replace_screen(next: Node) -> void:
 func _show_menu(error: String = "") -> void:
 	var menu := MainMenu.new()
 	menu.initial_seed = _initial_seed
+	menu.initial_difficulty = _initial_difficulty
 	menu.language = _language
 	menu.save_path = _save_path
 	menu.start_requested.connect(_start_game)
@@ -79,6 +112,7 @@ func _start_game(config: Dictionary) -> void:
 		return
 	_session = next
 	_initial_seed = _session.state.seed
+	_initial_difficulty = _session.state.difficulty
 	_show_game()
 
 
@@ -99,6 +133,7 @@ func _continue_game() -> void:
 		return
 	_session = next
 	_initial_seed = _session.state.seed
+	_initial_difficulty = _session.state.difficulty
 	_show_game()
 
 

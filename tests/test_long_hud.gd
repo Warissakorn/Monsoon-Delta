@@ -87,7 +87,7 @@ func test_mode_hud_uses_its_own_duration_and_exposes_long_run_tools() -> void:
 		var screen: GameScreen = _screen(state)
 		var years: int = 10 if mode == "long" else 5
 		assert_eq(screen._time_label.text, _translate("hud.time") % [1, years, _translate("season.dry"), 1, C.TURNS_PER_YEAR])
-		assert_eq(screen._run_label.text, _translate("run_mode." + mode + ".name"))
+		assert_eq(screen._run_label.text, _translate("run_mode." + mode + ".name") + "\n" + _translate("difficulty.run") % [0, 1.0])
 		assert_eq(screen._status_label.text, _translate("help.survive_years") % years)
 		assert_eq(screen._survival_help.text, _translate("help.survive_years") % years)
 		assert_true(not screen._goal_label.is_visible_in_tree(), "a run without an ambition has no empty goal panel")

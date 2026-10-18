@@ -15,6 +15,7 @@ const LandscapeArt: GDScript = preload("res://view/menu_landscape.gd")
 
 var save_path: String = SaveIO.DEFAULT_PATH
 var initial_seed: int = 42
+var initial_difficulty: int = 0
 var language: String = "th"
 
 var _colors: Dictionary
@@ -34,6 +35,8 @@ var _run_mode_option: OptionButton
 var _run_mode_description: Label
 var _goal_option: OptionButton
 var _goal_description: Label
+var _difficulty_option: OptionButton
+var _difficulty_description: Label
 var _error_panel: PanelContainer
 var _error_label: Label
 var _error_key: String = ""
@@ -313,8 +316,19 @@ func _build_setup(parent: Node) -> void:
 	map_row.add_child(_label("map.plains.name"))
 	var difficulty_row: HBoxContainer = HBoxContainer.new()
 	_setup.add_child(difficulty_row)
-	difficulty_row.add_child(_label("setup.difficulty", "", true))
-	difficulty_row.add_child(_label("setup.difficulty_zero"))
+	difficulty_row.add_child(_label("setup.difficulty", "Kicker"))
+	_difficulty_option = OptionButton.new()
+	_difficulty_option.custom_minimum_size = Vector2(220, 52)
+	_difficulty_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for level: int in range(11):
+		_difficulty_option.add_item(DifficultyInfo.label(level), level)
+	_difficulty_option.select(clampi(initial_difficulty, 0, 10))
+	_difficulty_option.item_selected.connect(_select_difficulty)
+	difficulty_row.add_child(_difficulty_option)
+	_difficulty_description = _label("", "", true)
+	_difficulty_description.add_theme_font_size_override("font_size", 16)
+	_setup.add_child(_difficulty_description)
+	_update_difficulty_description()
 	_setup.add_child(_label("setup.seed", "Kicker"))
 	_seed_input = LineEdit.new()
 	_seed_input.text = str(initial_seed)
@@ -355,11 +369,24 @@ func _show_page(page: Control) -> void:
 
 func _select_leader(index: int) -> void:
 	_leader_description.text = tr("leader." + LEADERS[index] + ".desc")
+	_update_difficulty_description()
 
 
 func _select_run_mode(index: int) -> void:
 	_run_mode_description.text = tr("run_mode." + RUN_MODES[index] + ".desc")
 	_run_mode_option.tooltip_text = _run_mode_option.get_item_text(index) + "\n" + _run_mode_description.text
+	_update_difficulty_description()
+
+
+func _select_difficulty(_index: int) -> void:
+	_update_difficulty_description()
+
+
+func _update_difficulty_description() -> void:
+	if _difficulty_description == null:
+		return
+	_difficulty_description.text = DifficultyInfo.description(_difficulty_option.get_selected_id(), LEADERS[_leader_option.selected], RUN_MODES[_run_mode_option.selected])
+	_difficulty_option.tooltip_text = _difficulty_description.text
 
 
 func _select_goal(index: int) -> void:
@@ -378,7 +405,7 @@ func _request_start() -> void:
 		"seed": SeedUtil.parse_seed_text(_seed_input.text),
 		"map_type": "plains",
 		"leader": LEADERS[_leader_option.selected],
-		"difficulty": 0,
+		"difficulty": _difficulty_option.get_selected_id(),
 		"run_mode": RUN_MODES[_run_mode_option.selected],
 		"village_goal": GOALS[_goal_option.selected],
 	}
@@ -395,4 +422,7 @@ func _confirm_start() -> void:
 		return
 	var config: Dictionary = _pending_config.duplicate(true)
 	_pending_config.clear()
+	# Boot replaces this screen synchronously. Consume the activation event
+	# before its remaining propagation can reach the new game's End Turn action.
+	get_viewport().set_input_as_handled()
 	start_requested.emit(config)

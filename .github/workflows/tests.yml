@@ -21,6 +21,8 @@ jobs:
           include-templates: false
       - name: Import, validate scripts and run tests
         run: scripts/test.sh
+      - name: Verify boot difficulty CLI and checkpoint protection
+        run: python3 scripts/test_boot_cli.py
       - name: Smoke test menu, game and sandbox
         run: |
           set -o pipefail

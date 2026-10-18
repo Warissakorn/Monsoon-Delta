@@ -18,7 +18,7 @@ godot --path . -- --scene=game --run-mode=long --goal=forest --seed=42 --lang=th
 godot --path . -- --scene=sandbox --seed=42 --lang=th
 ```
 
-เมนูเลือกโหมด ผู้นำ เป้าหมาย seed และภาษาได้ seed ใช้ตัวเลขหรือข้อความ เช่น `--seed=monsoon`; seed/กติกา/คำสั่งเดิมให้ผลซ้ำได้
+เมนูเลือกโหมด ผู้นำ เป้าหมาย [ความยาก 0–10](docs/features/DIFFICULTY.md) seed และภาษาได้ เปิดเกมด้วย `--difficulty=5` ได้เช่นกัน seed ใช้ตัวเลขหรือข้อความ เช่น `--seed=monsoon`; seed/กติกา/คำสั่งเดิมให้ผลซ้ำได้
 
 | การควบคุมหลัก | ผล |
 |---|---|
