@@ -21,6 +21,15 @@
 "setup.random_seed","New seed","สุ่มรหัสโลก"
 "setup.seed_hint","Number or text; leave blank to use 0","ใส่ตัวเลขหรือข้อความ เว้นว่างใช้ 0"
 "setup.difficulty_zero","Standard · 0","ปกติ · 0"
+"setup.difficulty_level","Level %d","ระดับ %d"
+"setup.difficulty_score","Cumulative rules · Score ×%.1f","กฎสะสม · คะแนน ×%.1f"
+"setup.difficulty_start","Start: %d people · %d food","เริ่มต้น: ประชากร %d · อาหาร %d"
+"setup.difficulty_rain","Rain ×%.2f · Extra rain from year 5 ×%.2f","ฝน ×%.2f · ฝนเพิ่มตั้งแต่ปี 5 ×%.2f"
+"setup.difficulty_range","Annual rain range width ×%.2f","ความกว้างช่วงฝนรายปี ×%.2f"
+"setup.difficulty_homes","Wood: house %d · Stilt house %d","ใช้ไม้: บ้าน %d · บ้านยกพื้น %d"
+"setup.difficulty_survival","Spoilage without a granary %.0f%% · Forest absorbs %.2f water/turn","อาหารเน่าเมื่อไม่มียุ้ง %.0f%% · ป่าซับน้ำ %.2f ต่อเทิร์น"
+"setup.difficulty_six","Level 6 uses the same gameplay rules as 5 with a higher score multiplier.","ระดับ 6 ใช้กฎการเล่นเหมือนระดับ 5 แต่มีตัวคูณคะแนนสูงขึ้น"
+"difficulty.run","Difficulty %d · Score ×%.1f","ความยาก %d · คะแนน ×%.1f"
 "credits.title","Credits","เครดิต"
 "credits.body","Monsoon Delta
 A village shaped by rain, rivers and your decisions.

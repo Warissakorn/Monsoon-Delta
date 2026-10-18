@@ -13,7 +13,7 @@
 
 | หมวด | เนื้อหาและเส้นทางอ่าน |
 |---|---|
-| **ฟีเจอร์ที่มีจริง** `features/` | [เมนูและหน้าจอเกม](features/M4_PLAYABLE.md), [รอบ 5/10 ปีและเป้าหมาย](features/LONG_RUNS.md), [ภาพหมู่บ้าน](features/VISUAL_REFRESH.md), [ผลตอบรับและ Reduce motion](features/ACTION_FEEDBACK.md) |
+| **ฟีเจอร์ที่มีจริง** `features/` | [เมนูและหน้าจอเกม](features/M4_PLAYABLE.md), [รอบ 5/10 ปีและเป้าหมาย](features/LONG_RUNS.md), [ความยาก 0–10](features/DIFFICULTY.md), [ภาพหมู่บ้าน](features/VISUAL_REFRESH.md), [ผลตอบรับและ Reduce motion](features/ACTION_FEEDBACK.md) |
 | **พัฒนาและตรวจ** `development/` | [ขั้นตอนพัฒนา](development/README.md), [สัญญาเซฟ](development/SAVE_IO.md), [ทดลองสมดุลและทำซ้ำผล](development/BALANCE_EXPERIMENTS.md) |
 | **แบบเสนอ** `design/` | [เริ่มที่ข้อเสนอ M5](design/REPLAYABILITY_PROPOSAL.md) → [การ์ด 30 ใบ](design/CARD_CATALOG.md) / [catalog เสนอ](design/cards.proposal.json), [เหตุการณ์ 15 แบบ](design/EVENT_CATALOG.md), [ความยากและแผนที่](design/CHALLENGES_AND_MAPS.md), [ข้อตกลงรายปี 6 แบบ](design/ANNUAL_CONTRACTS.md); ยังไม่เปิดใช้ในเกม |
 | **ประวัติ** `history/` | [บันทึกตามวัน](history/PROGRESS.md), [ต้นแบบน้ำ](history/PLAYTEST.md), [ระบบหลัก ณ M3](history/M3_CORE.md), [คัดกรองสมดุล](history/BALANCE_SCREEN.md), [ผลทดลองอาหารที่ไม่ผ่าน](history/M3_BALANCE_FOLLOWUP.md) |

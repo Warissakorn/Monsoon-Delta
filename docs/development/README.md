@@ -11,6 +11,8 @@
 godot --path . -- --scene=menu --lang=th
 godot --path . -- --scene=game --seed=42 --lang=en --save-path=user://dev-run.json
 godot --path . -- --scene=game --run-mode=long --goal=forest --seed=42 --save-path=user://dev-long.json
+# เลือกความยากในกฎเดิม 0–10; รับเฉพาะจำนวนเต็มในช่วงนี้
+godot --path . -- --scene=game --difficulty=5 --seed=42 --save-path=user://dev-difficulty.json
 # ห้องทดลองน้ำไม่เขียนเซฟรอบเล่น
 godot --path . -- --scene=sandbox --seed=42 --lang=th
 
@@ -22,6 +24,8 @@ git diff --check
 ```
 
 `scripts/test.sh` import โปรเจกต์ก่อนและตรวจ error จาก log แม้ Godot ออกด้วย status 0 ใช้ `--filter=game_screen`, `session`, `water` หรือชื่อส่วนที่เกี่ยวข้องได้ จำนวนเทสต์ฐานและหลักฐานล่าสุดอ้างใน STATUS; อย่าเปลี่ยนจำนวนเทสต์ในรายงานเก่าให้เป็นจำนวนปัจจุบัน
+
+เมื่อแก้ boot/ตัวเลือก CLI รัน `python3 scripts/test_boot_cli.py` เพิ่มเพื่อตรวจระดับความยาก seed เริ่มต้น และการปฏิเสธค่าผิดก่อนแตะ checkpoint ด้วยการเปิด Godot จริงบนเซฟ/ค่าตั้งแยก
 
 ## เลือกการตรวจตามสิ่งที่เปลี่ยน
 

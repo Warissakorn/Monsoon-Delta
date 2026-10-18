@@ -170,7 +170,7 @@ func _build_hud() -> void:
 	_time_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	time_row.add_child(_time_label)
 	_run_label = _label("", 18, true)
-	_run_label.custom_minimum_size.x = 200
+	_run_label.custom_minimum_size.x = 250
 	_run_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	time_row.add_child(_run_label)
 	for button: Button in [_button(tr("action.history"), open_turn_history, "TurnHistory"), _button(tr("action.pause"), open_pause, "Pause")]:
@@ -348,7 +348,7 @@ func refresh_state() -> void:
 			button.tooltip_text += "\n" + tr(_unavailable_reason(id))
 		button.set_pressed_no_signal(command_mode == id)
 	_time_label.text = tr("hud.time") % [state.year, state.target_years(), tr("season.rain" if state.is_rain() else "season.dry"), state.turn, C.TURNS_PER_YEAR]
-	_run_label.text = tr("run_mode." + state.run_mode + ".name")
+	_run_label.text = tr("run_mode." + state.run_mode + ".name") + "\n" + _difficulty_caption()
 	_survival_help.text = tr("help.survive_years") % state.target_years()
 	_resources_label.text = tr("hud.resources") % [state.labor, state.labor_max, state.food, state.wood, state.population, state.capacity()]
 	_water_label.text = tr("hud.water") % [state.current_inflow(), state.forecast_min, state.forecast_max]
@@ -363,6 +363,12 @@ func refresh_state() -> void:
 	_update_command_status()
 	_refresh_turn_result()
 	_refresh_village_goal()
+
+
+func _difficulty_caption() -> String:
+	var state: GameState = session.state
+	var multiplier: float = 1.0 + state.difficulty * float(DataDB.balance()["scoring"]["difficulty_step"])
+	return tr("difficulty.run") % [state.difficulty, multiplier]
 
 
 func _refresh_village_goal() -> void:
@@ -1023,6 +1029,7 @@ func _show_game_over() -> void:
 	var hall_bonus: int = int(scoring["hall_dry"]) if state.outcome == C.Outcome.WIN and not bool(state.stats["hall_ever_wet"]) else 0
 	_modal_content.add_child(_label(tr("gameover.components") % [state.population * int(scoring["population"]), state.food, house_bonus, hall_bonus, 1.0 + state.difficulty * float(scoring["difficulty_step"])]))
 	_modal_content.add_child(_label(tr("run_mode." + state.run_mode + ".name"), 20, true))
+	_modal_content.add_child(_label(_difficulty_caption(), 20, true))
 	if state.village_goal != "none":
 		var goal: Dictionary = RunGoals.progress(state)
 		_modal_content.add_child(_label(tr("goal." + state.village_goal + ".name"), 22))
@@ -1042,6 +1049,7 @@ func open_pause() -> void:
 		return
 	_open_modal("pause", tr("pause.title"))
 	_modal_content.add_child(_label(tr("pause.seed") % str(session.state.seed)))
+	_modal_content.add_child(_label(_difficulty_caption(), 20, true))
 	_motion_toggle = CheckBox.new()
 	_motion_toggle.name = "ReducedMotion"
 	_motion_toggle.text = tr("pause.reduced_motion")
