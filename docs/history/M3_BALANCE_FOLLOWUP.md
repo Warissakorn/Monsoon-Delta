@@ -1,8 +1,10 @@
 # ทดลองสมดุลอาหารและตรวจเกณฑ์ M3 — 2026-10-17
 
+> หลักฐานการทดลองย้อนหลัง ตัวเลขในตารางใช้ชุด override ที่ไม่ได้นำมาเป็นค่าเกมปัจจุบัน อ่าน [STATUS](../STATUS.md) ก่อนใช้อ้างสถานะหรือวางแผนปรับสมดุล
+
 **ยังไม่เสนอให้เปลี่ยนค่าเกมเริ่มต้น** ชุดอาหารทดลองผ่าน farmer/greedy ที่ difficulty 0 แต่ไม่ผ่าน greedy difficulty 10 และเวลา จึงยังไม่ปิดเกณฑ์ TS-06
 
-เพิ่ม `scripts/check_balance.py` เพื่ออ่าน CSV ตรวจยอดใหม่ แล้วรายงาน PASS/FAIL/ข้อมูลไม่ครบ แทนการตัดสินจากอัตราชนะ difficulty 0 เพียงกรณีเดียว ดู [วิธีใช้ตัวตรวจ](BALANCE_EXPERIMENTS.md#ตรวจเกณฑ์ตัวเลข-ts-06)
+เพิ่ม `scripts/check_balance.py` เพื่ออ่าน CSV ตรวจยอดใหม่ แล้วรายงาน PASS/FAIL/ข้อมูลไม่ครบ แทนการตัดสินจากอัตราชนะ difficulty 0 เพียงกรณีเดียว ดู [วิธีใช้ตัวตรวจ](../development/BALANCE_EXPERIMENTS.md#ตรวจเกณฑ์ตัวเลข-ts-06)
 
 ## ผลยืนยัน 600 เกม
 
@@ -18,11 +20,11 @@
 
 เทียบกับ [baseline เดิม 200 เกม](M3_CORE.md#ผลสมดุล) ที่ farmer ชนะ 63.5% และ greedy d0 ชนะ 23.5% ชุดนี้ลดการรอดของ farmer อย่างมาก แต่ทำให้ความยาก 10 ชนะมากกว่าความยาก 0 อยู่ 18.5 จุดเปอร์เซ็นต์ ต้องตรวจปฏิสัมพันธ์ของค่าอาหารและ difficulty ต่อ ห้ามสรุปว่าทำให้เกมสมดุลแล้วจากสองแถวแรก
 
-Baseline ใช้ [CSV เดิม](reports/m3_bots.csv) seed 1–200 กฎจำลอง แผนที่ บอท และ balance ที่ใช้เทียบไม่ได้เปลี่ยนจาก source เดิม `08120bd`; ส่วนที่เพิ่มภายหลังคือระบบเซฟ/หน้าจอ/เครื่องมือ เวลา baseline จากเครื่องเดิมจึงไม่ใช้เทียบความเร็วกับรอบนี้
+Baseline ใช้ [CSV เดิม](../reports/m3_bots.csv) seed 1–200 กฎจำลอง แผนที่ บอท และ balance ที่ใช้เทียบไม่ได้เปลี่ยนจาก source เดิม `08120bd`; ส่วนที่เพิ่มภายหลังคือระบบเซฟ/หน้าจอ/เครื่องมือ เวลา baseline จากเครื่องเดิมจึงไม่ใช้เทียบความเร็วกับรอบนี้
 
 ## ชุดค่าที่ทดลอง
 
-ไฟล์ [m3_food_probe.json](../tools/scenarios/m3_food_probe.json) มี scenario `h5_g3` ซึ่งแทน base defaults ก่อน leader/difficulty:
+ไฟล์ [m3_food_probe.json](../../tools/scenarios/m3_food_probe.json) มี scenario `h5_g3` ซึ่งแทน base defaults ก่อน leader/difficulty:
 
 ```json
 {"food_per_person":8,"paddy_labor":4,"start_food":72,"fish_trap_yield":3}
@@ -38,8 +40,8 @@ Farmer แพ้ประชากร 183/200 เกม จึงยังไม
 
 คัดกรอง **42 ชุดค่า/บอท รวม 1,890 เกม** โดยไม่เปลี่ยน policy: farmer 34 ชุด × 50 เกม, greedy d0 รวม 130 เกม และ greedy d10 รวม 60 เกม ข้อมูลเหล่านี้ใช้เลือกสมมติฐาน ไม่ใช้แทน benchmark 200 เกมต่อกรณี
 
-- [screen_summary.csv](reports/m3_followup_20261017/screen_summary.csv): overrides แบบ JSON, seed, source revision/dirty, candidates, ยอดสรุปและเวลา ต่อ batch
-- [screen_games.csv](reports/m3_followup_20261017/screen_games.csv): ผลรายเกมครบ ใช้ stage/scenario/bot/difficulty จับคู่กับ summary
+- [screen_summary.csv](../reports/m3_followup_20261017/screen_summary.csv): overrides แบบ JSON, seed, source revision/dirty, candidates, ยอดสรุปและเวลา ต่อ batch
+- [screen_games.csv](../reports/m3_followup_20261017/screen_games.csv): ผลรายเกมครบ ใช้ stage/scenario/bot/difficulty จับคู่กับ summary
 - เพิ่ม storm 4–16 ต่อปีอย่างเดียว ยังได้ farmer ชนะ 44–56% ใน 50 seed แรก ส่วนการย้ายช่วงนาผลิตไปที่ระดับ 2 และตายระดับ 3 พร้อม buffer อาหารที่ลอง ยังได้ farmer ชนะ 62%
 - ชุดอาหารบางชุดลด farmer ได้ถึง 0–4% โดยยังไปถึงปีเฉลี่ยเกิน 3 จึงเลือกชุดสี่พารามิเตอร์ข้างต้นมาขยายเป็น 200 เกม
 
@@ -49,9 +51,9 @@ Farmer แพ้ประชากร 183/200 เกม จึงยังไม
 
 Godot **4.6.3**; hash ของ balance เดิม ค่า engine/bot configuration/base mods/overrides และ source revision อยู่ใน manifest ทุกชุด:
 
-- [farmer d0](reports/m3_followup_20261017/farmer_d0/manifest.json)
-- [greedy d0](reports/m3_followup_20261017/greedy_d0/manifest.json)
-- [greedy d10](reports/m3_followup_20261017/greedy_d10/manifest.json)
+- [farmer d0](../reports/m3_followup_20261017/farmer_d0/manifest.json)
+- [greedy d0](../reports/m3_followup_20261017/greedy_d0/manifest.json)
+- [greedy d10](../reports/m3_followup_20261017/greedy_d10/manifest.json)
 
 แต่ละโฟลเดอร์มี summary และ CSV รายเกม 200 แถว รายงานเก็บ path ต้นทางเดิมไว้ แต่ตัวตรวจอ่านสำเนา CSV ที่อยู่ข้าง manifest ก่อน จึงตรวจได้หลัง clone บนเครื่องอื่น:
 

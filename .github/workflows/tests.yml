@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Check documentation links and imported source integrity
+        run: python3 scripts/check_docs.py
       - uses: chickensoft-games/setup-godot@v2
         with:
           version: 4.6.3
