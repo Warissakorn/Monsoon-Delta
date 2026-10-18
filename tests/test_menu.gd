@@ -22,6 +22,7 @@ func test_missing_checkpoint_hides_continue_and_text_seed_creates_config() -> vo
 		assert_eq(starts[0], {
 			"seed": SeedUtil.parse_seed_text("rain village"), "leader": "soil_doctor",
 			"map_type": "plains", "difficulty": 0,
+			"run_mode": "classic", "village_goal": "none",
 		})
 	assert_true(not SaveIO.has_save(CHECKPOINT_PATH), "menu emits a request; it never saves a run")
 	menu.free()

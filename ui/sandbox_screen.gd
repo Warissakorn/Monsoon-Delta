@@ -36,25 +36,15 @@ func _ready() -> void:
 	_new_map(initial_seed)
 
 func _build_world() -> void:
-	var environment := WorldEnvironment.new()
-	var env := Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(colors.background)
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color("#d7e4d2")
-	env.ambient_light_energy = 0.35
-	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
-	environment.environment = env
-	add_child(environment)
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-52, -35, 0)
-	sun.light_color = Color("#ffebc7")
-	sun.light_energy = 0.85
-	sun.shadow_enabled = true
-	add_child(sun)
+	var reduced_motion: bool = bool(GamePreferences.read().get("reduced_motion", false))
+	var atmosphere := DeltaAtmosphere.new()
+	add_child(atmosphere)
+	atmosphere.set_reduced_motion(reduced_motion)
 	board = BoardView.new()
+	board.set_reduced_motion(reduced_motion)
 	add_child(board)
 	camera_rig = CameraRig.new()
+	camera_rig.set_reduced_motion(reduced_motion)
 	add_child(camera_rig)
 	camera_rig.setup()
 	camera_rig.get_camera().h_offset = 1.9

@@ -5,10 +5,11 @@ extends Node3D
 var camera: Camera3D
 var _pitch: Node3D
 var _yaw_target: float = deg_to_rad(-12.0)
-var _zoom_target: float = 19.5
+var _zoom_target: float = 22.5
 var _orbit_tween: Tween
 var _zoom_tween: Tween
 var _initialized: bool = false
+var _reduced_motion: bool = false
 
 
 func _ready() -> void:
@@ -41,11 +42,29 @@ func get_camera() -> Camera3D:
 	return camera
 
 
+func set_reduced_motion(enabled: bool) -> void:
+	setup()
+	_reduced_motion = enabled
+	if enabled:
+		if _orbit_tween != null and _orbit_tween.is_valid():
+			_orbit_tween.kill()
+		if _zoom_tween != null and _zoom_tween.is_valid():
+			_zoom_tween.kill()
+		_orbit_tween = null
+		_zoom_tween = null
+		rotation.y = _yaw_target
+		camera.size = _zoom_target
+
+
 func rotate_step(direction: int) -> void:
 	setup()
 	_yaw_target += deg_to_rad(60.0) * float(direction)
 	if _orbit_tween != null and _orbit_tween.is_valid():
 		_orbit_tween.kill()
+	if _reduced_motion:
+		_orbit_tween = null
+		rotation.y = _yaw_target
+		return
 	_orbit_tween = create_tween()
 	_orbit_tween.tween_property(self, "rotation:y", _yaw_target, 0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
@@ -55,6 +74,10 @@ func zoom_step(direction: int) -> void:
 	_zoom_target = clampf(_zoom_target + float(direction) * 1.5, 12.0, 27.0)
 	if _zoom_tween != null and _zoom_tween.is_valid():
 		_zoom_tween.kill()
+	if _reduced_motion:
+		_zoom_tween = null
+		camera.size = _zoom_target
+		return
 	_zoom_tween = create_tween()
 	_zoom_tween.tween_property(camera, "size", _zoom_target, 0.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 

@@ -17,6 +17,8 @@ const SHORTCUTS: Dictionary = {
 const KEY_LABELS: Array[String] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "C", "P", "B", "X"]
 
 var session: GameSession
+var preferences_path: String = GamePreferences.DEFAULT_PATH
+var reduced_motion: bool = false
 var board: BoardView
 var camera_rig: CameraRig
 var hud: Control
@@ -45,6 +47,11 @@ var _skip_confirmation: CheckBox
 var _time_label: Label
 var _resources_label: Label
 var _water_label: Label
+var _run_label: Label
+var _goal_label: Label
+var _goal_panel: Control
+var _survival_help: Label
+var _goal_preview_achieved: bool = false
 var _save_label: Label
 var _tile_title: Label
 var _tile_details: Label
@@ -61,13 +68,23 @@ var _end_button: Button
 var _predicted_outcome: int = C.Outcome.NONE
 var _preferences_error: String = ""
 var _colors: Dictionary
+var _atmosphere: DeltaAtmosphere
+var _season_icon: TextureRect
+var _turn_pips: Array[ColorRect] = []
+var _feedback: ActionFeedback
+var _motion_toggle: CheckBox
+var _motion_error: Label
+var _turn_feedback_active: bool = false
 
 
 func _ready() -> void:
 	_colors = ThemeBuilder.palette()
-	confirm_unused_labor = bool(GamePreferences.read()["confirm_unused_labor"])
+	var preferences: Dictionary = GamePreferences.read(preferences_path)
+	confirm_unused_labor = bool(preferences["confirm_unused_labor"])
+	reduced_motion = bool(preferences.get("reduced_motion", false))
 	_build_world()
 	_build_hud()
+	_apply_motion_preference()
 	if session == null or session.state == null:
 		return
 	refresh_state()
@@ -78,27 +95,19 @@ func _ready() -> void:
 
 
 func _build_world() -> void:
-	var world := WorldEnvironment.new()
-	var environment := Environment.new()
-	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color(_colors.background)
-	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color("#d7e4d2")
-	environment.ambient_light_energy = 0.4
-	world.environment = environment
-	add_child(world)
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-52, -35, 0)
-	sun.light_color = Color("#ffebc7")
-	sun.light_energy = 0.85
-	sun.shadow_enabled = true
-	add_child(sun)
+	_atmosphere = DeltaAtmosphere.new()
+	add_child(_atmosphere)
 	board = BoardView.new()
 	add_child(board)
+	_feedback = ActionFeedback.new()
+	_feedback.name = "ActionFeedback"
+	board.add_child(_feedback)
+	_feedback.emptied.connect(_on_feedback_emptied)
 	camera_rig = CameraRig.new()
 	add_child(camera_rig)
 	camera_rig.setup()
-	camera_rig.get_camera().h_offset = 1.65
+	camera_rig.get_camera().h_offset = 3.8
+	camera_rig.get_camera().v_offset = -0.65
 
 
 func _label(text: String = "", font_size: int = 20, muted: bool = false) -> Label:
@@ -125,6 +134,7 @@ func _button(text: String, callback: Callable, node_name: String = "") -> Button
 
 func _panel(parent: Node) -> VBoxContainer:
 	var panel := PanelContainer.new()
+	panel.theme_type_variation = "CardPanel"
 	parent.add_child(panel)
 	var content := VBoxContainer.new()
 	panel.add_child(content)
@@ -151,17 +161,47 @@ func _build_hud() -> void:
 	var header := _panel(layout)
 	var time_row := HBoxContainer.new()
 	header.add_child(time_row)
-	_time_label = _label("", 28)
+	_season_icon = TextureRect.new()
+	_season_icon.custom_minimum_size = Vector2(30, 30)
+	_season_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_season_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	time_row.add_child(_season_icon)
+	_time_label = _label("", 26)
 	_time_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	time_row.add_child(_time_label)
-	time_row.add_child(_button(tr("action.history"), open_turn_history, "TurnHistory"))
-	time_row.add_child(_button(tr("action.pause"), open_pause, "Pause"))
-	_resources_label = _label()
-	header.add_child(_resources_label)
+	_run_label = _label("", 18, true)
+	_run_label.custom_minimum_size.x = 200
+	_run_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	time_row.add_child(_run_label)
+	for button: Button in [_button(tr("action.history"), open_turn_history, "TurnHistory"), _button(tr("action.pause"), open_pause, "Pause")]:
+		button.theme_type_variation = "QuietButton"
+		time_row.add_child(button)
+	var resources_row := HBoxContainer.new()
+	resources_row.add_theme_constant_override("separation", 28)
+	header.add_child(resources_row)
+	_resources_label = _label("", 22)
+	_resources_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	resources_row.add_child(_resources_label)
+	var water_icon := TextureRect.new()
+	water_icon.texture = preload("res://assets/icons/water.svg")
+	water_icon.custom_minimum_size = Vector2(24, 24)
+	water_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	water_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	resources_row.add_child(water_icon)
 	_water_label = _label("", 20, true)
-	header.add_child(_water_label)
-	_save_label = _label("", 18)
-	_save_label.add_theme_color_override("font_color", Color(_colors.accent))
+	_water_label.custom_minimum_size.x = 480
+	resources_row.add_child(_water_label)
+	var turn_track := HBoxContainer.new()
+	turn_track.add_theme_constant_override("separation", 6)
+	header.add_child(turn_track)
+	for _turn: int in range(C.TURNS_PER_YEAR):
+		var pip := ColorRect.new()
+		pip.custom_minimum_size.y = 3
+		pip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		turn_track.add_child(pip)
+		_turn_pips.append(pip)
+	_save_label = _label("", 16, true)
 	layout.add_child(_save_label)
 	var middle := HBoxContainer.new()
 	middle.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -172,13 +212,18 @@ func _build_hud() -> void:
 	board_space.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	middle.add_child(board_space)
 	var side_scroll := ScrollContainer.new()
-	side_scroll.custom_minimum_size.x = 340
+	side_scroll.custom_minimum_size.x = 400
 	side_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	middle.add_child(side_scroll)
 	var sidebar := VBoxContainer.new()
-	sidebar.custom_minimum_size.x = 320
+	sidebar.custom_minimum_size.x = 380
 	sidebar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	side_scroll.add_child(sidebar)
+	var objective := _panel(sidebar)
+	_goal_panel = objective.get_parent()
+	objective.add_child(_label(tr("goal.title"), 22))
+	_goal_label = _label("", 18)
+	objective.add_child(_goal_label)
 	var latest := _panel(sidebar)
 	_latest_panel = latest.get_parent()
 	latest.add_child(_label(tr("history.latest"), 22))
@@ -201,11 +246,16 @@ func _build_hud() -> void:
 	_preview_legend = _label(tr("preview.legend"), 18, true)
 	_preview_legend.name = "PreviewLegend"
 	preview_panel.add_child(_preview_legend)
-	sidebar.add_child(_label(tr("help.goal"), 20, true))
+	# Put the selected tile and immediate forecast within the first scroll view.
+	sidebar.move_child(inspector.get_parent(), 0)
+	sidebar.move_child(preview_panel.get_parent(), 1)
+	_survival_help = _label("", 20, true)
+	sidebar.add_child(_survival_help)
 	sidebar.add_child(_label(tr("help.controls"), 18, true))
-	_status_label = _label("", 20)
+	_status_label = _label("", 18, true)
 	layout.add_child(_status_label)
 	var toolbar := PanelContainer.new()
+	toolbar.theme_type_variation = "CardPanel"
 	layout.add_child(toolbar)
 	var toolbar_row := HBoxContainer.new()
 	toolbar.add_child(toolbar_row)
@@ -218,9 +268,12 @@ func _build_hud() -> void:
 	for index: int in range(COMMANDS.size()):
 		var id: String = COMMANDS[index]
 		var button := _button("", select_command.bind(id), "Command_" + id)
+		button.theme_type_variation = "CommandButton"
 		button.custom_minimum_size = Vector2(150, 64)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 18)
+		button.icon = load("res://assets/icons/%s.svg" % id)
+		button.add_theme_constant_override("icon_max_width", 22)
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		button.toggle_mode = true
 		_command_buttons[id] = button
@@ -229,21 +282,37 @@ func _build_hud() -> void:
 	turn_box.custom_minimum_size.x = 220
 	turn_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	toolbar_row.add_child(turn_box)
+	var undo_row := HBoxContainer.new()
+	turn_box.add_child(undo_row)
 	_undo_button = _button(tr("action.undo"), undo_command, "Undo")
-	turn_box.add_child(_undo_button)
+	_undo_button.theme_type_variation = "QuietButton"
+	_undo_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	undo_row.add_child(_undo_button)
 	_redo_button = _button(tr("action.redo"), redo_command, "Redo")
+	_redo_button.theme_type_variation = "QuietButton"
+	_redo_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_redo_button.tooltip_text = tr("help.redo")
-	turn_box.add_child(_redo_button)
+	undo_row.add_child(_redo_button)
 	_end_button = _button(tr("action.end_turn"), request_end_turn, "EndTurn")
+	_end_button.theme_type_variation = "PrimaryButton"
+	_end_button.icon = preload("res://assets/icons/next.svg")
+	_end_button.add_theme_constant_override("icon_max_width", 26)
 	turn_box.add_child(_end_button)
 
 
 func refresh_state() -> void:
 	var state: GameState = session.state
+	_turn_feedback_active = false
+	_feedback.clear()
+	_atmosphere.set_rain(state.is_rain())
+	_season_icon.texture = load("res://assets/icons/%s.svg" % ("rain" if state.is_rain() else "sun"))
+	for index: int in range(_turn_pips.size()):
+		_turn_pips[index].color = Color(_colors.accent if index == state.turn - 1 else (_colors.success if index < state.turn - 1 else _colors.border))
 	board.set_state(state)
 	board.set_labels_visible(show_levels)
 	prediction = GameFlow.preview(state) if state.phase == C.Phase.PLANNING else {}
 	harvest_projection = {}
+	_goal_preview_achieved = false
 	_predicted_outcome = C.Outcome.NONE
 	harvest_prediction.clear()
 	if not prediction.is_empty():
@@ -254,6 +323,7 @@ func refresh_state() -> void:
 			var available_food: int = harvested.food
 			var food_needed: int = harvested.population * maxi(0, roundi(float(harvested.mod("food_per_person"))))
 			Harvest.do_harvest(harvested)
+			_goal_preview_achieved = state.goal_achieved_year == 0 and harvested.goal_achieved_year > 0
 			harvest_prediction = harvested.harvest_report.duplicate(true)
 			harvest_projection = harvest_prediction.duplicate(true)
 			harvest_projection["available_food"] = available_food + int(harvest_projection["paddy_food"])
@@ -277,7 +347,9 @@ func refresh_state() -> void:
 		if button.disabled:
 			button.tooltip_text += "\n" + tr(_unavailable_reason(id))
 		button.set_pressed_no_signal(command_mode == id)
-	_time_label.text = tr("hud.time") % [state.year, C.YEARS, tr("season.rain" if state.is_rain() else "season.dry"), state.turn, C.TURNS_PER_YEAR]
+	_time_label.text = tr("hud.time") % [state.year, state.target_years(), tr("season.rain" if state.is_rain() else "season.dry"), state.turn, C.TURNS_PER_YEAR]
+	_run_label.text = tr("run_mode." + state.run_mode + ".name")
+	_survival_help.text = tr("help.survive_years") % state.target_years()
 	_resources_label.text = tr("hud.resources") % [state.labor, state.labor_max, state.food, state.wood, state.population, state.capacity()]
 	_water_label.text = tr("hud.water") % [state.current_inflow(), state.forecast_min, state.forecast_max]
 	_undo_button.disabled = state.phase != C.Phase.PLANNING or state.undo.is_empty()
@@ -290,6 +362,28 @@ func refresh_state() -> void:
 	_update_inspector()
 	_update_command_status()
 	_refresh_turn_result()
+	_refresh_village_goal()
+
+
+func _refresh_village_goal() -> void:
+	var state: GameState = session.state
+	_goal_panel.visible = state.village_goal != "none"
+	_goal_label.text = ""
+	if state.village_goal == "none":
+		return
+	var progress: Dictionary = RunGoals.progress(state)
+	var lines := PackedStringArray([tr("goal." + state.village_goal + ".name")])
+	if progress["achieved"]:
+		lines.append(tr("goal.completed") % [int(progress["achieved_year"]), int(progress["score"])])
+	else:
+		lines.append(tr("goal.progress_population") % [int(progress["population"]), int(progress["required_population"])])
+		if int(progress["required_forests"]) > 0:
+			lines.append(tr("goal.progress_forests") % [int(progress["forests"]), int(progress["required_forests"])])
+		if int(progress["required_paddy_food"]) > 0:
+			lines.append(tr("goal.progress_rice") % [int(progress["paddy_food"]), int(progress["required_paddy_food"])])
+		lines.append(tr("goal.harvest_check"))
+		lines.append(tr("goal.reward") % int(progress["score"]))
+	_goal_label.text = "\n".join(lines)
 
 
 func _turn_stamp(entry: Dictionary) -> String:
@@ -495,6 +589,9 @@ func apply_at(coord: Vector2i) -> void:
 		if parameter < 0:
 			_status_label.text = tr("err.param")
 			return
+	var previous_elevation: int = state.get_tile(origin).elevation
+	var previous_labor: int = state.labor
+	var previous_wood: int = state.wood
 	var error: String = session.apply(Command.new(id, origin, parameter))
 	if not error.is_empty():
 		_status_label.text = tr(error)
@@ -503,10 +600,79 @@ func apply_at(coord: Vector2i) -> void:
 	hovered_coord = coord
 	refresh_state()
 	board.select(origin)
+	_show_command_feedback(id, origin, previous_elevation, previous_labor, previous_wood)
 	if not command_mode.is_empty() and _targets.get(command_mode, []).is_empty():
 		_update_command_status()
 	else:
 		_status_label.text = tr("msg.command_done") % tr("cmd.%s.name" % id)
+
+
+func _feedback_position(coord: Vector2i) -> Vector3:
+	var tile: Tile = session.state.get_tile(coord)
+	var at: Vector3 = Hex.to_world(coord)
+	at.y = board._surface_y(tile) + 0.08
+	return at
+
+
+func _show_command_feedback(id: String, coord: Vector2i, elevation_before: int, labor_before: int, wood_before: int) -> void:
+	var state: GameState = session.state
+	var title: String = tr("cmd.%s.name" % id)
+	var height_change: int = state.get_tile(coord).elevation - elevation_before
+	if height_change != 0:
+		title += " · " + tr("feedback.height") % height_change
+	var changes := PackedStringArray()
+	if state.labor != labor_before:
+		changes.append(tr("feedback.labor") % (state.labor - labor_before))
+	if state.wood != wood_before:
+		changes.append(tr("feedback.wood") % (state.wood - wood_before))
+	var text: String = title if changes.is_empty() else title + "\n" + " · ".join(changes)
+	_feedback.show_marker(_feedback_position(coord), text, Color(_colors.accent))
+
+
+func _show_turn_feedback(report: TurnReport) -> void:
+	# Read the committed report. Never replay a preview or re-evaluate production.
+	var events: Dictionary = {}
+	for item: Dictionary in report.destroyed:
+		var name: String = tr("building." + C.enum_name(C.Building, int(item["building"])))
+		_add_feedback_event(events, item["coord"], tr("feedback.destroyed") % name, true)
+	for coord: Vector2i in report.paddies_died:
+		_add_feedback_event(events, coord, tr("feedback.rice_lost"), true)
+	for coord: Vector2i in report.paddy_gains:
+		_add_feedback_event(events, coord, tr("feedback.rice_gain"))
+	var fish: Dictionary = BoardView.preview_fish_food_by_tile(session.state, report)
+	for coord: Vector2i in fish:
+		_add_feedback_event(events, coord, tr("feedback.food_gain") % int(fish[coord]))
+	var shown: int = 0
+	for coord: Vector2i in events:
+		if shown >= ActionFeedback.MAX_MARKERS:
+			break
+		var event: Dictionary = events[coord]
+		var danger: bool = event["danger"]
+		_feedback.show_marker(_feedback_position(coord), "\n".join(event["lines"]), Color(_colors.danger if danger else _colors.success), "danger" if danger else "success")
+		shown += 1
+	if shown > 0:
+		_turn_feedback_active = true
+		board.set_preview({}, false)
+
+
+func _on_feedback_emptied() -> void:
+	if not _turn_feedback_active:
+		return
+	_turn_feedback_active = false
+	# Restore the current forecast, never the resolved turn's prior preview.
+	if session != null and session.state != null and session.state.phase == C.Phase.PLANNING:
+		board.set_preview(prediction, preview_enabled)
+
+
+func _add_feedback_event(events: Dictionary, coord: Vector2i, text: String, danger: bool = false) -> void:
+	if session.state.get_tile(coord) == null:
+		return
+	if not events.has(coord):
+		events[coord] = {"lines": PackedStringArray(), "danger": false}
+	var lines: PackedStringArray = events[coord]["lines"]
+	lines.append(text)
+	events[coord]["lines"] = lines
+	events[coord]["danger"] = bool(events[coord]["danger"]) or danger
 
 
 func undo_command() -> void:
@@ -528,6 +694,7 @@ func redo_command() -> void:
 func toggle_preview() -> void:
 	if not modal_kind.is_empty():
 		return
+	_feedback.clear()
 	preview_enabled = not preview_enabled
 	_preview_button.set_pressed_no_signal(preview_enabled)
 	board.set_preview(prediction, preview_enabled)
@@ -539,7 +706,7 @@ func _update_command_status() -> void:
 	if wheel_origin != BoardView.NO_COORD:
 		_status_label.text = tr("tile.wheel_direction")
 	elif command_mode.is_empty():
-		_status_label.text = tr("help.goal")
+		_status_label.text = tr("help.survive_years") % session.state.target_years()
 	elif _targets.get(command_mode, []).is_empty():
 		_status_label.text = "%s: %s" % [tr("cmd.%s.name" % command_mode), tr(_unavailable_reason(command_mode))]
 	else:
@@ -697,7 +864,7 @@ func _harvest_preview_lines() -> PackedStringArray:
 	if harvest_projection.is_empty():
 		return PackedStringArray()
 	var report: Dictionary = harvest_projection
-	return PackedStringArray([
+	var lines := PackedStringArray([
 		tr("preview.harvest_title"),
 		tr("preview.harvest_paddy") % int(report["paddy_food"]),
 		tr("preview.harvest_food") % [int(report["available_food"]), int(report["food_needed"]), int(report["eaten"])],
@@ -706,9 +873,13 @@ func _harvest_preview_lines() -> PackedStringArray:
 		tr("preview.harvest_food_after") % int(report["food_after"]),
 		tr("preview.harvest_people") % [int(report["population_after"]), int(report["capacity"])],
 	])
+	if _goal_preview_achieved:
+		lines.append(tr("goal.preview_complete") % int(RunGoals.progress(session.state)["score"]))
+	return lines
 
 
 func _refresh_save_status() -> void:
+	_save_label.add_theme_color_override("font_color", Color(_colors.danger if not session.last_save_error.is_empty() or not _preferences_error.is_empty() else _colors.muted))
 	if not session.last_save_error.is_empty():
 		_save_label.text = tr(session.last_save_error)
 	elif not _preferences_error.is_empty():
@@ -748,16 +919,19 @@ func _confirm_end_turn() -> void:
 		return
 	if modal_kind == "confirm_labor" and _skip_confirmation.button_pressed:
 		confirm_unused_labor = false
-		_preferences_error = GamePreferences.write({"confirm_unused_labor": false})
+		_preferences_error = _save_game_preferences()
 	close_modal()
 	_finish_turn()
 
 
 func _finish_turn() -> void:
-	if session.advance_turn() == null:
+	var report: TurnReport = session.advance_turn()
+	if report == null:
 		return
 	wheel_origin = BoardView.NO_COORD
 	refresh_state()
+	if session.state.phase == C.Phase.PLANNING:
+		_show_turn_feedback(report)
 	if session.state.phase == C.Phase.HARVEST:
 		_show_harvest()
 	elif session.state.phase == C.Phase.GAME_OVER:
@@ -765,6 +939,7 @@ func _finish_turn() -> void:
 
 
 func _open_modal(kind: String, title: String) -> void:
+	_feedback.clear()
 	close_modal()
 	modal_kind = kind
 	_modal = Control.new()
@@ -780,6 +955,7 @@ func _open_modal(kind: String, title: String) -> void:
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_modal.add_child(center)
 	var panel := PanelContainer.new()
+	panel.theme_type_variation = "CardPanel"
 	panel.custom_minimum_size.x = 740
 	center.add_child(panel)
 	_modal_content = VBoxContainer.new()
@@ -802,6 +978,12 @@ func close_modal() -> void:
 
 func _add_modal_button(text: String, callback: Callable, node_name: String = "", preferred: bool = false) -> Button:
 	var button: Button = _button(text, callback, node_name)
+	if node_name == "ConfirmEndTurn" and modal_kind == "confirm_loss":
+		button.theme_type_variation = "DangerButton"
+	elif node_name in ["ContinueHarvest", "Restart", "ConfirmEndTurn"]:
+		button.theme_type_variation = "PrimaryButton"
+	else:
+		button.theme_type_variation = "QuietButton"
 	button.focus_mode = Control.FOCUS_ALL
 	_modal_content.add_child(button)
 	if preferred:
@@ -813,6 +995,9 @@ func _show_harvest() -> void:
 	_open_modal("harvest", tr("summary.title") % session.state.year)
 	for key: String in ["paddy_food", "eaten", "left_hunger", "left_housing", "born", "spoiled", "food_after", "population_after"]:
 		_modal_content.add_child(_label(tr("summary." + key) % int(session.state.harvest_report[key])))
+	if session.state.goal_achieved_year == session.state.year and session.state.village_goal != "none":
+		_modal_content.add_child(_label(tr("goal." + session.state.village_goal + ".name"), 20))
+		_modal_content.add_child(_label(tr("goal.completed") % [session.state.goal_achieved_year, int(RunGoals.progress(session.state)["score"])], 20))
 	var caption: String = tr("action.finish") if session.state.outcome != C.Outcome.NONE else tr("action.continue")
 	_add_modal_button(caption, continue_harvest, "ContinueHarvest", true)
 	_add_modal_button(tr("action.history"), open_turn_history, "HarvestHistory")
@@ -837,6 +1022,11 @@ func _show_game_over() -> void:
 	var house_bonus: int = int(scoring["no_houses_lost"]) if state.outcome == C.Outcome.WIN and int(state.stats["houses_lost"]) == 0 else 0
 	var hall_bonus: int = int(scoring["hall_dry"]) if state.outcome == C.Outcome.WIN and not bool(state.stats["hall_ever_wet"]) else 0
 	_modal_content.add_child(_label(tr("gameover.components") % [state.population * int(scoring["population"]), state.food, house_bonus, hall_bonus, 1.0 + state.difficulty * float(scoring["difficulty_step"])]))
+	_modal_content.add_child(_label(tr("run_mode." + state.run_mode + ".name"), 20, true))
+	if state.village_goal != "none":
+		var goal: Dictionary = RunGoals.progress(state)
+		_modal_content.add_child(_label(tr("goal." + state.village_goal + ".name"), 22))
+		_modal_content.add_child(_label(tr("goal.completed") % [int(goal["achieved_year"]), int(goal["score"])] if goal["achieved"] else tr("goal.unfinished"), 20))
 	_modal_content.add_child(_label(tr("gameover.seed") % str(state.seed)))
 	_add_modal_button(tr("action.history"), open_turn_history, "GameOverHistory")
 	_add_modal_button(tr("action.restart"), _restart, "Restart")
@@ -844,7 +1034,7 @@ func _show_game_over() -> void:
 
 
 func _restart() -> void:
-	restart_requested.emit({"seed": session.state.seed + 1, "map_type": "plains", "leader": session.state.leader, "difficulty": session.state.difficulty})
+	restart_requested.emit({"seed": session.state.seed + 1, "map_type": "plains", "leader": session.state.leader, "difficulty": session.state.difficulty, "run_mode": session.state.run_mode, "village_goal": session.state.village_goal})
 
 
 func open_pause() -> void:
@@ -852,12 +1042,49 @@ func open_pause() -> void:
 		return
 	_open_modal("pause", tr("pause.title"))
 	_modal_content.add_child(_label(tr("pause.seed") % str(session.state.seed)))
+	_motion_toggle = CheckBox.new()
+	_motion_toggle.name = "ReducedMotion"
+	_motion_toggle.text = tr("pause.reduced_motion")
+	_motion_toggle.tooltip_text = tr("pause.reduced_motion_hint")
+	_motion_toggle.set_pressed_no_signal(reduced_motion)
+	_motion_toggle.toggled.connect(_on_motion_toggled)
+	_modal_content.add_child(_motion_toggle)
+	_motion_error = _label("", 18)
+	_motion_error.add_theme_color_override("font_color", Color(_colors.danger))
+	_motion_error.visible = false
+	_modal_content.add_child(_motion_error)
 	_add_modal_button(tr("action.resume"), close_modal, "Resume", true)
 	_add_modal_button(tr("action.history"), open_turn_history, "PauseHistory")
 	if not session.last_save_error.is_empty():
 		_modal_content.add_child(_label(tr(session.last_save_error)))
 		_add_modal_button(tr("action.retry_save"), _retry_save, "RetrySave")
 	_add_modal_button(tr("action.menu"), _return_menu, "PauseMenu")
+
+
+func _apply_motion_preference() -> void:
+	_feedback.set_reduced_motion(reduced_motion)
+	_atmosphere.set_reduced_motion(reduced_motion)
+	camera_rig.set_reduced_motion(reduced_motion)
+	board.set_reduced_motion(reduced_motion)
+
+
+func _on_motion_toggled(enabled: bool) -> void:
+	reduced_motion = enabled
+	_apply_motion_preference()
+	_preferences_error = _save_game_preferences()
+	_refresh_save_status()
+	if is_instance_valid(_motion_error):
+		_motion_error.text = tr(_preferences_error) if not _preferences_error.is_empty() else ""
+		_motion_error.visible = not _preferences_error.is_empty()
+
+
+func _save_game_preferences() -> String:
+	# A successful retry also preserves any other live choice whose earlier
+	# settings write failed; game progress remains in its separate checkpoint.
+	return GamePreferences.write({
+		"confirm_unused_labor": confirm_unused_labor,
+		"reduced_motion": reduced_motion,
+	}, preferences_path)
 
 
 func _retry_save() -> void:

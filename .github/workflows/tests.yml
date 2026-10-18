@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Check documentation links and imported source integrity
+        run: python3 scripts/check_docs.py
       - uses: chickensoft-games/setup-godot@v2
         with:
           version: 4.6.3
@@ -26,6 +28,8 @@ jobs:
             godot --headless --path . --quit-after 5 -- --scene="$scene" --lang=th --save-path=user://ci-smoke.json 2>&1 | tee smoke.log
             ! grep -Eq 'SCRIPT ERROR:|^ERROR:' smoke.log
           done
+          godot --headless --path . --quit-after 5 -- --scene=game --run-mode=long --goal=forest --lang=en --save-path=user://ci-long-smoke.json 2>&1 | tee smoke.log
+          ! grep -Eq 'SCRIPT ERROR:|^ERROR:' smoke.log
       - name: Smoke test complete game policies
         run: |
           set -o pipefail

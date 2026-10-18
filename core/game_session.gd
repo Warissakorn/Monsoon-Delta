@@ -90,7 +90,7 @@ func advance_turn() -> TurnReport:
 			# Harvest can decide a win or population loss after TurnReport ends.
 			"outcome": state.outcome,
 		})
-		if _turn_history.size() > C.YEARS * C.TURNS_PER_YEAR:
+		while _turn_history.size() > state.target_years() * C.TURNS_PER_YEAR:
 			_turn_history.pop_front()
 		checkpoint()
 	return report

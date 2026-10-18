@@ -8,12 +8,16 @@ const Database = preload("res://core/data_db.gd")
 
 static func generate(s: GameState) -> void:
 	var balance: Dictionary = Database.balance()
-	var rain_range: Array = balance["rain_table"][str(s.year)]
+	var rain_range: Array = balance["rain_table"][str(mini(s.year, Constants.YEARS))]
+	var mode: Dictionary = balance["run_modes"][s.run_mode]
+	var extra_years: int = maxi(0, s.year - Constants.YEARS)
+	var base_minimum: float = float(rain_range[0]) + extra_years * float(mode.get("rain_min_step", 0))
+	var base_maximum: float = float(rain_range[1]) + extra_years * float(mode.get("rain_max_step", 0))
 	var multiplier: float = float(s.mod("rain_inflow_multiplier"))
-	if s.year == Constants.YEARS:
+	if s.year >= Constants.YEARS:
 		multiplier *= float(s.mod("year5_inflow_multiplier"))
-	var minimum: float = float(rain_range[0]) * multiplier
-	var maximum: float = float(rain_range[1]) * multiplier
+	var minimum: float = base_minimum * multiplier
+	var maximum: float = base_maximum * multiplier
 	var midpoint: float = (minimum + maximum) / 2.0
 	var half_range: float = (maximum - minimum) / 2.0 * float(s.mod("forecast_range_multiplier"))
 	minimum = midpoint - half_range
