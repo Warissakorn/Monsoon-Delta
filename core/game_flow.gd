@@ -8,6 +8,7 @@ static func new_game(cfg: Dictionary) -> GameState:
 	var leader: Variant = cfg.get("leader", "farmer")
 	var difficulty: Variant = cfg.get("difficulty", 0)
 	var run_mode: Variant = cfg.get("run_mode", "classic")
+	var ruleset: Variant = cfg.get("ruleset", "legacy")
 	var village_goal: Variant = cfg.get("village_goal", "none")
 	if typeof(seed_value) != TYPE_INT or typeof(map_type) != TYPE_STRING:
 		return null
@@ -19,6 +20,8 @@ static func new_game(cfg: Dictionary) -> GameState:
 	if difficulty < 0 or difficulty > 10:
 		return null
 	if typeof(run_mode) != TYPE_STRING or typeof(village_goal) != TYPE_STRING:
+		return null
+	if typeof(ruleset) != TYPE_STRING or ruleset not in ["legacy", "bracing_v1"]:
 		return null
 	if not DataDB.balance()["run_modes"].has(run_mode) or not DataDB.balance()["village_goals"].has(village_goal):
 		return null
@@ -32,6 +35,7 @@ static func new_game(cfg: Dictionary) -> GameState:
 	state.leader = leader
 	state.difficulty = difficulty
 	state.run_mode = run_mode
+	state.ruleset = ruleset
 	state.village_goal = village_goal
 	state.goal_achieved_year = 0
 	state.is_daily = bool(cfg.get("is_daily", false))

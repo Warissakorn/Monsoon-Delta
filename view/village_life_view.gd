@@ -71,7 +71,7 @@ func show_command(id: String, coord: Vector2i) -> bool:
 		"paddy": kind = "farm"
 		"dig", "fill", "chop", "plant", "demolish": kind = id
 		"toggle_gate": kind = "operate"
-		"house", "stilt_house", "raft_house", "gate", "reservoir", "fish_trap", "granary", "waterwheel": kind = "build"
+		"house", "stilt_house", "raft_house", "gate", "reservoir", "fish_trap", "granary", "waterwheel", "brace_house": kind = "build"
 		_: return false
 	return _enqueue(kind, coord, id == "chop", "command")
 

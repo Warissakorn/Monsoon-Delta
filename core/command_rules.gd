@@ -8,6 +8,7 @@ const DEFS: Dictionary = {
 	"paddy": {"labor": "paddy_labor", "dry_only": true},
 	"house": {"labor": "house_labor", "wood": "house_wood", "building": C.Building.HOUSE},
 	"stilt_house": {"labor": "stilt_labor", "wood": "stilt_wood", "building": C.Building.STILT_HOUSE},
+	"brace_house": {"labor": "brace_labor", "wood": "brace_wood"},
 	"raft_house": {"labor": "raft_labor", "wood": "raft_wood", "building": C.Building.RAFT_HOUSE, "unlock": "unlock_raft_house"},
 	"chop": {"labor": "chop_labor"},
 	"plant": {"labor": "plant_labor", "dry_only": true},
@@ -26,6 +27,8 @@ static func check(s: GameState, cmd: Command) -> String:
 		return "err.phase"
 	if not DEFS.has(cmd.id):
 		return "err.unknown"
+	if cmd.id == "brace_house" and not s.has_bracing():
+		return "err.locked"
 	var definition: Dictionary = DEFS[cmd.id]
 	var unlock: String = String(definition.get("unlock", ""))
 	if not unlock.is_empty() and _count(s, unlock) <= 0:
@@ -37,6 +40,8 @@ static func check(s: GameState, cmd: Command) -> String:
 		return "err.season"
 	if not _target_matches(tile, cmd.id):
 		return "err.target"
+	if cmd.id == "brace_house" and tile.brace_turns != 0:
+		return "err.braced"
 	var level: int = s.level_of(tile)
 	if cmd.id in ["paddy", "house", "stilt_house", "plant", "reservoir", "granary"] and level != 0:
 		return "err.water"
@@ -81,6 +86,8 @@ static func apply(s: GameState, cmd: Command) -> void:
 	s.labor -= price.x
 	s.wood -= price.y
 	match cmd.id:
+		"brace_house":
+			tile.brace_turns = 1
 		"dig":
 			tile.elevation = maxi(0, tile.elevation - _count(s, "dig_amount"))
 		"fill":
@@ -120,6 +127,8 @@ static func valid_targets(s: GameState, id: String, param: int = -1) -> Array[Ve
 
 static func _target_matches(tile: Tile, id: String) -> bool:
 	match id:
+		"brace_house":
+			return tile.building in [C.Building.HOUSE, C.Building.STILT_HOUSE]
 		"dig", "fill":
 			var earthwork_target: bool = tile.building == C.Building.NONE and tile.feature in [C.Feature.NONE, C.Feature.PADDY] and not tile.is_sea and not tile.is_source
 			return earthwork_target and (tile.elevation >= 1 if id == "dig" else tile.elevation <= 3)
@@ -158,6 +167,7 @@ static func _demolish(s: GameState, tile: Tile) -> void:
 				break
 		s.wood += floori(float(wood_cost) * float(s.mod("demolish_refund_fraction")))
 		tile.building = C.Building.NONE
+		tile.brace_turns = 0
 		tile.gate_open = true
 		tile.wheel_dir = -1
 	else:

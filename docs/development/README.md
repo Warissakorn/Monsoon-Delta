@@ -13,6 +13,8 @@ godot --path . -- --scene=game --seed=42 --lang=en --save-path=user://dev-run.js
 godot --path . -- --scene=game --run-mode=long --goal=forest --seed=42 --save-path=user://dev-long.json
 # เลือกความยากในกฎเดิม 0–10; รับเฉพาะจำนวนเต็มในช่วงนี้
 godot --path . -- --scene=game --difficulty=5 --seed=42 --save-path=user://dev-difficulty.json
+# รอบใหม่ที่เปิดค้ำบ้านหนึ่งเทิร์น
+godot --path . -- --scene=game --ruleset=bracing_v1 --seed=42 --save-path=user://dev-bracing.json
 # ห้องทดลองน้ำไม่เขียนเซฟรอบเล่น
 godot --path . -- --scene=sandbox --seed=42 --lang=th
 

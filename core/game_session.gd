@@ -87,6 +87,8 @@ func advance_turn() -> TurnReport:
 			"hall_wet": report.hall_wet,
 			"dry_paddy_water_used": report.dry_paddy_water_used,
 		}
+		if not report.brace_results.is_empty():
+			results["brace_results"] = report.brace_results.duplicate(true)
 		_turn_history.append({
 			"year": year,
 			"turn": turn,

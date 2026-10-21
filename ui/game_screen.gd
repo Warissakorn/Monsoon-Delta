@@ -7,14 +7,14 @@ signal restart_requested(config: Dictionary)
 
 const COMMANDS: Array[String] = [
 	"dig", "fill", "paddy", "house", "stilt_house", "raft_house", "gate",
-	"reservoir", "fish_trap", "granary", "chop", "plant", "waterwheel", "demolish",
+	"reservoir", "fish_trap", "granary", "chop", "plant", "waterwheel", "demolish", "brace_house",
 ]
 const SHORTCUTS: Dictionary = {
 	KEY_1: "dig", KEY_2: "fill", KEY_3: "paddy", KEY_4: "house", KEY_5: "stilt_house",
 	KEY_6: "raft_house", KEY_7: "gate", KEY_8: "reservoir", KEY_9: "fish_trap",
-	KEY_0: "granary", KEY_C: "chop", KEY_P: "plant", KEY_B: "waterwheel", KEY_X: "demolish",
+	KEY_0: "granary", KEY_C: "chop", KEY_P: "plant", KEY_B: "waterwheel", KEY_X: "demolish", KEY_R: "brace_house",
 }
-const KEY_LABELS: Array[String] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "C", "P", "B", "X"]
+const KEY_LABELS: Array[String] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "C", "P", "B", "X", "R"]
 const Advisor = preload("res://ui/village_advisor.gd")
 const Progress = preload("res://core/settlement_progress.gd")
 
@@ -78,6 +78,7 @@ var _preview_label: Label
 var _preview_legend: Label
 var _status_label: Label
 var _command_buttons: Dictionary = {}
+var _commands_grid: GridContainer
 var _targets: Dictionary = {}
 var _preview_button: Button
 var _undo_button: Button
@@ -343,7 +344,8 @@ func _build_hud() -> void:
 	layout.add_child(toolbar)
 	var toolbar_row := HBoxContainer.new()
 	toolbar.add_child(toolbar_row)
-	var commands_grid := GridContainer.new()
+	_commands_grid = GridContainer.new()
+	var commands_grid: GridContainer = _commands_grid
 	commands_grid.columns = 7
 	commands_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	commands_grid.add_theme_constant_override("h_separation", 6)
@@ -421,7 +423,7 @@ func refresh_state() -> void:
 		var id: String = COMMANDS[index]
 		var button: Button = _command_buttons[id]
 		var unlock: String = String(CommandRules.DEFS[id].get("unlock", ""))
-		button.visible = unlock.is_empty() or float(state.mod(unlock)) > 0.0
+		button.visible = (unlock.is_empty() or float(state.mod(unlock)) > 0.0) and (id != "brace_house" or state.has_bracing())
 		var targets: Array[Vector2i] = valid_targets(id)
 		_targets[id] = targets
 		button.disabled = targets.is_empty()
@@ -431,8 +433,17 @@ func refresh_state() -> void:
 		if button.disabled:
 			button.tooltip_text += "\n" + tr(_unavailable_reason(id))
 		button.set_pressed_no_signal(command_mode == id)
+	var visible_commands: int = 0
+	for button: Button in _command_buttons.values():
+		if button.visible:
+			visible_commands += 1
+	_commands_grid.columns = 8 if visible_commands > 14 else 7
+	for button: Button in _command_buttons.values():
+		button.custom_minimum_size.x = 128 if visible_commands > 14 else 150
+		button.add_theme_font_size_override("font_size", 16 if visible_commands > 14 else 18)
 	_time_label.text = tr("hud.time") % [state.year, state.target_years(), tr("season.rain" if state.is_rain() else "season.dry"), state.turn, C.TURNS_PER_YEAR]
 	_run_label.text = tr("run_mode." + state.run_mode + ".name") + "\n" + _difficulty_caption()
+	_run_label.tooltip_text = tr("ruleset.bracing_v1.name") if state.has_bracing() else ""
 	_survival_help.text = tr("help.survive_years") % state.target_years()
 	_resources_label.text = tr("hud.resources") % [state.labor, state.labor_max, state.food, state.wood, state.population, state.capacity()]
 	_resource_chips["labor"].text = tr("resource.labor") + " %d/%d" % [state.labor, state.labor_max]
@@ -706,6 +717,11 @@ func _render_turn_history() -> void:
 	if not report["paddy_gains"].is_empty():
 		_history_details.add_child(_label(tr("history.yield_note"), 18, true))
 	_history_details.add_child(_label(tr("history.fish") % int(report["fish_food"])))
+	for entry_result: Dictionary in report.get("brace_results", []):
+		var failed: bool = int(entry_result["level"]) >= int(entry_result["protected_threshold"])
+		var key: String = "feedback.brace_failed" if failed else ("feedback.brace_held" if bool(entry_result["prevented_loss"]) else "feedback.brace_expired")
+		var coord: Vector2i = entry_result["coord"]
+		_history_details.add_child(_label("(%d, %d) · %s" % [coord.x, coord.y, tr(key)]))
 	if float(report["dry_paddy_water_used"]) > 0.0:
 		_history_details.add_child(_label(tr("history.irrigation") % float(report["dry_paddy_water_used"])))
 	if not entry["harvest"].is_empty():
@@ -852,6 +868,10 @@ func _show_turn_feedback(report: TurnReport) -> void:
 		_add_feedback_event(events, item["coord"], tr("feedback.destroyed") % name, true)
 	for coord: Vector2i in report.paddies_died:
 		_add_feedback_event(events, coord, tr("feedback.rice_lost"), true)
+	for entry: Dictionary in report.brace_results:
+		var failed: bool = int(entry["level"]) >= int(entry["protected_threshold"])
+		var key: String = "feedback.brace_failed" if failed else ("feedback.brace_held" if bool(entry["prevented_loss"]) else "feedback.brace_expired")
+		_add_feedback_event(events, entry["coord"], tr(key), failed)
 	for coord: Vector2i in report.paddy_gains:
 		_add_feedback_event(events, coord, tr("feedback.rice_gain"))
 	var fish: Dictionary = BoardView.preview_fish_food_by_tile(session.state, report)
@@ -991,6 +1011,8 @@ func _update_inspector() -> void:
 		var intake: Tile = state.neighbor_in_dir(tile, tile.wheel_dir)
 		if intake != null:
 			_tile_note.text = tr("tile.wheel_intake") % [intake.q, intake.r]
+	if state.has_bracing() and tile.brace_turns > 0:
+		_tile_note.text += ("\n" if not _tile_note.text.is_empty() else "") + tr("tile.braced")
 	if Progress.enabled(state) and tile.building != C.Building.NONE:
 		_tile_note.text += ("\n" if not _tile_note.text.is_empty() else "") + tr("settlement.building_age") % Progress.building_age(state, tile)
 		_tile_note.text += "\n" + tr("settlement.building_stage") % tr("settlement.stage.%d" % Progress.building_stage(state, tile))
@@ -1019,6 +1041,13 @@ func _tile_preview_lines(tile: Tile) -> PackedStringArray:
 		return lines
 	var predicted: GameState = prediction["state"]
 	var report: TurnReport = prediction["report"]
+	var braced_threshold: int = -1
+	for entry: Dictionary in report.brace_results:
+		if entry["coord"] == tile.coord:
+			braced_threshold = int(entry["protected_threshold"])
+			lines.append(tr("tile.brace_forecast") % braced_threshold)
+			if bool(entry["prevented_loss"]):
+				lines.append(tr("tile.brace_held_forecast"))
 	if tile.building == C.Building.HALL and report.outcome == C.Outcome.LOSE_HALL:
 		lines.append(tr("preview.lose_hall"))
 		lines.append(_flood_limit_line(predicted, "hall_lose_level"))
@@ -1033,7 +1062,7 @@ func _tile_preview_lines(tile: Tile) -> PackedStringArray:
 			C.Building.GRANARY: "granary_destroy_level",
 		}
 		if limits.has(building):
-			lines.append(_flood_limit_line(predicted, limits[building]))
+			lines.append(_flood_threshold_line(braced_threshold) if braced_threshold >= 0 else _flood_limit_line(predicted, limits[building]))
 	if report.paddies_died.has(tile.coord):
 		lines.append(tr("tile.paddy_dies"))
 		lines.append(_flood_limit_line(predicted, "paddy_death_level"))
@@ -1048,7 +1077,10 @@ func _tile_preview_lines(tile: Tile) -> PackedStringArray:
 
 
 func _flood_limit_line(predicted: GameState, key: String) -> String:
-	var threshold: int = roundi(float(predicted.mods[key]))
+	return _flood_threshold_line(roundi(float(predicted.mods[key])))
+
+
+func _flood_threshold_line(threshold: int) -> String:
 	if threshold >= 0 and threshold <= 3:
 		return tr("tile.flood_limit") % [threshold, tr("level.%d" % threshold)]
 	return tr("tile.flood_limit_number") % threshold
@@ -1251,6 +1283,8 @@ func _show_game_over() -> void:
 	_modal_content.add_child(_label(tr("gameover.components") % [state.population * int(scoring["population"]), state.food, house_bonus, hall_bonus, 1.0 + state.difficulty * float(scoring["difficulty_step"])]))
 	_modal_content.add_child(_label(tr("run_mode." + state.run_mode + ".name"), 20, true))
 	_modal_content.add_child(_label(_difficulty_caption(), 20, true))
+	if session.state.has_bracing():
+		_modal_content.add_child(_label(tr("ruleset.bracing_v1.name"), 18, true))
 	if state.village_goal != "none":
 		var goal: Dictionary = RunGoals.progress(state)
 		_modal_content.add_child(_label(tr("goal." + state.village_goal + ".name"), 22))
@@ -1262,7 +1296,10 @@ func _show_game_over() -> void:
 
 
 func _restart() -> void:
-	restart_requested.emit({"seed": session.state.seed + 1, "map_type": "plains", "leader": session.state.leader, "difficulty": session.state.difficulty, "run_mode": session.state.run_mode, "village_goal": session.state.village_goal})
+	var config: Dictionary = {"seed": session.state.seed + 1, "map_type": "plains", "leader": session.state.leader, "difficulty": session.state.difficulty, "run_mode": session.state.run_mode, "village_goal": session.state.village_goal}
+	if session.state.has_bracing():
+		config["ruleset"] = session.state.ruleset
+	restart_requested.emit(config)
 
 
 func open_pause() -> void:
@@ -1271,6 +1308,8 @@ func open_pause() -> void:
 	_open_modal("pause", tr("pause.title"))
 	_modal_content.add_child(_label(tr("pause.seed") % str(session.state.seed)))
 	_modal_content.add_child(_label(_difficulty_caption(), 20, true))
+	if session.state.has_bracing():
+		_modal_content.add_child(_label(tr("ruleset.bracing_v1.name"), 18, true))
 	_motion_toggle = CheckBox.new()
 	_motion_toggle.name = "ReducedMotion"
 	_motion_toggle.text = tr("pause.reduced_motion")

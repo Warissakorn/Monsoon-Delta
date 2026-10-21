@@ -27,7 +27,7 @@ The imported [M5 roadmap](docs/ROADMAP.md) asks for approval of the 30 cards, 15
 
 - Keep deterministic rules in `core/`; rendering/input in `view/` and `ui/`. `GameSession` owns checkpoint I/O; `GameFlow`, preview, bots and sandbox must not overwrite the player's save.
 - Preview and committed turn resolution must agree. UI reads, effects, preview and Undo/Redo must not advance gameplay RNG.
-- Preserve exact state snapshots and save validation/float64/RNG behavior. Current envelopes are v1/v2 for legacy runs and v3 for cosmetic settlement history in new menu/boot runs. M5's proposed v3 payload is not implemented and needs a distinct future version. Do not silently change an active run's rules.
+- Preserve exact state snapshots and save validation/float64/RNG behavior. Legacy runs keep v1/v2, or v3 with cosmetic settlement history; opt-in `bracing_v1` uses v4 with required ruleset and per-tile brace fields. Unsupported future envelopes/rulesets return `msg.save_unsupported` and preserve the file. M5's proposed v3 payload is not implemented and needs a distinct future version. Do not silently change an active run's rules.
 - Runtime balance is `data/balance.json`, not `docs/examples/data/balance.json`. Player text belongs in `translations/strings.csv`; maintain Thai/English key and placeholder parity.
 - Sandbox and tests use isolated state/save paths. Do not benchmark against or modify a real player save.
 

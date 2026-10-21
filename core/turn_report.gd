@@ -8,6 +8,8 @@ var from_sea: float = 0.0
 var absorbed: float = 0.0
 var evaporated: float = 0.0
 var destroyed: Array[Dictionary] = []
+# Semantic results also available with visual recording disabled.
+var brace_results: Array[Dictionary] = []
 var paddies_died: Array[Vector2i] = []
 var paddy_gains: Array[Vector2i] = []
 var fish_food: int = 0
@@ -49,7 +51,7 @@ func to_dict() -> Dictionary:
 		for depth: float in snapshot:
 			water.append(depth)
 		snapshot_data.append(water)
-	return {
+	var data: Dictionary = {
 		"inflow": inflow,
 		"to_sea": to_sea,
 		"from_sea": from_sea,
@@ -66,6 +68,17 @@ func to_dict() -> Dictionary:
 		"snapshots": snapshot_data,
 		"dry_paddy_water_used": dry_paddy_water_used,
 	}
+	# Leave reports from legacy turns unchanged when no brace was resolved.
+	if not brace_results.is_empty():
+		var serialized_braces: Array[Dictionary] = []
+		for entry: Dictionary in brace_results:
+			var serialized: Dictionary = entry.duplicate(true)
+			var coord: Vector2i = entry["coord"]
+			var pair: Array[int] = [coord.x, coord.y]
+			serialized["coord"] = pair
+			serialized_braces.append(serialized)
+		data["brace_results"] = serialized_braces
+	return data
 
 
 static func _coord_data(coords: Array[Vector2i]) -> Array:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise difficulty through the real Godot boot scene and isolated saves."""
+"""Exercise difficulty and rulesets through the real boot scene and isolated saves."""
 
 import json
 import os
@@ -54,6 +54,47 @@ class BootDifficultyTests(unittest.TestCase):
         self.assertEqual(envelope["state"]["settlement_progress"]["version"], 1)
         self.assertEqual(envelope["state"]["run_mode"], "classic")
         self.assertEqual(envelope["state"]["village_goal"], "none")
+
+    def test_bracing_ruleset_starts_a_distinct_save_with_visual_history(self):
+        self.invoke("--ruleset=bracing_v1", "--run-mode=long", "--goal=forest")
+        envelope = self.read_checkpoint()
+        self.assertEqual(envelope["version"], 4)
+        self.assertEqual(envelope["state"]["ruleset"], "bracing_v1")
+        self.assertEqual(envelope["state"]["run_mode"], "long")
+        self.assertEqual(envelope["state"]["village_goal"], "forest")
+        self.assertEqual(envelope["state"]["settlement_progress"]["version"], 1)
+        self.assertTrue(all(tile["brace_turns"] == 0 for tile in envelope["state"]["tiles"]))
+
+    def test_legacy_and_menu_ruleset_preset_preserve_existing_contract(self):
+        self.invoke("--ruleset=legacy")
+        envelope = self.read_checkpoint()
+        self.assertEqual(envelope["version"], 3)
+        self.assertNotIn("ruleset", envelope["state"])
+        self.assertTrue(all("brace_turns" not in tile for tile in envelope["state"]["tiles"]))
+        saved = self.checkpoint.read_bytes()
+        self.invoke("--ruleset=bracing_v1", scene="menu")
+        self.assertEqual(self.checkpoint.read_bytes(), saved)
+
+    def test_invalid_rulesets_exit_before_reading_or_replacing_any_checkpoint(self):
+        original = b"existing checkpoint: do not validate or replace\n"
+        invalid_arguments = [
+            ["--ruleset"], ["--ruleset", "bracing_v1"], ["--ruleset="],
+            ["--ruleset=unknown"], ["--ruleset=BRACING_V1"], ["--ruleset=bracing_v1=extra"],
+            # Godot strips trailing whitespace before exposing user args.
+            # Leading value whitespace survives and must still be rejected.
+            ["--ruleset= legacy"], ["--ruleset=bad", "--ruleset=legacy"],
+        ]
+        for scene in ["game", "menu", "sandbox"]:
+            for arguments in invalid_arguments:
+                with self.subTest(scene=scene, arguments=arguments):
+                    self.checkpoint.write_bytes(original)
+                    result = self.invoke(*arguments, scene=scene, expected=2)
+                    self.assertIn("--ruleset=legacy", result.stdout)
+                    self.assertEqual(self.checkpoint.read_bytes(), original)
+                    self.assertFalse(self.checkpoint.with_suffix(".json.tmp").exists())
+        self.checkpoint.unlink()
+        self.invoke("--ruleset=unknown", expected=2)
+        self.assertFalse(self.checkpoint.exists())
 
     def test_all_existing_levels_reach_the_checkpoint(self):
         for difficulty in range(11):

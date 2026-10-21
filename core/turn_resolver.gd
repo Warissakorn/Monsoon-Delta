@@ -24,6 +24,11 @@ static func resolve_turn(s: GameState, record_snapshots: bool = true) -> TurnRep
 	if s.outcome == C.Outcome.NONE:
 		_produce(s, report, production_levels, record_snapshots)
 		s.stats["food_produced"] = int(s.stats.get("food_produced", 0)) + report.fish_food
+	# A brace buys one resolved turn, including dry turns and a losing turn.
+	# The same expiry runs on preview's copy; view callbacks never change it.
+	if s.has_bracing():
+		for tile: Tile in s.tiles:
+			tile.brace_turns = 0
 	report.levels_after = _levels(s)
 	report.outcome = s.outcome
 	return report
@@ -46,9 +51,19 @@ static func _damage(s: GameState, report: TurnReport, levels: PackedInt32Array) 
 		var tile: Tile = s.tiles[index]
 		var level: int = levels[index]
 		var building: int = tile.building
+		var braced: bool = s.has_bracing() and tile.brace_turns == 1 and building in [C.Building.HOUSE, C.Building.STILT_HOUSE]
+		var threshold_bonus: int = 1 if braced else 0
+		if braced:
+			var base_threshold: int = house_level if building == C.Building.HOUSE else stilt_level
+			report.brace_results.append({
+				"coord": tile.coord, "base_threshold": base_threshold,
+				"protected_threshold": base_threshold + 1, "level": level,
+				"prevented_loss": level >= base_threshold and level < base_threshold + 1,
+				"expired": true,
+			})
 		var destroyed: bool = (
-			(building == C.Building.HOUSE and level >= house_level)
-			or (building == C.Building.STILT_HOUSE and level >= stilt_level)
+			(building == C.Building.HOUSE and level >= house_level + threshold_bonus)
+			or (building == C.Building.STILT_HOUSE and level >= stilt_level + threshold_bonus)
 			or (building == C.Building.GRANARY and level >= granary_level)
 		)
 		if destroyed:
