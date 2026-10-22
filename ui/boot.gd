@@ -4,6 +4,7 @@ var _screen: Node
 var _session: GameSession
 var _initial_seed: int = 42
 var _initial_difficulty: int = 0
+var _initial_ruleset: String = "legacy"
 var _language: String = "en"
 var _save_path: String = SaveIO.DEFAULT_PATH
 
@@ -11,11 +12,19 @@ var _save_path: String = SaveIO.DEFAULT_PATH
 func _ready() -> void:
 	var options: Dictionary = {}
 	for arg in OS.get_cmdline_user_args():
+		if arg == "--ruleset":
+			_reject_ruleset("")
+			return
 		if arg == "--difficulty":
 			_reject_difficulty("")
 			return
 		if arg.begins_with("--") and "=" in arg:
 			var parts := arg.substr(2).split("=", true, 1)
+			if parts[0] == "ruleset":
+				if parts[1] not in ["legacy", "bracing_v1"]:
+					_reject_ruleset(parts[1])
+					return
+				_initial_ruleset = parts[1]
 			if parts[0] == "difficulty":
 				var difficulty: int = _parse_difficulty(parts[1])
 				if difficulty < 0:
@@ -44,7 +53,7 @@ func _ready() -> void:
 	get_tree().auto_accept_quit = false
 	match scene:
 		"menu": _show_menu()
-		"game": _start_game({"seed": _initial_seed, "difficulty": _initial_difficulty, "run_mode": String(options.get("run-mode", "classic")), "village_goal": String(options.get("goal", "none"))})
+		"game": _start_game({"seed": _initial_seed, "difficulty": _initial_difficulty, "ruleset": _initial_ruleset, "run_mode": String(options.get("run-mode", "classic")), "village_goal": String(options.get("goal", "none"))})
 		"sandbox": _show_sandbox()
 	if options.has("screenshot"):
 		for frame in range(30):
@@ -74,6 +83,11 @@ static func _parse_difficulty(value: String) -> int:
 	return int(digits)
 
 
+func _reject_ruleset(value: String) -> void:
+	printerr("Invalid --ruleset=%s. Use --ruleset=legacy or --ruleset=bracing_v1." % value)
+	get_tree().quit(2)
+
+
 func _reject_difficulty(value: String) -> void:
 	printerr("Invalid --difficulty=%s. Use --difficulty=N with an integer from 0 to 10." % value)
 	get_tree().quit(2)
@@ -91,6 +105,7 @@ func _show_menu(error: String = "") -> void:
 	var menu := MainMenu.new()
 	menu.initial_seed = _initial_seed
 	menu.initial_difficulty = _initial_difficulty
+	menu.initial_ruleset = _initial_ruleset
 	menu.language = _language
 	menu.save_path = _save_path
 	menu.start_requested.connect(_start_game)
@@ -115,6 +130,7 @@ func _start_game(config: Dictionary) -> void:
 	_session = next
 	_initial_seed = _session.state.seed
 	_initial_difficulty = _session.state.difficulty
+	_initial_ruleset = _session.state.ruleset
 	_show_game()
 
 
@@ -136,6 +152,7 @@ func _continue_game() -> void:
 	_session = next
 	_initial_seed = _session.state.seed
 	_initial_difficulty = _session.state.difficulty
+	_initial_ruleset = _session.state.ruleset
 	_show_game()
 
 
@@ -148,6 +165,8 @@ func _show_sandbox() -> void:
 
 
 func _change_language(language: String) -> void:
+	if _screen is MainMenu:
+		_initial_ruleset = "bracing_v1" if _screen._bracing_toggle.button_pressed else "legacy"
 	_language = language
 	Localization.change_language(language)
 	var error: String = GamePreferences.write({"language": language})

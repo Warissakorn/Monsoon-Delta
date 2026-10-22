@@ -1,0 +1,148 @@
+{
+  "captures": [
+    {
+      "context": "NEW GAME SETUP / OPTIONAL HOUSE BRACING",
+      "file": "bracing-setup-th.png",
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    {
+      "context": "LEGAL SEED 42 / NEW BRACING RUN",
+      "file": "bracing-start-th.png",
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    {
+      "context": "CONTROLLED FIXTURE / BRACED BEFORE RESOLVE",
+      "file": "bracing-ready-fixture-th.png",
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    {
+      "context": "CONTROLLED DRY VISUAL FIXTURE / TIMBER AND ONE-TURN SHIELD",
+      "file": "bracing-detail-fixture-th.png",
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    {
+      "context": "CONTROLLED FIXTURE / REDUCE MOTION",
+      "file": "bracing-reduced-fixture-th.png",
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    {
+      "context": "CONTROLLED FIXTURE / HELD THIS TURN, NOW EXPIRED",
+      "file": "bracing-held-fixture-th.png",
+      "viewport": [
+        1280,
+        720
+      ]
+    }
+  ],
+  "checks": {
+    "brace_expired": true,
+    "braced_house_survives": true,
+    "bracing-detail-fixture_screenshot": true,
+    "bracing-held-fixture_screenshot": true,
+    "bracing-ready-fixture_screenshot": true,
+    "bracing-reduced-fixture_screenshot": true,
+    "bracing-setup_screenshot": true,
+    "bracing-start_screenshot": true,
+    "bracing_cost": true,
+    "bracing_opt_in_default_off": true,
+    "bracing_tool_visible": true,
+    "clickable_@Button@30": true,
+    "clickable_@Button@3581": true,
+    "clickable_Command_brace_house": true,
+    "clickable_EnableBracing": true,
+    "clickable_ReducedMotion": true,
+    "continue_available": true,
+    "continue_ignores_menu_legacy_setting": true,
+    "continue_load_success": true,
+    "continue_restores_brace_geometry": true,
+    "continue_restores_motion_preference": true,
+    "current_inspector_braced": true,
+    "dry_visual_fixture_preserves_run": true,
+    "duplicate_command_no_charge": true,
+    "enter_did_not_end_first_turn": true,
+    "fixture_checkpoint": true,
+    "fixture_predicts_unbraced_loss": true,
+    "held_feedback_visible": true,
+    "held_preview_icon": true,
+    "history_has_brace_result": true,
+    "isolated_preferences": true,
+    "isolated_previous_checkpoints_cleared": true,
+    "legacy_shortcut_inactive": true,
+    "legacy_start": true,
+    "legacy_tool_hidden": true,
+    "menu_session_start": true,
+    "modal_blocks_gameplay": true,
+    "motion_setting_keeps_state": true,
+    "native_board_click_braces_house": true,
+    "native_bracing_opt_in": true,
+    "native_bracing_shortcut": true,
+    "native_bracing_tool_click": true,
+    "native_continue_preserves_braced_state": true,
+    "native_end_turn": true,
+    "native_menu_start_request": true,
+    "native_new_game_setup": true,
+    "native_pause": true,
+    "native_redo_exact_state": true,
+    "native_reduce_motion": true,
+    "native_resume": true,
+    "native_target_projection": true,
+    "native_undo_exact_state": true,
+    "other_houses_lost": true,
+    "physical_braces_visible": true,
+    "post_turn_exact_load": true,
+    "preview_brace_expires_on_copy": true,
+    "preview_matches_committed_house": true,
+    "preview_shows_held_house": true,
+    "preview_uses_protected_threshold": true,
+    "redo_restores_geometry": true,
+    "rendering_does_not_mutate_run": true,
+    "seed_42_start": true,
+    "shield_visible": true,
+    "undo_removes_brace_geometry": true
+  },
+  "display": "X11",
+  "engine": "4.6.3-stable (official)",
+  "fixtures": {
+    "detail": "Separate presentation clone of the braced board with water 0; HUD hidden and camera zoomed to expose timber. Session and checkpoint unchanged.",
+    "flood": "Controlled turn 4 board: 61 flat tiles at elevation 2, water 0.35, no rain inflow/source/sea/features; three houses and one hall. Not a legal playthrough.",
+    "new_game": "Legal seed 42 start through native menu with house bracing opted in."
+  },
+  "language": "th",
+  "note": "Native automated mouse/keyboard integration, not a human playtest or performance benchmark. Screenshot pixels are captured directly from the Godot viewport without image editing. Checkpoints/settings isolated beneath the output directory.",
+  "run": {
+    "argv": [
+      "godot",
+      "--path",
+      ".",
+      "--audio-driver",
+      "Dummy",
+      "--resolution",
+      "1280x720",
+      "--script",
+      "res://tools/bracing_probe.gd",
+      "--",
+      "--out-dir=/workspace/Monsoon-Delta/work/bracing-qa/th",
+      "--lang=th"
+    ],
+    "environment": {
+      "DISPLAY": ":99",
+      "XDG_DATA_HOME": "/workspace/Monsoon-Delta/work/bracing-qa/xdg-th"
+    },
+    "working_directory": "/workspace/Monsoon-Delta/"
+  }
+}

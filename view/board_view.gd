@@ -14,6 +14,7 @@ var _tiles_root: Node3D
 var _labels_root: Node3D
 var _targets_root: Node3D
 var _preview_root: Node3D
+var _brace_status_root: Node3D
 var _selection: MeshInstance3D
 var _hover: MeshInstance3D
 var _selected_coord: Vector2i = NO_COORD
@@ -65,6 +66,7 @@ func refresh() -> void:
 	_ensure_nodes()
 	_clear_root(_tiles_root)
 	_clear_root(_labels_root)
+	_clear_root(_brace_status_root)
 	if state == null:
 		_selection.hide()
 		_hover.hide()
@@ -251,6 +253,11 @@ func _ensure_nodes() -> void:
 	_preview_root = Node3D.new()
 	_preview_root.name = "Preview"
 	add_child(_preview_root)
+	# Persistent protection indicators stay outside the static geometry batch.
+	# Rebuilding them from state also removes expired, undone and loaded braces.
+	_brace_status_root = Node3D.new()
+	_brace_status_root.name = "BraceStatus"
+	add_child(_brace_status_root)
 	_route_view = RouteNetworkView.new()
 	_route_view.name = "Routes"
 	add_child(_route_view)
@@ -711,6 +718,67 @@ func _build_house(cell: Node3D, tile: Tile) -> void:
 	else:
 		_add_box(village, Vector3(0.28, 0.045, 0.14), Vector3(0.03, 0.025, 0.46), timber.lightened(0.22))
 		_build_path(village, 0.0, 0.61, 2)
+	if state.ruleset == "bracing_v1" and tile.brace_turns == 1 and tile.building in [C.Building.HOUSE, C.Building.STILT_HOUSE]:
+		_build_emergency_bracing(village, tile, offset)
+		_build_brace_status(tile, offset)
+
+
+func _build_emergency_bracing(house: Node3D, tile: Tile, offset: float) -> void:
+	var bracing: Node3D = Node3D.new()
+	bracing.name = "EmergencyBracing"
+	bracing.set_meta("brace_turns", tile.brace_turns)
+	house.add_child(bracing)
+	# Ordinary stilt supports already exist. These additional outer X supports
+	# have amber lashings to distinguish the one-turn investment from decoration.
+	var low: float = 0.09 + offset
+	var high: float = 0.47 + offset
+	for x: float in [-0.355, 0.355]:
+		_add_brace_beam(bracing, Vector3(x, low, -0.29), Vector3(x, high, 0.29))
+		_add_brace_beam(bracing, Vector3(x, high, -0.29), Vector3(x, low, 0.29))
+	# Two diagonal shore props remain visible below the platform of stilt homes.
+	for x: float in [-0.47, 0.47]:
+		_add_brace_beam(bracing, Vector3(x, 0.035, -0.35), Vector3(x * 0.65, high, -0.28))
+
+
+func _add_brace_beam(parent: Node3D, from: Vector3, to: Vector3) -> void:
+	var direction: Vector3 = to - from
+	var orientation: Quaternion = Quaternion(Vector3.UP, direction.normalized())
+	var wood: Color = _color("earth").lerp(_color("roof"), 0.55).lightened(0.16)
+	var beam: MeshInstance3D = _add_mesh(parent, _box_mesh(Vector3(0.065, direction.length(), 0.065)), (from + to) * 0.5, wood)
+	beam.quaternion = orientation
+	for position: float in [0.18, 0.82]:
+		var band: MeshInstance3D = _add_mesh(parent, _box_mesh(Vector3(0.078, 0.055, 0.078)), from.lerp(to, position), _color("highlight"))
+		band.quaternion = orientation
+
+
+func _build_brace_status(tile: Tile, offset: float) -> void:
+	var label: Label3D = Label3D.new()
+	label.name = "Brace_%d_%d" % [tile.q, tile.r]
+	label.text = "1"
+	label.font = MARKER_FONT
+	label.font_size = 40
+	label.pixel_size = 0.010
+	label.position = Hex.to_world(tile.coord, tile.elevation)
+	# Both markers are billboards: leave enough projected vertical clearance
+	# above the forecast plate so its shield cannot obscure the remaining turn.
+	label.position.y += maxf(2.05 + offset, tile.water * C.HEIGHT_UNIT + 1.9)
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.modulate = _color("highlight")
+	label.outline_modulate = _color("background")
+	label.outline_size = 8
+	label.no_depth_test = true
+	label.set_meta("brace_turns", tile.brace_turns)
+	var icon: Sprite3D = Sprite3D.new()
+	icon.name = "Shield"
+	icon.texture = load("res://assets/icons/brace_house.svg")
+	icon.pixel_size = 0.018
+	icon.position = Vector3(-0.30, 0.04, 0.0)
+	icon.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	icon.no_depth_test = true
+	icon.shaded = false
+	icon.modulate = _color("highlight")
+	label.add_child(icon)
+	_brace_status_root.add_child(label)
 
 
 func _build_settlement_details(cell: Node3D, tile: Tile) -> void:
@@ -966,6 +1034,9 @@ func _refresh_preview() -> void:
 			_build_ghost_water(after, delta)
 	for entry: Dictionary in report.destroyed:
 		_preview_label("", entry["coord"], Color("#ef8c76"), "Destroyed", "broken_house")
+	for entry: Dictionary in report.brace_results:
+		if bool(entry.get("prevented_loss", false)):
+			_preview_label("", entry["coord"], _color("highlight"), "BraceHeld", "brace_house")
 	if report.outcome == C.Outcome.LOSE_HALL:
 		for tile: Tile in state.tiles:
 			if tile.building == C.Building.HALL:

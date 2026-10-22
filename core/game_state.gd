@@ -17,6 +17,7 @@ var map_type: String = "plains"
 var leader: String = "farmer"
 var difficulty: int = 0
 var run_mode: String = "classic"
+var ruleset: String = "legacy"
 var village_goal: String = "none"
 var goal_achieved_year: int = 0
 var is_daily: bool = false
@@ -103,6 +104,10 @@ func target_years() -> int:
 	return int(mode["years"])
 
 
+func has_bracing() -> bool:
+	return ruleset == "bracing_v1"
+
+
 func mod(key: String) -> Variant:
 	if mods.is_empty():
 		recompute_mods()
@@ -187,7 +192,7 @@ func duplicate_state() -> GameState:
 func to_dict() -> Dictionary:
 	var tile_data: Array[Dictionary] = []
 	for tile: TileModel in tiles:
-		tile_data.append(tile.to_dict())
+		tile_data.append(tile.to_dict(has_bracing()))
 	var data: Dictionary = {
 		"version": version,
 		"seed": str(seed),
@@ -224,6 +229,8 @@ func to_dict() -> Dictionary:
 	}
 	if not settlement_progress.is_empty():
 		data["settlement_progress"] = _canonical_dictionary(settlement_progress)
+	if ruleset != "legacy":
+		data["ruleset"] = ruleset
 	return data
 
 
@@ -235,6 +242,7 @@ static func from_dict(data: Dictionary) -> GameState:
 	state.leader = String(data.get("leader", "farmer"))
 	state.difficulty = int(data.get("difficulty", 0))
 	state.run_mode = String(data.get("run_mode", "classic"))
+	state.ruleset = String(data.get("ruleset", "legacy"))
 	state.village_goal = String(data.get("village_goal", "none"))
 	state.goal_achieved_year = int(data.get("goal_achieved_year", 0))
 	state.is_daily = bool(data.get("is_daily", false))

@@ -33,6 +33,7 @@ var paddy_yield: int = 0
 var paddy_dead: bool = false
 var paddy_rain_turns: int = 0
 var start_house: bool = false
+var brace_turns: int = 0
 
 
 func _init(initial_q: int = 0, initial_r: int = 0) -> void:
@@ -40,8 +41,8 @@ func _init(initial_q: int = 0, initial_r: int = 0) -> void:
 	_r = initial_r
 
 
-func to_dict() -> Dictionary:
-	return {
+func to_dict(include_bracing: bool = false) -> Dictionary:
+	var data: Dictionary = {
 		"q": q,
 		"r": r,
 		"elevation": elevation,
@@ -58,6 +59,9 @@ func to_dict() -> Dictionary:
 		"paddy_rain_turns": paddy_rain_turns,
 		"start_house": start_house,
 	}
+	if include_bracing:
+		data["brace_turns"] = brace_turns
+	return data
 
 
 static func from_dict(data: Dictionary) -> Tile:
@@ -75,4 +79,5 @@ static func from_dict(data: Dictionary) -> Tile:
 	tile.paddy_dead = bool(data.get("paddy_dead", false))
 	tile.paddy_rain_turns = int(data.get("paddy_rain_turns", 0))
 	tile.start_house = bool(data.get("start_house", false))
+	tile.brace_turns = int(data.get("brace_turns", 0))
 	return tile

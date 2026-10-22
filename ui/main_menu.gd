@@ -16,6 +16,7 @@ const LandscapeArt: GDScript = preload("res://view/menu_landscape.gd")
 var save_path: String = SaveIO.DEFAULT_PATH
 var initial_seed: int = 42
 var initial_difficulty: int = 0
+var initial_ruleset: String = "legacy"
 var language: String = "th"
 
 var _colors: Dictionary
@@ -37,6 +38,7 @@ var _goal_option: OptionButton
 var _goal_description: Label
 var _difficulty_option: OptionButton
 var _difficulty_description: Label
+var _bracing_toggle: CheckBox
 var _error_panel: PanelContainer
 var _error_label: Label
 var _error_key: String = ""
@@ -329,6 +331,16 @@ func _build_setup(parent: Node) -> void:
 	_difficulty_description.add_theme_font_size_override("font_size", 16)
 	_setup.add_child(_difficulty_description)
 	_update_difficulty_description()
+	_bracing_toggle = CheckBox.new()
+	_bracing_toggle.name = "EnableBracing"
+	_bracing_toggle.text = tr("setup.bracing")
+	_bracing_toggle.tooltip_text = tr("setup.bracing_hint")
+	_bracing_toggle.custom_minimum_size.y = 44
+	_bracing_toggle.set_pressed_no_signal(initial_ruleset == "bracing_v1")
+	_setup.add_child(_bracing_toggle)
+	var bracing_hint: Label = _label("setup.bracing_hint", "", true)
+	bracing_hint.add_theme_font_size_override("font_size", 16)
+	_setup.add_child(bracing_hint)
 	_setup.add_child(_label("setup.seed", "Kicker"))
 	_seed_input = LineEdit.new()
 	_seed_input.text = str(initial_seed)
@@ -409,6 +421,8 @@ func _request_start() -> void:
 		"run_mode": RUN_MODES[_run_mode_option.selected],
 		"village_goal": GOALS[_goal_option.selected],
 	}
+	if _bracing_toggle.button_pressed:
+		_pending_config["ruleset"] = "bracing_v1"
 	# Existing files are protected even if a temporary read failure disabled
 	# Continue. Opening the setup form itself never changes the checkpoint.
 	if SaveIO.has_save(save_path):

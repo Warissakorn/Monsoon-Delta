@@ -35,6 +35,8 @@ static func save(state: GameState, path: String = DEFAULT_PATH) -> String:
 	# Debug/tutorial play must leave an existing normal run checkpoint alone.
 	if state.is_tutorial:
 		return ""
+	if state.ruleset not in ["legacy", "bracing_v1"]:
+		return "msg.save_unsupported"
 	if state.phase == C.Phase.GAME_OVER:
 		return delete_save(path)
 	if not _can_serialize(state):
@@ -48,7 +50,9 @@ static func save(state: GameState, path: String = DEFAULT_PATH) -> String:
 	# Keep legacy runs on their original schema. Visual history needs version 3
 	# so an older client cannot silently discard building ages or development.
 	var envelope_version: int = 2
-	if data.has("settlement_progress"):
+	if state.has_bracing():
+		envelope_version = 4
+	elif data.has("settlement_progress"):
 		envelope_version = 3
 	elif data["run_mode"] == "classic" and data["village_goal"] == "none":
 		envelope_version = 1
@@ -111,16 +115,29 @@ static func load_game(path: String = DEFAULT_PATH) -> Dictionary:
 	var envelope: Variant = parser.data
 	if not envelope is Dictionary:
 		return _corrupt(path)
-	if not envelope.get("format") is String or envelope["format"] != "monsoon_save" or not _integer(envelope.get("version"), 1, 3):
+	if not envelope.get("format") is String or envelope["format"] != "monsoon_save" or not _integer(envelope.get("version"), 1):
 		return _corrupt(path)
-	if not envelope.get("state") is Dictionary or not _valid_state(envelope["state"]):
+	# A future build's save is unsupported, not corrupt. Preserve it for that
+	# build instead of deleting progress we cannot interpret.
+	if int(envelope["version"]) > 4:
+		return _result(null, "msg.save_unsupported")
+	if not envelope.get("state") is Dictionary:
 		return _corrupt(path)
 	var data: Dictionary = envelope["state"]
+	if data.get("ruleset") is String and data["ruleset"] not in ["legacy", "bracing_v1"]:
+		return _result(null, "msg.save_unsupported")
+	if not _valid_state(data):
+		return _corrupt(path)
 	var envelope_version: int = int(envelope["version"])
+	if envelope_version == 4:
+		if data.get("ruleset") != "bracing_v1" or not _has_fields(data, RUN_FIELDS):
+			return _corrupt(path)
+	elif data.has("ruleset"):
+		return _corrupt(path)
 	if envelope_version == 3:
 		if not _has_fields(data, RUN_FIELDS) or not data.has("settlement_progress"):
 			return _corrupt(path)
-	elif data.has("settlement_progress"):
+	elif envelope_version != 4 and data.has("settlement_progress"):
 		return _corrupt(path)
 	if envelope_version == 2:
 		if not _has_fields(data, RUN_FIELDS):
@@ -169,16 +186,25 @@ static func _can_serialize(state: GameState) -> bool:
 	# Reject those unsafe inputs before calling it, without engine error output.
 	if state.rng == null or state.phase not in [C.Phase.PLANNING, C.Phase.HARVEST]:
 		return false
+	if state.ruleset not in ["legacy", "bracing_v1"]:
+		return false
 	if state.outcome not in C.Outcome.values():
 		return false
 	for tile: Tile in state.tiles:
 		if tile == null or tile.feature not in C.Feature.values() or tile.building not in C.Building.values():
+			return false
+		if tile.brace_turns < 0 or tile.brace_turns > 1:
+			return false
+		if tile.brace_turns != 0 and (not state.has_bracing() or state.phase != C.Phase.PLANNING or tile.building not in [C.Building.HOUSE, C.Building.STILT_HOUSE]):
 			return false
 	return _valid_stats(state.stats, state.target_years()) and _valid_report(state.harvest_report, state.phase == C.Phase.HARVEST) and _valid_modifiers(state.year_mods)
 
 
 static func _valid_state(data: Dictionary) -> bool:
 	if not _has_fields(data, STATE_FIELDS) or not _integer(data["version"], 1, 1):
+		return false
+	var bracing: bool = data.has("ruleset")
+	if bracing and (not data["ruleset"] is String or data["ruleset"] != "bracing_v1" or not _has_fields(data, RUN_FIELDS)):
 		return false
 	if not _valid_run_fields(data):
 		return false
@@ -245,6 +271,14 @@ static func _valid_state(data: Dictionary) -> bool:
 		return false
 	for index: int in range(coords.size()):
 		if not data["tiles"][index] is Dictionary or not _valid_tile(data["tiles"][index], coords[index]):
+			return false
+		var tile: Dictionary = data["tiles"][index]
+		if bracing:
+			if not tile.has("brace_turns") or not _integer(tile["brace_turns"], 0, 1):
+				return false
+			if tile["brace_turns"] != 0 and (data["phase"] != "planning" or tile["building"] not in ["house", "stilt_house"]):
+				return false
+		elif tile.has("brace_turns"):
 			return false
 	return not data.has("settlement_progress") or _valid_settlement_progress(data)
 
