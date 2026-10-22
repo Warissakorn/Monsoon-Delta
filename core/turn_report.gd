@@ -10,6 +10,7 @@ var evaporated: float = 0.0
 var destroyed: Array[Dictionary] = []
 # Semantic results also available with visual recording disabled.
 var brace_results: Array[Dictionary] = []
+var moisture_changes: Array[Dictionary] = []
 var paddies_died: Array[Vector2i] = []
 var paddy_gains: Array[Vector2i] = []
 var fish_food: int = 0
@@ -78,6 +79,15 @@ func to_dict() -> Dictionary:
 			serialized["coord"] = pair
 			serialized_braces.append(serialized)
 		data["brace_results"] = serialized_braces
+	if not moisture_changes.is_empty():
+		var serialized_moisture: Array[Dictionary] = []
+		for entry: Dictionary in moisture_changes:
+			var serialized: Dictionary = entry.duplicate(true)
+			var coord: Vector2i = entry["coord"]
+			var pair: Array[int] = [coord.x, coord.y]
+			serialized["coord"] = pair
+			serialized_moisture.append(serialized)
+		data["moisture_changes"] = serialized_moisture
 	return data
 
 

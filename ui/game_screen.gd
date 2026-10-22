@@ -443,7 +443,7 @@ func refresh_state() -> void:
 		button.add_theme_font_size_override("font_size", 16 if visible_commands > 14 else 18)
 	_time_label.text = tr("hud.time") % [state.year, state.target_years(), tr("season.rain" if state.is_rain() else "season.dry"), state.turn, C.TURNS_PER_YEAR]
 	_run_label.text = tr("run_mode." + state.run_mode + ".name") + "\n" + _difficulty_caption()
-	_run_label.tooltip_text = tr("ruleset.bracing_v1.name") if state.has_bracing() else ""
+	_run_label.tooltip_text = tr("ruleset." + state.ruleset + ".name") if state.ruleset != "legacy" else ""
 	_survival_help.text = tr("help.survive_years") % state.target_years()
 	_resources_label.text = tr("hud.resources") % [state.labor, state.labor_max, state.food, state.wood, state.population, state.capacity()]
 	_resource_chips["labor"].text = tr("resource.labor") + " %d/%d" % [state.labor, state.labor_max]
@@ -722,6 +722,11 @@ func _render_turn_history() -> void:
 		var key: String = "feedback.brace_failed" if failed else ("feedback.brace_held" if bool(entry_result["prevented_loss"]) else "feedback.brace_expired")
 		var coord: Vector2i = entry_result["coord"]
 		_history_details.add_child(_label("(%d, %d) · %s" % [coord.x, coord.y, tr(key)]))
+	for moisture: Dictionary in report.get("moisture_changes", []):
+		var coord: Vector2i = moisture["coord"]
+		_history_details.add_child(_label(tr("history.moisture") % [coord.x, coord.y, int(moisture["before"]), int(moisture["after"])], 18, true))
+		if int(moisture["yield_from_moisture"]) > 0:
+			_history_details.add_child(_label(tr("feedback.moisture_yield"), 18))
 	if float(report["dry_paddy_water_used"]) > 0.0:
 		_history_details.add_child(_label(tr("history.irrigation") % float(report["dry_paddy_water_used"])))
 	if not entry["harvest"].is_empty():
@@ -872,8 +877,12 @@ func _show_turn_feedback(report: TurnReport) -> void:
 		var failed: bool = int(entry["level"]) >= int(entry["protected_threshold"])
 		var key: String = "feedback.brace_failed" if failed else ("feedback.brace_held" if bool(entry["prevented_loss"]) else "feedback.brace_expired")
 		_add_feedback_event(events, entry["coord"], tr(key), failed)
+	var moisture_yields: Dictionary = {}
+	for moisture: Dictionary in report.moisture_changes:
+		if int(moisture["yield_from_moisture"]) > 0:
+			moisture_yields[moisture["coord"]] = true
 	for coord: Vector2i in report.paddy_gains:
-		_add_feedback_event(events, coord, tr("feedback.rice_gain"))
+		_add_feedback_event(events, coord, tr("feedback.moisture_yield" if moisture_yields.has(coord) else "feedback.rice_gain"))
 	var fish: Dictionary = BoardView.preview_fish_food_by_tile(session.state, report)
 	for coord: Vector2i in fish:
 		_add_feedback_event(events, coord, tr("feedback.food_gain") % int(fish[coord]))
@@ -1003,6 +1012,9 @@ func _update_inspector() -> void:
 			_tile_note.text = tr("tile.paddy_dead")
 		else:
 			_tile_note.text = tr("tile.paddy") % [tile.paddy_yield, tile.paddy_rain_turns]
+		if state.has_moisture():
+			_tile_note.text += "\n" + tr("tile.moisture") % [tile.soil_moisture, 2]
+			_tile_note.text += "\n" + tr("tile.moisture_hint")
 	elif tile.building == C.Building.GATE:
 		_tile_note.text = tr("tile.gate_open" if tile.gate_open else "tile.gate_closed")
 		if command_mode.is_empty() and state.phase == C.Phase.PLANNING:
@@ -1041,6 +1053,13 @@ func _tile_preview_lines(tile: Tile) -> PackedStringArray:
 		return lines
 	var predicted: GameState = prediction["state"]
 	var report: TurnReport = prediction["report"]
+	var moisture_production: bool = false
+	for moisture: Dictionary in report.moisture_changes:
+		if moisture["coord"] == tile.coord:
+			lines.append(tr("tile.moisture_forecast") % [int(moisture["before"]), int(moisture["after"])])
+			if int(moisture["yield_from_moisture"]) > 0:
+				moisture_production = true
+				lines.append(tr("tile.moisture_yield"))
 	var braced_threshold: int = -1
 	for entry: Dictionary in report.brace_results:
 		if entry["coord"] == tile.coord:
@@ -1068,7 +1087,7 @@ func _tile_preview_lines(tile: Tile) -> PackedStringArray:
 		lines.append(_flood_limit_line(predicted, "paddy_death_level"))
 	# Damage is completed even on a losing flood, but production is skipped.
 	if report.outcome != C.Outcome.LOSE_HALL:
-		if report.paddy_gains.has(tile.coord):
+		if report.paddy_gains.has(tile.coord) and not moisture_production:
 			lines.append(tr("tile.paddy_gain"))
 		var fish: int = int(BoardView.preview_fish_food_by_tile(predicted, report).get(tile.coord, 0))
 		if fish > 0:
@@ -1283,8 +1302,8 @@ func _show_game_over() -> void:
 	_modal_content.add_child(_label(tr("gameover.components") % [state.population * int(scoring["population"]), state.food, house_bonus, hall_bonus, 1.0 + state.difficulty * float(scoring["difficulty_step"])]))
 	_modal_content.add_child(_label(tr("run_mode." + state.run_mode + ".name"), 20, true))
 	_modal_content.add_child(_label(_difficulty_caption(), 20, true))
-	if session.state.has_bracing():
-		_modal_content.add_child(_label(tr("ruleset.bracing_v1.name"), 18, true))
+	if state.ruleset != "legacy":
+		_modal_content.add_child(_label(tr("ruleset." + state.ruleset + ".name"), 18, true))
 	if state.village_goal != "none":
 		var goal: Dictionary = RunGoals.progress(state)
 		_modal_content.add_child(_label(tr("goal." + state.village_goal + ".name"), 22))
@@ -1297,7 +1316,7 @@ func _show_game_over() -> void:
 
 func _restart() -> void:
 	var config: Dictionary = {"seed": session.state.seed + 1, "map_type": "plains", "leader": session.state.leader, "difficulty": session.state.difficulty, "run_mode": session.state.run_mode, "village_goal": session.state.village_goal}
-	if session.state.has_bracing():
+	if session.state.ruleset != "legacy":
 		config["ruleset"] = session.state.ruleset
 	restart_requested.emit(config)
 
@@ -1308,8 +1327,10 @@ func open_pause() -> void:
 	_open_modal("pause", tr("pause.title"))
 	_modal_content.add_child(_label(tr("pause.seed") % str(session.state.seed)))
 	_modal_content.add_child(_label(_difficulty_caption(), 20, true))
-	if session.state.has_bracing():
-		_modal_content.add_child(_label(tr("ruleset.bracing_v1.name"), 18, true))
+	if session.state.ruleset != "legacy":
+		_modal_content.add_child(_label(tr("ruleset." + session.state.ruleset + ".name"), 18, true))
+	if session.state.has_moisture():
+		_modal_content.add_child(_label(tr("pause.moisture_hint"), 18, true))
 	_motion_toggle = CheckBox.new()
 	_motion_toggle.name = "ReducedMotion"
 	_motion_toggle.text = tr("pause.reduced_motion")

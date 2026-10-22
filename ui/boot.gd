@@ -21,7 +21,7 @@ func _ready() -> void:
 		if arg.begins_with("--") and "=" in arg:
 			var parts := arg.substr(2).split("=", true, 1)
 			if parts[0] == "ruleset":
-				if parts[1] not in ["legacy", "bracing_v1"]:
+				if parts[1] not in GameState.RULESETS:
 					_reject_ruleset(parts[1])
 					return
 				_initial_ruleset = parts[1]
@@ -84,7 +84,7 @@ static func _parse_difficulty(value: String) -> int:
 
 
 func _reject_ruleset(value: String) -> void:
-	printerr("Invalid --ruleset=%s. Use --ruleset=legacy or --ruleset=bracing_v1." % value)
+	printerr("Invalid --ruleset=%s. Use --ruleset= with one of: %s." % [value, ", ".join(GameState.RULESETS)])
 	get_tree().quit(2)
 
 
@@ -166,7 +166,7 @@ func _show_sandbox() -> void:
 
 func _change_language(language: String) -> void:
 	if _screen is MainMenu:
-		_initial_ruleset = "bracing_v1" if _screen._bracing_toggle.button_pressed else "legacy"
+		_initial_ruleset = GameState.ruleset_for(_screen._bracing_toggle.button_pressed, _screen._moisture_toggle.button_pressed)
 	_language = language
 	Localization.change_language(language)
 	var error: String = GamePreferences.write({"language": language})

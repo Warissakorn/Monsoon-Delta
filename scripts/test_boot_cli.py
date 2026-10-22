@@ -65,12 +65,40 @@ class BootDifficultyTests(unittest.TestCase):
         self.assertEqual(envelope["state"]["settlement_progress"]["version"], 1)
         self.assertTrue(all(tile["brace_turns"] == 0 for tile in envelope["state"]["tiles"]))
 
+    def test_moisture_rulesets_start_v5_with_only_the_selected_mechanics(self):
+        for ruleset in ["moisture_v1", "bracing_moisture_v1"]:
+            with self.subTest(ruleset=ruleset):
+                self.invoke(f"--ruleset={ruleset}", "--run-mode=long", "--goal=rice",
+                            "--difficulty=4")
+                envelope = self.read_checkpoint()
+                self.assertEqual(envelope["version"], 5)
+                state = envelope["state"]
+                self.assertEqual(state["ruleset"], ruleset)
+                self.assertEqual(state["run_mode"], "long")
+                self.assertEqual(state["village_goal"], "rice")
+                self.assertEqual(state["difficulty"], 4)
+                self.assertEqual(state["settlement_progress"]["version"], 1)
+                self.assertTrue(all(tile["soil_moisture"] == 0 for tile in state["tiles"]))
+                if ruleset == "bracing_moisture_v1":
+                    self.assertTrue(all(tile["brace_turns"] == 0 for tile in state["tiles"]))
+                else:
+                    self.assertTrue(all("brace_turns" not in tile for tile in state["tiles"]))
+
+    def test_moisture_menu_presets_leave_existing_checkpoint_untouched(self):
+        self.invoke("--ruleset=bracing_moisture_v1")
+        original = self.checkpoint.read_bytes()
+        for ruleset in ["legacy", "bracing_v1", "moisture_v1", "bracing_moisture_v1"]:
+            with self.subTest(ruleset=ruleset):
+                self.invoke(f"--ruleset={ruleset}", scene="menu")
+                self.assertEqual(self.checkpoint.read_bytes(), original)
+
     def test_legacy_and_menu_ruleset_preset_preserve_existing_contract(self):
         self.invoke("--ruleset=legacy")
         envelope = self.read_checkpoint()
         self.assertEqual(envelope["version"], 3)
         self.assertNotIn("ruleset", envelope["state"])
         self.assertTrue(all("brace_turns" not in tile for tile in envelope["state"]["tiles"]))
+        self.assertTrue(all("soil_moisture" not in tile for tile in envelope["state"]["tiles"]))
         saved = self.checkpoint.read_bytes()
         self.invoke("--ruleset=bracing_v1", scene="menu")
         self.assertEqual(self.checkpoint.read_bytes(), saved)
@@ -80,6 +108,8 @@ class BootDifficultyTests(unittest.TestCase):
         invalid_arguments = [
             ["--ruleset"], ["--ruleset", "bracing_v1"], ["--ruleset="],
             ["--ruleset=unknown"], ["--ruleset=BRACING_V1"], ["--ruleset=bracing_v1=extra"],
+            ["--ruleset=MOISTURE_V1"], ["--ruleset=moisture_v1=extra"],
+            ["--ruleset=seasonal_works_v1"],
             # Godot strips trailing whitespace before exposing user args.
             # Leading value whitespace survives and must still be rejected.
             ["--ruleset= legacy"], ["--ruleset=bad", "--ruleset=legacy"],
@@ -89,7 +119,9 @@ class BootDifficultyTests(unittest.TestCase):
                 with self.subTest(scene=scene, arguments=arguments):
                     self.checkpoint.write_bytes(original)
                     result = self.invoke(*arguments, scene=scene, expected=2)
-                    self.assertIn("--ruleset=legacy", result.stdout)
+                    self.assertIn("--ruleset=", result.stdout)
+                    for supported in ["legacy", "bracing_v1", "moisture_v1", "bracing_moisture_v1"]:
+                        self.assertIn(supported, result.stdout)
                     self.assertEqual(self.checkpoint.read_bytes(), original)
                     self.assertFalse(self.checkpoint.with_suffix(".json.tmp").exists())
         self.checkpoint.unlink()

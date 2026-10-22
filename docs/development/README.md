@@ -15,6 +15,9 @@ godot --path . -- --scene=game --run-mode=long --goal=forest --seed=42 --save-pa
 godot --path . -- --scene=game --difficulty=5 --seed=42 --save-path=user://dev-difficulty.json
 # รอบใหม่ที่เปิดค้ำบ้านหนึ่งเทิร์น
 godot --path . -- --scene=game --ruleset=bracing_v1 --seed=42 --save-path=user://dev-bracing.json
+# ความชื้นสะสมในนา แยกเดี่ยวหรือใช้ร่วมกับค้ำบ้าน
+godot --path . -- --scene=game --ruleset=moisture_v1 --seed=42 --save-path=user://dev-moisture.json
+godot --path . -- --scene=game --ruleset=bracing_moisture_v1 --seed=42 --save-path=user://dev-seasonal.json
 # ห้องทดลองน้ำไม่เขียนเซฟรอบเล่น
 godot --path . -- --scene=sandbox --seed=42 --lang=th
 
