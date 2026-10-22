@@ -12,6 +12,9 @@ var _save_path: String = SaveIO.DEFAULT_PATH
 func _ready() -> void:
 	var options: Dictionary = {}
 	for arg in OS.get_cmdline_user_args():
+		if arg == "--lesson":
+			_reject_lesson("")
+			return
 		if arg == "--ruleset":
 			_reject_ruleset("")
 			return
@@ -20,6 +23,9 @@ func _ready() -> void:
 			return
 		if arg.begins_with("--") and "=" in arg:
 			var parts := arg.substr(2).split("=", true, 1)
+			if parts[0] == "lesson" and parts[1] not in ["river_school_01", "river_school_03"]:
+				_reject_lesson(parts[1])
+				return
 			if parts[0] == "ruleset":
 				if parts[1] not in GameState.RULESETS:
 					_reject_ruleset(parts[1])
@@ -37,8 +43,8 @@ func _ready() -> void:
 		get_tree().quit(2)
 		return
 	var scene := String(options.get("scene", "menu"))
-	if scene not in ["menu", "game", "sandbox"]:
-		push_error("Supported scenes: --scene=menu, --scene=game or --scene=sandbox.")
+	if scene not in ["menu", "game", "sandbox", "school"]:
+		push_error("Supported scenes: --scene=menu, --scene=game, --scene=sandbox or --scene=school.")
 		get_tree().quit(2)
 		return
 	_language = String(options.get("lang", GamePreferences.read()["language"]))
@@ -55,6 +61,11 @@ func _ready() -> void:
 		"menu": _show_menu()
 		"game": _start_game({"seed": _initial_seed, "difficulty": _initial_difficulty, "ruleset": _initial_ruleset, "run_mode": String(options.get("run-mode", "classic")), "village_goal": String(options.get("goal", "none"))})
 		"sandbox": _show_sandbox()
+		"school":
+			if options.has("lesson"):
+				_start_lesson(String(options["lesson"]))
+			else:
+				_show_school_menu()
 	if options.has("screenshot"):
 		for frame in range(30):
 			await get_tree().process_frame
@@ -83,6 +94,11 @@ static func _parse_difficulty(value: String) -> int:
 	return int(digits)
 
 
+func _reject_lesson(value: String) -> void:
+	printerr("Invalid --lesson=%s. Use --lesson=river_school_01 or --lesson=river_school_03." % value)
+	get_tree().quit(2)
+
+
 func _reject_ruleset(value: String) -> void:
 	printerr("Invalid --ruleset=%s. Use --ruleset= with one of: %s." % [value, ", ".join(GameState.RULESETS)])
 	get_tree().quit(2)
@@ -101,21 +117,40 @@ func _replace_screen(next: Node) -> void:
 	add_child(next)
 
 
-func _show_menu(error: String = "") -> void:
+func _show_menu(error: String = "", school_first: bool = false) -> void:
 	var menu := MainMenu.new()
 	menu.initial_seed = _initial_seed
 	menu.initial_difficulty = _initial_difficulty
 	menu.initial_ruleset = _initial_ruleset
 	menu.language = _language
 	menu.save_path = _save_path
+	menu.initial_school = school_first
 	menu.start_requested.connect(_start_game)
 	menu.continue_requested.connect(_continue_game)
 	menu.sandbox_requested.connect(_show_sandbox)
+	menu.lesson_requested.connect(_start_lesson)
 	menu.language_changed.connect(_change_language)
 	menu.quit_requested.connect(func(): get_tree().quit())
 	_replace_screen(menu)
 	if not error.is_empty():
 		menu.show_error(error)
+
+
+func _show_school_menu() -> void:
+	_show_menu("", true)
+
+
+func _start_lesson(id: String) -> void:
+	var lesson := RiverSchoolRun.new()
+	if not lesson.start(id):
+		_show_menu("school.lesson_not_run")
+		return
+	var screen := RiverSchoolScreen.new()
+	screen.lesson = lesson
+	screen.menu_requested.connect(_show_menu)
+	screen.school_requested.connect(_show_school_menu)
+	screen.lesson_requested.connect(_start_lesson)
+	_replace_screen(screen)
 
 
 func _start_game(config: Dictionary) -> void:
@@ -165,17 +200,18 @@ func _show_sandbox() -> void:
 
 
 func _change_language(language: String) -> void:
+	var school_visible: bool = _screen is MainMenu and _screen._school.visible
 	if _screen is MainMenu:
 		_initial_ruleset = GameState.ruleset_for(_screen._bracing_toggle.button_pressed, _screen._moisture_toggle.button_pressed)
 	_language = language
 	Localization.change_language(language)
 	var error: String = GamePreferences.write({"language": language})
-	_show_menu(error)
+	_show_menu(error, school_visible)
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
-		if _screen is GameScreen and _session != null:
+		if _screen is GameScreen:
 			_screen.request_quit()
 		else:
 			get_tree().quit()

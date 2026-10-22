@@ -18,6 +18,9 @@ godot --path . -- --scene=game --ruleset=bracing_v1 --seed=42 --save-path=user:/
 # ความชื้นสะสมในนา แยกเดี่ยวหรือใช้ร่วมกับค้ำบ้าน
 godot --path . -- --scene=game --ruleset=moisture_v1 --seed=42 --save-path=user://dev-moisture.json
 godot --path . -- --scene=game --ruleset=bracing_moisture_v1 --seed=42 --save-path=user://dev-seasonal.json
+# เลือกโจทย์สั้น / เข้าโจทย์โดยตรง ไม่มี checkpoint บทเรียน
+godot --path . -- --scene=school --lang=th
+godot --path . -- --scene=school --lesson=river_school_01 --lang=th
 # ห้องทดลองน้ำไม่เขียนเซฟรอบเล่น
 godot --path . -- --scene=sandbox --seed=42 --lang=th
 
@@ -30,7 +33,7 @@ git diff --check
 
 `scripts/test.sh` import โปรเจกต์ก่อนและตรวจ error จาก log แม้ Godot ออกด้วย status 0 ใช้ `--filter=game_screen`, `session`, `water` หรือชื่อส่วนที่เกี่ยวข้องได้ จำนวนเทสต์ฐานและหลักฐานล่าสุดอ้างใน STATUS; อย่าเปลี่ยนจำนวนเทสต์ในรายงานเก่าให้เป็นจำนวนปัจจุบัน
 
-เมื่อแก้ boot/ตัวเลือก CLI รัน `python3 scripts/test_boot_cli.py` เพิ่มเพื่อตรวจระดับความยาก seed เริ่มต้น และการปฏิเสธค่าผิดก่อนแตะ checkpoint ด้วยการเปิด Godot จริงบนเซฟ/ค่าตั้งแยก
+เมื่อแก้ boot/ตัวเลือก CLI รัน `python3 scripts/test_boot_cli.py` และ `python3 scripts/test_school_cli.py` เพิ่มเพื่อตรวจระดับความยาก seed เริ่มต้น และการปฏิเสธค่าผิดก่อนแตะ checkpoint ด้วยการเปิด Godot จริงบนเซฟ/ค่าตั้งแยก
 
 ## เลือกการตรวจตามสิ่งที่เปลี่ยน
 
@@ -44,6 +47,8 @@ git diff --check
 | checker เอกสาร | ตรวจ repo จริงและกรณี broken link/ต้นฉบับเปลี่ยนด้วย temporary fixture; ห้ามแก้ไฟล์นำเข้าจริงเพื่อทดสอบ |
 
 [CI](../../.github/workflows/tests.yml) ตรวจเอกสาร Godot tests, smoke เมนู/เกม/sandbox/รอบยาว, บอท, balance CLI และ Python report checker ใช้ผลที่รันกับ commit ที่กำลังส่ง ไม่ใช้ CI เก่ารับรองการเปลี่ยน runtime ใหม่
+
+โรงเรียนสายน้ำใช้ [fixture/replay](../../core/river_school_fixtures.gd), [controller](../../core/river_school_run.gd) และ [หน้าจอเฉพาะ](../../ui/river_school_screen.gd) บนกฎเดิม ใช้ `scripts/test.sh --filter=river_school` ตรวจผลจริง/Retry/RNG/การรักษาเซฟปกติ แล้วตรวจทั้งชุด การผ่านเทสต์ไม่แทนการทดลองความเข้าใจหรือความสนุกกับผู้เล่นตาม [แผนตรวจ](../design/FUN_DESIGN.md)
 
 ### ตรวจภาพและการควบคุม
 
