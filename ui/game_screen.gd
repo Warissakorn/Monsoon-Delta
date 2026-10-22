@@ -726,7 +726,7 @@ func _render_turn_history() -> void:
 		var coord: Vector2i = moisture["coord"]
 		_history_details.add_child(_label(tr("history.moisture") % [coord.x, coord.y, int(moisture["before"]), int(moisture["after"])], 18, true))
 		if int(moisture["yield_from_moisture"]) > 0:
-			_history_details.add_child(_label(tr("feedback.moisture_yield"), 18))
+			_history_details.add_child(_label(tr("history.moisture_yield"), 18))
 	if float(report["dry_paddy_water_used"]) > 0.0:
 		_history_details.add_child(_label(tr("history.irrigation") % float(report["dry_paddy_water_used"])))
 	if not entry["harvest"].is_empty():
@@ -892,7 +892,8 @@ func _show_turn_feedback(report: TurnReport) -> void:
 			break
 		var event: Dictionary = events[coord]
 		var danger: bool = event["danger"]
-		_feedback.show_marker(_feedback_position(coord), "\n".join(event["lines"]), Color(_colors.danger if danger else _colors.success), "danger" if danger else "success")
+		var kind: String = "danger" if danger else ("moisture" if moisture_yields.has(coord) else "success")
+		_feedback.show_marker(_feedback_position(coord), "\n".join(event["lines"]), Color(_colors.danger if danger else _colors.success), kind)
 		shown += 1
 	if shown > 0:
 		_turn_feedback_active = true

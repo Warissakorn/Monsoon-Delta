@@ -49,7 +49,7 @@ func show_marker(at: Vector3, text: String, color: Color, kind: String = "succes
 	label.name = "Label"
 	label.text = text
 	label.font = FONT
-	label.font_size = 48
+	label.font_size = 36 if kind == "moisture" else 48
 	label.pixel_size = 0.010
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.width = 500.0
@@ -62,6 +62,16 @@ func show_marker(at: Vector3, text: String, color: Color, kind: String = "succes
 	label.render_priority = 4
 	marker.add_child(label)
 	label.owner = marker
+	if kind == "moisture":
+		var source: Sprite3D = Sprite3D.new()
+		source.name = "MoistureSource"
+		source.texture = preload("res://assets/icons/moisture.svg")
+		source.pixel_size = 0.012
+		source.position = Vector3(0.0, 0.35, 0.0)
+		source.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		source.no_depth_test = true
+		source.shaded = false
+		label.add_child(source)
 	var entry: Dictionary = {
 		"node": marker, "ring": ring, "label": label, "burst": null,
 		"material": material, "color": color, "kind": kind, "age": 0.0,

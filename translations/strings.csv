@@ -324,6 +324,7 @@ The delta is built from a procedurally generated world.","Monsoon Delta
 "tile.moisture_hint","Moisture is stored in soil. Rice becomes food at harvest.","ความชื้นสะสมในดิน ข้าวจะเป็นอาหารเมื่อเก็บเกี่ยว"
 "tile.moisture_forecast","This turn · moisture %d → %d","เทิร์นนี้ · ความชื้น %d → %d"
 "tile.moisture_yield","Stored rice +1 from soil moisture · collected at harvest","ข้าวสะสม +1 จากความชื้น · รับอาหารเมื่อเก็บเกี่ยว"
-"feedback.moisture_yield","Stored rice +1 · soil moisture used","ข้าวสะสม +1 · ใช้ความชื้นในดิน"
+"feedback.moisture_yield","Rice +1","ข้าว +1"
 "history.moisture","Paddy (%d, %d) · soil moisture %d → %d","นา (%d, %d) · ความชื้นในดิน %d → %d"
+"history.moisture_yield","Rice +1 from soil moisture · collected at harvest","ข้าว +1 จากความชื้น · รับอาหารเมื่อเก็บเกี่ยว"
 "pause.moisture_hint","Suitable rain fills moisture to 2. Every dry turn uses 1 moisture; reservoirs take priority and never double the rice yield. Moisture survives the harvest. Flooded or demolished fields lose it.","ฝนที่เหมาะสมเติมความชื้นเป็น 2 ทุกเทิร์นแล้งลด 1 หน่วย ใช้บึงก่อนและไม่ผลิตข้าวซ้ำ ความชื้นคงอยู่ข้ามเก็บเกี่ยว นาตายหรือรื้อจะสูญเสียความชื้น"

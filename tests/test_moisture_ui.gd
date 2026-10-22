@@ -168,6 +168,11 @@ func test_committed_moisture_yield_has_crop_feedback_and_persists_in_history() -
 		assert_eq(state.get_tile(coord).paddy_yield, 1)
 		assert_eq(state.food, food_before, "moisture yield waits for the normal harvest")
 		assert_true(_marker_texts(screen).contains(_text("feedback.moisture_yield")))
+		var source_visible: bool = false
+		for marker: Node in screen._feedback.get_children():
+			if marker.has_node("Label/MoistureSource"):
+				source_visible = true
+		assert_true(source_visible, "compact crop feedback keeps the soil moisture source visible")
 		var before_history: Dictionary = state.to_dict()
 		var saved: PackedByteArray = FileAccess.get_file_as_bytes(PATH)
 		var entries: Array[Dictionary] = screen.session.turn_history()
@@ -176,6 +181,7 @@ func test_committed_moisture_yield_has_crop_feedback_and_persists_in_history() -
 		screen.open_turn_history()
 		var history_text: String = "\n".join(_labels(screen._history_details))
 		assert_true(history_text.contains(_text("feedback.moisture_yield")))
+		assert_true(history_text.contains(_text("history.moisture_yield")))
 		assert_eq(state.to_dict(), before_history)
 		assert_eq(FileAccess.get_file_as_bytes(PATH), saved)
 		screen.free()
