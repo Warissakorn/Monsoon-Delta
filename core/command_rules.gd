@@ -156,6 +156,7 @@ static func _reset_paddy(tile: Tile) -> void:
 	tile.paddy_yield = 0
 	tile.paddy_dead = false
 	tile.paddy_rain_turns = 0
+	tile.soil_moisture = 0
 
 
 static func _demolish(s: GameState, tile: Tile) -> void:

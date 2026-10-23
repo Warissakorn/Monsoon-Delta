@@ -6,6 +6,7 @@ const Constants = preload("res://core/constants.gd")
 const TileModel = preload("res://core/tile.gd")
 const Database = preload("res://core/data_db.gd")
 const UndoHistory = preload("res://core/undo_stack.gd")
+const RULESETS: Array[String] = ["legacy", "bracing_v1", "moisture_v1", "bracing_moisture_v1"]
 const DIRECTIONS: Array[Vector2i] = [
 	Vector2i(1, 0), Vector2i(1, -1), Vector2i(0, -1),
 	Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, 1),
@@ -105,7 +106,17 @@ func target_years() -> int:
 
 
 func has_bracing() -> bool:
-	return ruleset == "bracing_v1"
+	return ruleset in ["bracing_v1", "bracing_moisture_v1"]
+
+
+func has_moisture() -> bool:
+	return ruleset in ["moisture_v1", "bracing_moisture_v1"]
+
+
+static func ruleset_for(bracing: bool, moisture: bool) -> String:
+	if moisture:
+		return "bracing_moisture_v1" if bracing else "moisture_v1"
+	return "bracing_v1" if bracing else "legacy"
 
 
 func mod(key: String) -> Variant:
@@ -192,7 +203,7 @@ func duplicate_state() -> GameState:
 func to_dict() -> Dictionary:
 	var tile_data: Array[Dictionary] = []
 	for tile: TileModel in tiles:
-		tile_data.append(tile.to_dict(has_bracing()))
+		tile_data.append(tile.to_dict(has_bracing(), has_moisture()))
 	var data: Dictionary = {
 		"version": version,
 		"seed": str(seed),

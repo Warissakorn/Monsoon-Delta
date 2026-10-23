@@ -15,6 +15,7 @@ var _labels_root: Node3D
 var _targets_root: Node3D
 var _preview_root: Node3D
 var _brace_status_root: Node3D
+var _moisture_status_root: Node3D
 var _selection: MeshInstance3D
 var _hover: MeshInstance3D
 var _selected_coord: Vector2i = NO_COORD
@@ -67,6 +68,7 @@ func refresh() -> void:
 	_clear_root(_tiles_root)
 	_clear_root(_labels_root)
 	_clear_root(_brace_status_root)
+	_clear_root(_moisture_status_root)
 	if state == null:
 		_selection.hide()
 		_hover.hide()
@@ -113,6 +115,7 @@ func set_preview(prediction: Dictionary, enabled: bool = true) -> void:
 	_prediction = prediction if enabled else {}
 	_ensure_nodes()
 	_refresh_preview()
+	_refresh_moisture_status()
 	_flow_view.set_preview(prediction, enabled)
 	_update_water_flow()
 
@@ -138,6 +141,7 @@ func show_actual_flow(report: TurnReport) -> void:
 	_flow_view.show_report(report, state)
 	if _flow_view.is_showing_actual():
 		_clear_root(_preview_root)
+	_refresh_moisture_status()
 	_update_water_flow()
 
 
@@ -155,6 +159,7 @@ func finish_actual_flow() -> void:
 		_flow_view.clear()
 		_flow_view.set_preview(_prediction, not _prediction.is_empty())
 		_refresh_preview()
+	_refresh_moisture_status()
 	_update_water_flow()
 
 
@@ -170,6 +175,7 @@ func set_activity_paused(paused: bool) -> void:
 func _on_actual_flow_finished() -> void:
 	_actual_flow_report = null
 	_refresh_preview()
+	_refresh_moisture_status()
 	_update_water_flow()
 
 
@@ -258,6 +264,9 @@ func _ensure_nodes() -> void:
 	_brace_status_root = Node3D.new()
 	_brace_status_root.name = "BraceStatus"
 	add_child(_brace_status_root)
+	_moisture_status_root = Node3D.new()
+	_moisture_status_root.name = "MoistureStatus"
+	add_child(_moisture_status_root)
 	_route_view = RouteNetworkView.new()
 	_route_view.name = "Routes"
 	add_child(_route_view)
@@ -565,6 +574,10 @@ func _build_paddy(cell: Node3D, tile: Tile) -> void:
 	if tile.paddy_dead:
 		stalk_color = _color("earth").lightened(0.24)
 	var mud: Color = _color("riverbed").lerp(_color("earth"), 0.55)
+	if state.has_moisture() and not tile.paddy_dead:
+		var damp_soil: Color = _color("roof").lerp(_color("earth"), 0.70).darkened(0.33)
+		mud = mud.lerp(damp_soil, float(clampi(tile.soil_moisture, 0, 2)) / 2.0)
+	field.set_meta("soil_color", mud)
 	_add_box(field, Vector3(1.20, 0.022, 1.05), Vector3(0.0, 0.012, 0.0), mud)
 	for x: float in [-0.64, 0.64]:
 		_add_box(field, Vector3(0.07, 0.055, 1.16), Vector3(x, 0.028, 0.0), _color("earth").lightened(0.17))
@@ -718,7 +731,7 @@ func _build_house(cell: Node3D, tile: Tile) -> void:
 	else:
 		_add_box(village, Vector3(0.28, 0.045, 0.14), Vector3(0.03, 0.025, 0.46), timber.lightened(0.22))
 		_build_path(village, 0.0, 0.61, 2)
-	if state.ruleset == "bracing_v1" and tile.brace_turns == 1 and tile.building in [C.Building.HOUSE, C.Building.STILT_HOUSE]:
+	if state.has_bracing() and tile.brace_turns == 1 and tile.building in [C.Building.HOUSE, C.Building.STILT_HOUSE]:
 		_build_emergency_bracing(village, tile, offset)
 		_build_brace_status(tile, offset)
 
@@ -1043,8 +1056,12 @@ func _refresh_preview() -> void:
 				_preview_label("", tile.coord, Color("#ef8c76"), "HallRisk", "hall")
 	for coord: Vector2i in report.paddies_died:
 		_preview_label("", coord, Color("#ef8c76"), "PaddyDied", "dead_rice")
+	var moisture_yields: Dictionary = {}
+	for entry: Dictionary in report.moisture_changes:
+		if int(entry["yield_from_moisture"]) > 0:
+			moisture_yields[entry["coord"]] = true
 	for coord: Vector2i in report.paddy_gains:
-		_preview_label("+1", coord, _color("highlight"), "PaddyGain", "paddy")
+		_preview_label("+1", coord, _color("highlight"), "PaddyGain", "moisture" if moisture_yields.has(coord) else "paddy")
 	var fish: Dictionary = preview_fish_food_by_tile(predicted, report)
 	for coord: Vector2i in fish:
 		_preview_label("+%d" % int(fish[coord]), coord, _color("water_shallow"), "FishFood", "fish")
@@ -1146,6 +1163,7 @@ func _preview_label(text: String, coord: Vector2i, color: Color, prefix: String,
 
 
 func _update_markers() -> void:
+	_refresh_moisture_status()
 	if state == null:
 		_selection.hide()
 		_hover.hide()
@@ -1153,6 +1171,80 @@ func _update_markers() -> void:
 	_position_marker(_selection, _selected_coord, 0.045)
 	_position_marker(_hover, _hover_coord, 0.06)
 	_hover.visible = _hover.visible and _hover_coord != _selected_coord
+
+
+func _refresh_moisture_status() -> void:
+	_clear_root(_moisture_status_root)
+	if state == null or not state.has_moisture():
+		return
+	var seen: Dictionary = {}
+	for coord: Vector2i in [_selected_coord, _hover_coord]:
+		var tile: Tile = state.get_tile(coord)
+		if tile == null or seen.has(coord) or tile.feature != C.Feature.PADDY or tile.paddy_dead:
+			continue
+		seen[coord] = true
+		var status: Node3D = Node3D.new()
+		status.name = "Moisture_%d_%d" % [coord.x, coord.y]
+		status.position = Hex.to_world(coord)
+		status.position.y = _surface_y(tile) + 2.45
+		status.set_meta("soil_moisture", tile.soil_moisture)
+		_moisture_status_root.add_child(status)
+		_build_moisture_slots(status, tile.soil_moisture, "Current", false)
+		if _flow_view != null and _flow_view.is_showing_actual():
+			continue
+		var predicted: GameState = _prediction.get("state") as GameState
+		if predicted == null:
+			continue
+		var after: Tile = predicted.get_tile(coord)
+		if after != null and not after.paddy_dead:
+			var forecast: Label3D = _build_moisture_slots(status, after.soil_moisture, "Forecast", true)
+			forecast.position.y = -0.44
+
+
+func _build_moisture_slots(parent: Node3D, moisture: int, node_name: String, forecast: bool) -> Label3D:
+	var label: Label3D = Label3D.new()
+	label.name = node_name
+	label.text = "%d/2" % moisture
+	label.font = MARKER_FONT
+	label.font_size = 30 if forecast else 36
+	label.pixel_size = 0.010
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.modulate = _color("muted") if forecast else _color("ink")
+	label.outline_modulate = _color("background")
+	label.outline_size = 8
+	label.no_depth_test = true
+	label.set_meta("soil_moisture", moisture)
+	label.set_meta("forecast", forecast)
+	parent.add_child(label)
+	if forecast:
+		var arrow: Label3D = Label3D.new()
+		arrow.name = "Arrow"
+		arrow.text = "→"
+		arrow.font = MARKER_FONT
+		arrow.font_size = 30
+		arrow.pixel_size = 0.010
+		arrow.position = Vector3(-0.98, 0.01, 0.0)
+		arrow.modulate = _color("muted")
+		arrow.outline_modulate = _color("background")
+		arrow.outline_size = 8
+		arrow.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		arrow.no_depth_test = true
+		label.add_child(arrow)
+	for slot: int in range(2):
+		var drop: Sprite3D = Sprite3D.new()
+		drop.name = "Drop%d" % slot
+		drop.texture = preload("res://assets/icons/moisture.svg")
+		drop.pixel_size = 0.010 if forecast else 0.012
+		drop.position = Vector3(-0.67 + float(slot) * 0.25, 0.03, 0.0)
+		drop.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		drop.no_depth_test = true
+		drop.shaded = false
+		drop.modulate = _color("water_shallow").lightened(0.38) if slot < moisture else _color("muted").darkened(0.30)
+		drop.modulate.a = (0.65 if forecast else 1.0) if slot < moisture else 0.40
+		drop.scale = Vector3.ONE if slot < moisture else Vector3.ONE * 0.72
+		drop.set_meta("filled", slot < moisture)
+		label.add_child(drop)
+	return label
 
 
 func _position_marker(marker: MeshInstance3D, coord: Vector2i, offset: float) -> void:

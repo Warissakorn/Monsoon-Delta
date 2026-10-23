@@ -13,11 +13,11 @@
 
 | หมวด | เนื้อหาและเส้นทางอ่าน |
 |---|---|
-| **ฟีเจอร์ที่มีจริง** `features/` | [เมนูและหน้าจอเกม](features/M4_PLAYABLE.md), [รอบ 5/10 ปีและเป้าหมาย](features/LONG_RUNS.md), [ความยาก 0–10](features/DIFFICULTY.md), [ค้ำบ้านฉุกเฉิน](features/HOUSE_BRACING.md), [หมู่บ้านมีชีวิต](features/LIVING_VILLAGE.md), [ภาพหมู่บ้าน](features/VISUAL_REFRESH.md), [ผลตอบรับและ Reduce motion](features/ACTION_FEEDBACK.md) |
+| **ฟีเจอร์ที่มีจริง** `features/` | [เมนูและหน้าจอเกม](features/M4_PLAYABLE.md), [โรงเรียนสายน้ำ 2 โจทย์](features/RIVER_SCHOOL.md), [รอบ 5/10 ปีและเป้าหมาย](features/LONG_RUNS.md), [ความยาก 0–10](features/DIFFICULTY.md), [ค้ำบ้านฉุกเฉิน](features/HOUSE_BRACING.md), [ความชื้นสะสมในนา](features/SOIL_MOISTURE.md), [หมู่บ้านมีชีวิต](features/LIVING_VILLAGE.md), [ภาพหมู่บ้าน](features/VISUAL_REFRESH.md), [ผลตอบรับและ Reduce motion](features/ACTION_FEEDBACK.md) |
 | **พัฒนาและตรวจ** `development/` | [ขั้นตอนพัฒนา](development/README.md), [สัญญาเซฟ](development/SAVE_IO.md), [ทดลองสมดุลและทำซ้ำผล](development/BALANCE_EXPERIMENTS.md) |
 | **แบบเสนอ** `design/` | [เริ่มที่ข้อเสนอ M5](design/REPLAYABILITY_PROPOSAL.md) → [การ์ด 30 ใบ](design/CARD_CATALOG.md) / [catalog เสนอ](design/cards.proposal.json), [เหตุการณ์ 15 แบบ](design/EVENT_CATALOG.md), [ความยากและแผนที่](design/CHALLENGES_AND_MAPS.md), [ข้อตกลงรายปี 6 แบบ](design/ANNUAL_CONTRACTS.md); ยังไม่เปิดใช้ในเกม |
-| **แบบเสนอบทเรียน** `design/` | [โรงเรียนสายน้ำ: flow หน้าจอและแผนพัฒนา](design/SCENARIO_CAMPAIGN.md) → [ภารกิจ 6 บท เป้าหมายและคำใบ้](design/SCENARIO_CATALOG.md); ต่อยอด M8 ด้วยกฎเดิม ยังไม่เปิดใช้ในเกม |
-| **แบบเสนอกลไกและฉาก** `design/` | [ค้ำบ้าน ความชื้นในนา และประตูอุดตัน](design/SEASONAL_MECHANICS.md) → [เอฟเฟกต์ 12 รายการและจังหวะหนึ่งเทิร์น](design/SCENE_EFFECTS.md); ทำส่วนค้ำบ้านแล้ว ความชื้น/ประตูและเอฟเฟกต์ที่เหลือยังเป็นข้อเสนอ |
+| **การออกแบบประสบการณ์** `design/` | [ทฤษฎีกับสิ่งที่ทดลองเพิ่มความสนุก](design/FUN_DESIGN.md), [แผนโรงเรียนสายน้ำครบ 6 บท](design/SCENARIO_CAMPAIGN.md) → [บัญชีภารกิจ](design/SCENARIO_CATALOG.md); บท 01/03 มีต้นแบบเล่นได้ บท 02/04–06 และเซฟบทเรียนยังเป็นข้อเสนอ |
+| **แบบเสนอกลไกและฉาก** `design/` | [ค้ำบ้าน ความชื้นในนา และประตูอุดตัน](design/SEASONAL_MECHANICS.md) → [เอฟเฟกต์ 12 รายการและจังหวะหนึ่งเทิร์น](design/SCENE_EFFECTS.md); ทำค้ำบ้านและความชื้นในนาแล้ว ประตูอุดตันและเอฟเฟกต์ที่เหลือยังเป็นข้อเสนอ |
 | **ประวัติ** `history/` | [บันทึกตามวัน](history/PROGRESS.md), [ต้นแบบน้ำ](history/PLAYTEST.md), [ระบบหลัก ณ M3](history/M3_CORE.md), [คัดกรองสมดุล](history/BALANCE_SCREEN.md), [ผลทดลองอาหารที่ไม่ผ่าน](history/M3_BALANCE_FOLLOWUP.md) |
 | **หลักฐานดิบ** `reports/`, `images/` | [CSV/manifest การทดลอง](reports), [ภาพหน้าจอและ fixture](images); เปิดผ่านเอกสารที่อธิบายบริบทของแต่ละชุด |
 

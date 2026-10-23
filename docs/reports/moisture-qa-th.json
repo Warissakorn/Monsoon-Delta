@@ -1,0 +1,109 @@
+{
+  "captures": [
+    {
+      "context": "NEW GAME SETUP / OPTIONAL SOIL MOISTURE",
+      "file": "moisture-setup-th.png",
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    {
+      "context": "CONTROLLED FIXTURE / RAIN RECHARGES SOIL 0 TO 2",
+      "file": "moisture-rain-fixture-th.png",
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    {
+      "context": "CONTROLLED DRAINED FIXTURE / CARRIED SOIL 2, PREVIEW 1",
+      "file": "moisture-dry-fixture-th.png",
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    {
+      "context": "CONTROLLED FIXTURE / PAUSE AND REDUCE MOTION",
+      "file": "moisture-pause-fixture-th.png",
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    {
+      "context": "CONTROLLED FIXTURE / SOIL YIELD, REDUCE MOTION ON",
+      "file": "moisture-yield-fixture-th.png",
+      "viewport": [
+        1280,
+        720
+      ]
+    }
+  ],
+  "checks": {
+    "actual_history_semantics": true,
+    "actual_moisture_feedback": true,
+    "both_options_default_off": true,
+    "both_options_native_click": true,
+    "clear_fixture-checkpoint.json": true,
+    "clear_menu-checkpoint.json": true,
+    "clickable_@Button@30_3": true,
+    "clickable_@Button@5353_34": true,
+    "clickable_ContinueHarvest_23": true,
+    "clickable_EnableBracing_5": true,
+    "clickable_EnableMoisture_6": true,
+    "clickable_ReducedMotion_40": true,
+    "combined_bracing_tool_visible": true,
+    "continue_load": true,
+    "continue_ruleset_independent_of_menu": true,
+    "dry_actual_decrements_once": true,
+    "dry_fixture_checkpoint": true,
+    "dry_inspector_source": true,
+    "dry_preview_uses_moisture": true,
+    "dry_yield_is_not_food": true,
+    "enter_preserves_first_turn": true,
+    "fixture_checkpoint_13": true,
+    "fixture_checkpoint_54": true,
+    "fixture_checkpoint_56": true,
+    "flood_kills_and_clears_soil": true,
+    "harvest_continue_available": true,
+    "history_source_visible": true,
+    "isolated_preferences": true,
+    "menu_start_saves": true,
+    "moisture-dry-fixture_screenshot": true,
+    "moisture-pause-fixture_screenshot": true,
+    "moisture-rain-fixture_screenshot": true,
+    "moisture-setup_screenshot": true,
+    "moisture-yield-fixture_screenshot": true,
+    "moisture_survives_next_year": true,
+    "motion_read_only": true,
+    "native_continue_exact_state": true,
+    "native_demolish_clears_moisture": true,
+    "native_history_open": true,
+    "native_inspection_target_14": true,
+    "native_inspection_target_26": true,
+    "native_inspection_target_38": true,
+    "native_redo_clears_moisture": true,
+    "native_restore_before_continue": true,
+    "native_undo_restores_moisture": true,
+    "new_game_config": true,
+    "pause_content_fits_viewport": true,
+    "pause_open": true,
+    "preview_toggle_read_only": true,
+    "rain_actual_recharge": true,
+    "rain_inspector_current": true,
+    "rain_inspector_forecast": true,
+    "rain_preview_recharges_two": true,
+    "reduce_motion": true,
+    "second_dry_yield_exhausts_soil": true,
+    "selected_moisture_badge": true,
+    "third_dry_no_free_yield": true,
+    "unsuitable_rain_decays_without_yield": true
+  },
+  "display": "X11",
+  "engine": "4.6.3-stable (official)",
+  "fixture": "Controlled flat elevation-2 board, three paddies and three stilt houses, hall threshold4, no sources/sea/inflow. Rain turn6 depth0.35; next-year surface water explicitly drained for dry visual fixture. Unsuitable-rain depth0 and flood depth0.7 are independent controlled fixtures. Not a legal playthrough.",
+  "language": "th",
+  "note": "Automated native mouse/keyboard integration at 1280x720; not human playtesting, balance validation or a performance benchmark. Images captured directly from Godot viewport without editing. All saves/settings isolated under out-dir."
+}

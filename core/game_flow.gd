@@ -21,7 +21,7 @@ static func new_game(cfg: Dictionary) -> GameState:
 		return null
 	if typeof(run_mode) != TYPE_STRING or typeof(village_goal) != TYPE_STRING:
 		return null
-	if typeof(ruleset) != TYPE_STRING or ruleset not in ["legacy", "bracing_v1"]:
+	if typeof(ruleset) != TYPE_STRING or ruleset not in GameState.RULESETS:
 		return null
 	if not DataDB.balance()["run_modes"].has(run_mode) or not DataDB.balance()["village_goals"].has(village_goal):
 		return null
@@ -72,6 +72,8 @@ static func start_year(s: GameState) -> void:
 		if tile.feature == C.Feature.SAPLING:
 			tile.feature = C.Feature.FOREST
 		elif tile.feature == C.Feature.PADDY:
+			if tile.paddy_dead:
+				tile.soil_moisture = 0
 			tile.paddy_yield = 0
 			tile.paddy_dead = false
 			tile.paddy_rain_turns = 0

@@ -5,6 +5,7 @@ extends Control
 signal start_requested(config: Dictionary)
 signal continue_requested()
 signal sandbox_requested()
+signal lesson_requested(scenario_id: String)
 signal language_changed(language: String)
 signal quit_requested()
 
@@ -18,11 +19,14 @@ var initial_seed: int = 42
 var initial_difficulty: int = 0
 var initial_ruleset: String = "legacy"
 var language: String = "th"
+var initial_school: bool = false
 
 var _colors: Dictionary
 var _home: VBoxContainer
 var _setup: VBoxContainer
 var _credits: VBoxContainer
+var _school: VBoxContainer
+var _school_button: Button
 var _continue_button: Button
 var _new_game_button: Button
 var _columns: HBoxContainer
@@ -39,6 +43,7 @@ var _goal_description: Label
 var _difficulty_option: OptionButton
 var _difficulty_description: Label
 var _bracing_toggle: CheckBox
+var _moisture_toggle: CheckBox
 var _error_panel: PanelContainer
 var _error_label: Label
 var _error_key: String = ""
@@ -95,7 +100,10 @@ func _ready() -> void:
 	_build_ui()
 	resized.connect(_update_layout)
 	_update_layout()
-	_validate_checkpoint()
+	if initial_school:
+		show_school()
+	else:
+		_validate_checkpoint()
 	show_error(_error_key)
 
 
@@ -210,6 +218,7 @@ func _build_ui() -> void:
 	scroll.add_child(pages)
 	_build_home(pages)
 	_build_setup(pages)
+	_build_school(pages)
 	_build_credits(pages)
 	_overwrite_dialog = ConfirmationDialog.new()
 	_overwrite_dialog.title = tr("menu.overwrite_title")
@@ -247,6 +256,9 @@ func _build_home(parent: Node) -> void:
 	_new_game_button = _button("menu.new_game", func(): _show_page(_setup), "PrimaryButton", true)
 	_home.add_child(_new_game_button)
 	_home.add_child(_button("menu.sandbox", func(): sandbox_requested.emit(), "QuietButton", true))
+	_school_button = _button("school.title", show_school, "QuietButton", true)
+	_school_button.name = "RiverSchool"
+	_home.add_child(_school_button)
 	var spacer: Control = Control.new()
 	spacer.custom_minimum_size.y = 24
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -261,6 +273,55 @@ func _build_home(parent: Node) -> void:
 	credits_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	utilities.add_child(credits_button)
 	_home.add_child(_button("menu.quit", func(): quit_requested.emit()))
+
+
+func show_school() -> void:
+	_show_page(_school)
+	var first: Button = _school.find_child("Lesson_river_school_01", true, false) as Button
+	if first != null:
+		first.grab_focus()
+
+
+func _build_school(parent: Node) -> void:
+	_school = VBoxContainer.new()
+	_school.name = "RiverSchoolPage"
+	_school.add_theme_constant_override("separation", 14)
+	parent.add_child(_school)
+	_school.add_child(_label("school.title", "Heading"))
+	_school.add_child(_label("school.intro", "", true))
+	_school.add_child(_label("school.no_checkpoint", "", true))
+	for id: String in ["river_school_01", "river_school_03"]:
+		var card: PanelContainer = PanelContainer.new()
+		card.theme_type_variation = "CardPanel"
+		_school.add_child(card)
+		var content: VBoxContainer = VBoxContainer.new()
+		content.add_theme_constant_override("separation", 8)
+		card.add_child(content)
+		content.add_child(_label("school." + id + ".name", "Heading"))
+		content.add_child(_label("school." + id + ".goal"))
+		var preparation: Label = _label("school." + id + ".prepared", "", true)
+		preparation.add_theme_font_size_override("font_size", 16)
+		content.add_child(preparation)
+		var mastery: Label = _label("school." + id + ".mastery", "", true)
+		mastery.add_theme_font_size_override("font_size", 16)
+		content.add_child(mastery)
+		var start: Button = _button("school.start", _request_lesson.bind(id), "PrimaryButton", true)
+		start.name = "Lesson_" + id
+		content.add_child(start)
+	_school.add_child(_button("menu.back", _return_from_school))
+
+
+func _return_from_school() -> void:
+	# Opening practice directly does not need to inspect a normal checkpoint.
+	# Check Continue only when the player explicitly returns to the home menu.
+	_validate_checkpoint()
+	_show_page(_home)
+
+
+func _request_lesson(id: String) -> void:
+	# Consume activation before the newly created board can see End Turn.
+	get_viewport().set_input_as_handled()
+	lesson_requested.emit(id)
 
 
 func _build_setup(parent: Node) -> void:
@@ -336,11 +397,21 @@ func _build_setup(parent: Node) -> void:
 	_bracing_toggle.text = tr("setup.bracing")
 	_bracing_toggle.tooltip_text = tr("setup.bracing_hint")
 	_bracing_toggle.custom_minimum_size.y = 44
-	_bracing_toggle.set_pressed_no_signal(initial_ruleset == "bracing_v1")
+	_bracing_toggle.set_pressed_no_signal(initial_ruleset in ["bracing_v1", "bracing_moisture_v1"])
 	_setup.add_child(_bracing_toggle)
 	var bracing_hint: Label = _label("setup.bracing_hint", "", true)
 	bracing_hint.add_theme_font_size_override("font_size", 16)
 	_setup.add_child(bracing_hint)
+	_moisture_toggle = CheckBox.new()
+	_moisture_toggle.name = "EnableMoisture"
+	_moisture_toggle.text = tr("setup.moisture")
+	_moisture_toggle.tooltip_text = tr("setup.moisture_hint")
+	_moisture_toggle.custom_minimum_size.y = 44
+	_moisture_toggle.set_pressed_no_signal(initial_ruleset in ["moisture_v1", "bracing_moisture_v1"])
+	_setup.add_child(_moisture_toggle)
+	var moisture_hint: Label = _label("setup.moisture_hint", "", true)
+	moisture_hint.add_theme_font_size_override("font_size", 16)
+	_setup.add_child(moisture_hint)
 	_setup.add_child(_label("setup.seed", "Kicker"))
 	_seed_input = LineEdit.new()
 	_seed_input.text = str(initial_seed)
@@ -372,6 +443,7 @@ func _show_page(page: Control) -> void:
 	_home.visible = page == _home
 	_setup.visible = page == _setup
 	_credits.visible = page == _credits
+	_school.visible = page == _school
 	var focus: Control = get_viewport().gui_get_focus_owner()
 	if focus != null and not focus.is_visible_in_tree():
 		focus.release_focus()
@@ -421,8 +493,9 @@ func _request_start() -> void:
 		"run_mode": RUN_MODES[_run_mode_option.selected],
 		"village_goal": GOALS[_goal_option.selected],
 	}
-	if _bracing_toggle.button_pressed:
-		_pending_config["ruleset"] = "bracing_v1"
+	var ruleset: String = GameState.ruleset_for(_bracing_toggle.button_pressed, _moisture_toggle.button_pressed)
+	if ruleset != "legacy":
+		_pending_config["ruleset"] = ruleset
 	# Existing files are protected even if a temporary read failure disabled
 	# Continue. Opening the setup form itself never changes the checkpoint.
 	if SaveIO.has_save(save_path):

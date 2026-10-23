@@ -5,6 +5,11 @@ extends RefCounted
 # spec: T-08. Resolve one turn without advancing time or consuming any RNG.
 static func resolve_turn(s: GameState, record_snapshots: bool = true) -> TurnReport:
 	var report: TurnReport = TurnReport.new()
+	var moisture_before: Dictionary = {}
+	if s.has_moisture():
+		for tile: Tile in s.tiles:
+			if tile.feature == C.Feature.PADDY:
+				moisture_before[tile.coord] = tile.soil_moisture
 	report.levels_before = _levels(s)
 	var water: Dictionary = WaterSim.simulate(s, s.current_inflow(), record_snapshots)
 	report.inflow = float(water["inflow"])
@@ -21,9 +26,18 @@ static func resolve_turn(s: GameState, record_snapshots: bool = true) -> TurnRep
 	var production_levels: PackedInt32Array = _levels(s)
 	_damage(s, report, production_levels)
 	SettlementProgress.reconcile(s)
+	var moisture_yields: Dictionary = {}
 	if s.outcome == C.Outcome.NONE:
-		_produce(s, report, production_levels, record_snapshots)
+		moisture_yields = _produce(s, report, production_levels, record_snapshots)
 		s.stats["food_produced"] = int(s.stats.get("food_produced", 0)) + report.fish_food
+	# Semantic receipts include zero changes and damage on a losing turn. A hall
+	# loss skips production, so surviving paddies keep their prior moisture.
+	for coord: Vector2i in moisture_before:
+		report.moisture_changes.append({
+			"coord": coord, "before": int(moisture_before[coord]),
+			"after": s.get_tile(coord).soil_moisture,
+			"yield_from_moisture": int(moisture_yields.get(coord, 0)),
+		})
 	# A brace buys one resolved turn, including dry turns and a losing turn.
 	# The same expiry runs on preview's copy; view callbacks never change it.
 	if s.has_bracing():
@@ -80,11 +94,13 @@ static func _damage(s: GameState, report: TurnReport, levels: PackedInt32Array) 
 		if tile.feature == C.Feature.PADDY and not tile.paddy_dead and level >= paddy_level:
 			tile.paddy_dead = true
 			tile.paddy_yield = 0
+			tile.soil_moisture = 0
 			s.stats["paddies_lost"] = int(s.stats.get("paddies_lost", 0)) + 1
 			report.paddies_died.append(tile.coord)
 
 
-static func _produce(s: GameState, report: TurnReport, levels: PackedInt32Array, record_visuals: bool = true) -> void:
+static func _produce(s: GameState, report: TurnReport, levels: PackedInt32Array, record_visuals: bool = true) -> Dictionary:
+	var moisture_yields: Dictionary = {}
 	var min_level: int = roundi(float(s.mod("paddy_min_level")))
 	var max_level: int = roundi(float(s.mod("paddy_max_level")))
 	var reservoir_min: float = float(s.mod("dry_paddy_reservoir_min"))
@@ -100,6 +116,10 @@ static func _produce(s: GameState, report: TurnReport, levels: PackedInt32Array,
 					tile.paddy_yield += 1
 					tile.paddy_rain_turns += 1
 					report.paddy_gains.append(tile.coord)
+					if s.has_moisture():
+						tile.soil_moisture = 2
+				elif s.has_moisture():
+					tile.soil_moisture = maxi(0, tile.soil_moisture - 1)
 			else:
 				var reservoir: Tile = _best_reservoir(s, tile, reservoir_min)
 				if reservoir != null:
@@ -108,11 +128,18 @@ static func _produce(s: GameState, report: TurnReport, levels: PackedInt32Array,
 					report.dry_paddy_water_used += used
 					tile.paddy_yield += 1
 					report.paddy_gains.append(tile.coord)
+				elif s.has_moisture() and tile.soil_moisture > 0:
+					tile.paddy_yield += 1
+					report.paddy_gains.append(tile.coord)
+					moisture_yields[tile.coord] = 1
+				if s.has_moisture():
+					tile.soil_moisture = maxi(0, tile.soil_moisture - 1)
 		if tile.building == C.Building.FISH_TRAP and level >= 1:
 			s.food += fish_food
 			report.fish_food += fish_food
 			if record_visuals:
 				report.fish_food_by_tile[tile.coord] = fish_food
+	return moisture_yields
 
 
 static func _best_reservoir(s: GameState, paddy: Tile, minimum: float) -> Tile:
