@@ -23,6 +23,8 @@ jobs:
         run: scripts/test.sh
       - name: Verify boot difficulty CLI and checkpoint protection
         run: python3 scripts/test_boot_cli.py
+      - name: Verify River School CLI and normal checkpoint isolation
+        run: python3 scripts/test_school_cli.py
       - name: Smoke test menu, game and sandbox
         run: |
           set -o pipefail
