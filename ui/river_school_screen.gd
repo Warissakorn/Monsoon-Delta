@@ -10,6 +10,10 @@ var hint_level: int = 0
 var _hint_button: Button
 var _school_modal_return: String = ""
 var _hint_modal_return: String = ""
+var _suspended_modal: Control
+var _suspended_modal_content: VBoxContainer
+var _suspended_confirmation: CheckBox
+var _suspended_focus: Control
 
 
 func _ready() -> void:
@@ -183,25 +187,37 @@ func _next_hint() -> void:
 
 
 func _close_school_modal() -> void:
-	var previous: String
-	if modal_kind == "school_hint":
-		previous = _hint_modal_return
-		_hint_modal_return = ""
-	else:
-		previous = _school_modal_return
+	if modal_kind == "school_exit":
+		close_modal()
+		modal_kind = _school_modal_return
 		_school_modal_return = ""
+		_modal = _suspended_modal
+		_modal_content = _suspended_modal_content
+		_skip_confirmation = _suspended_confirmation
+		_suspended_modal = null
+		_suspended_modal_content = null
+		_suspended_confirmation = null
+		if _modal != null:
+			_modal.show()
+			board.set_activity_paused(true)
+			if is_instance_valid(_suspended_focus) and _modal.is_ancestor_of(_suspended_focus):
+				_suspended_focus.grab_focus()
+		_suspended_focus = null
+		return
+	var previous: String = _hint_modal_return
+	if modal_kind == "school_hint":
+		_hint_modal_return = ""
 	close_modal()
 	if lesson.completed:
 		_show_result()
 	elif previous == "pause":
 		open_pause()
-	elif previous == "school_hint":
-		_render_hint()
 
 
 func retry_lesson() -> void:
 	if not lesson.retry():
 		return
+	_discard_suspended_modal()
 	close_modal()
 	session = lesson.session
 	hint_level = 0
@@ -259,10 +275,37 @@ func _leave_game(exit_action: Callable) -> void:
 	if modal_kind == "school_exit":
 		return
 	_school_modal_return = modal_kind
+	# Keep the interrupted dialog alive so cancel restores its exact history
+	# selection, scroll, focus and unsaved confirmation checkbox. Rebuilding
+	# only Pause or hints loses the other planning dialogs and their context.
+	_suspended_modal = _modal
+	_suspended_modal_content = _modal_content
+	_suspended_confirmation = _skip_confirmation
+	_suspended_focus = get_viewport().gui_get_focus_owner()
+	if _suspended_modal != null:
+		_suspended_modal.hide()
+	_modal = null
 	_open_modal("school_exit", tr("school.exit_title"))
 	_modal_content.add_child(_label(tr("school.exit_body")))
-	_add_modal_button(tr("school.leave"), exit_action, "SchoolLeave")
+	_add_modal_button(tr("school.leave"), _confirm_school_exit.bind(exit_action), "SchoolLeave")
 	_add_modal_button(tr("action.resume"), _close_school_modal, "SchoolCancelLeave", true)
+
+
+func _confirm_school_exit(exit_action: Callable) -> void:
+	if modal_kind != "school_exit":
+		return
+	_discard_suspended_modal()
+	exit_action.call()
+
+
+func _discard_suspended_modal() -> void:
+	if _suspended_modal != null:
+		_suspended_modal.queue_free()
+	_suspended_modal = null
+	_suspended_modal_content = null
+	_suspended_confirmation = null
+	_suspended_focus = null
+	_school_modal_return = ""
 
 
 func open_turn_history() -> void:

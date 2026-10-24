@@ -4,8 +4,109 @@ extends TestCase
 const CHECKPOINT_PATH: String = "user://test_main_menu_checkpoint.json"
 
 
+class MenuBoot extends "res://ui/boot.gd":
+	# Exercise real menu replacement/start behavior without command-line startup.
+	func _ready() -> void:
+		pass
+
+
 func before_each() -> void:
 	SaveIO.delete_save(CHECKPOINT_PATH)
+	Localization.setup("en")
+
+
+func test_language_round_trip_preserves_setup_and_starts_the_selected_run() -> void:
+	var settings: Dictionary = _settings_snapshot()
+	assert_eq(SaveIO.save(GameFlow.new_game({"seed": 73}), CHECKPOINT_PATH), "")
+	var checkpoint: PackedByteArray = FileAccess.get_file_as_bytes(CHECKPOINT_PATH)
+	var boot: MenuBoot = _open_boot_menu()
+	var menu: MainMenu = boot._screen as MainMenu
+	menu._show_page(menu._setup)
+	menu._seed_input.text = "  หมู่บ้าน rain 007  "
+	menu._leader_option.select(2)
+	menu._run_mode_option.select(1)
+	menu._goal_option.select(2)
+	menu._difficulty_option.select(7)
+	menu._bracing_toggle.set_pressed_no_signal(true)
+	menu._moisture_toggle.set_pressed_no_signal(true)
+	menu._show_page(menu._home)
+	for language: String in ["th", "en"]:
+		menu._change_language()
+		menu = boot._screen as MainMenu
+		assert_eq(menu.language, language)
+		menu._show_page(menu._setup)
+		assert_eq(menu._seed_input.text, "  หมู่บ้าน rain 007  ", "changing display language keeps the original seed text")
+		assert_eq(menu._leader_option.selected, 2)
+		assert_eq(menu._run_mode_option.selected, 1)
+		assert_eq(menu._goal_option.selected, 2)
+		assert_eq(menu._difficulty_option.get_selected_id(), 7)
+		assert_true(menu._bracing_toggle.button_pressed and menu._moisture_toggle.button_pressed)
+		assert_eq(menu._leader_description.text, String(TranslationServer.translate("leader.fisher.desc")))
+		assert_eq(menu._run_mode_description.text, String(TranslationServer.translate("run_mode.long.desc")))
+		assert_eq(menu._goal_description.text, String(TranslationServer.translate("goal.forest.desc")))
+		assert_eq(menu._difficulty_description.text, DifficultyInfo.description(7, "fisher", "long"))
+		assert_eq(FileAccess.get_file_as_bytes(CHECKPOINT_PATH), checkpoint, "a language change cannot replace Continue")
+		menu._show_page(menu._home)
+	menu._show_page(menu._setup)
+	menu._request_start()
+	assert_true(menu._overwrite_dialog.visible, "the preserved draft still requires the normal overwrite confirmation")
+	assert_eq(FileAccess.get_file_as_bytes(CHECKPOINT_PATH), checkpoint)
+	menu._overwrite_dialog.confirmed.emit()
+	var expected: GameState = GameFlow.new_game({
+		"seed": SeedUtil.parse_seed_text("  หมู่บ้าน rain 007  "), "leader": "fisher",
+		"difficulty": 7, "run_mode": "long", "village_goal": "forest",
+		"ruleset": "bracing_moisture_v1", "living_village": true,
+	})
+	assert_true(boot._screen is GameScreen)
+	assert_eq(boot._session.state.to_dict(), expected.to_dict(), "Play sends the complete preserved draft to the real session")
+	assert_eq(SaveIO.load_game(CHECKPOINT_PATH)["state"].to_dict(), expected.to_dict())
+	boot.free()
+	SaveIO.delete_save(CHECKPOINT_PATH)
+	_restore_settings(settings)
+
+
+func test_language_change_preserves_empty_numeric_seeds_and_independent_ruleset_choices() -> void:
+	var settings: Dictionary = _settings_snapshot()
+	var boot: MenuBoot = _open_boot_menu()
+	var seeds: Array[String] = ["", "00042", "-9", "มรสุม"]
+	for index: int in range(seeds.size()):
+		var menu: MainMenu = boot._screen as MainMenu
+		menu._seed_input.text = seeds[index]
+		menu._bracing_toggle.set_pressed_no_signal(index % 2 == 1)
+		menu._moisture_toggle.set_pressed_no_signal(index >= 2)
+		menu._change_language()
+		menu = boot._screen as MainMenu
+		assert_eq(menu._seed_input.text, seeds[index], "seed conversion waits until Play")
+		assert_eq(menu._bracing_toggle.button_pressed, index % 2 == 1)
+		assert_eq(menu._moisture_toggle.button_pressed, index >= 2)
+		assert_true(not SaveIO.has_save(CHECKPOINT_PATH))
+	boot.free()
+	_restore_settings(settings)
+
+
+func _open_boot_menu() -> MenuBoot:
+	var boot: MenuBoot = MenuBoot.new()
+	boot._save_path = CHECKPOINT_PATH
+	boot._language = "en"
+	(Engine.get_main_loop() as SceneTree).root.add_child(boot)
+	boot._show_menu()
+	return boot
+
+
+func _settings_snapshot() -> Dictionary:
+	return {
+		"exists": FileAccess.file_exists(GamePreferences.DEFAULT_PATH),
+		"bytes": FileAccess.get_file_as_bytes(GamePreferences.DEFAULT_PATH) if FileAccess.file_exists(GamePreferences.DEFAULT_PATH) else PackedByteArray(),
+	}
+
+
+func _restore_settings(snapshot: Dictionary) -> void:
+	if snapshot["exists"]:
+		var file: FileAccess = FileAccess.open(GamePreferences.DEFAULT_PATH, FileAccess.WRITE)
+		file.store_buffer(snapshot["bytes"])
+		file.close()
+	else:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(GamePreferences.DEFAULT_PATH))
 	Localization.setup("en")
 
 

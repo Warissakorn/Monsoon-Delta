@@ -201,12 +201,16 @@ func _show_sandbox() -> void:
 
 func _change_language(language: String) -> void:
 	var school_visible: bool = _screen is MainMenu and _screen._school.visible
+	var draft: Dictionary = {}
 	if _screen is MainMenu:
+		draft = _screen.setup_draft()
 		_initial_ruleset = GameState.ruleset_for(_screen._bracing_toggle.button_pressed, _screen._moisture_toggle.button_pressed)
 	_language = language
 	Localization.change_language(language)
 	var error: String = GamePreferences.write({"language": language})
 	_show_menu(error, school_visible)
+	if not draft.is_empty():
+		(_screen as MainMenu).restore_setup_draft(draft)
 
 
 func _notification(what: int) -> void:
