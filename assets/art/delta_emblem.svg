@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Monsoon Delta — river village seal</title>
+  <desc>A raised timber house above a winding river, framed by two rice stalks and a brass hexagon.</desc>
+  <path d="M128 10 230 69v118l-102 59L26 187V69Z" fill="#122b30" stroke="#c6a66d" stroke-width="3" stroke-linejoin="round"/>
+  <path d="m128 21 92 53v107l-92 53-92-53V74Z" fill="none" stroke="#496360" stroke-width="1.5"/>
+  <path d="M93 214c6-23 43-31 47-51 4-17-28-20-23-37 3-10 17-16 22-24-1 13-9 18-7 25 3 11 35 16 33 36-3 24-42 38-42 62Z" fill="#499b9c"/>
+  <path d="M129 205c8-7 17-13 22-21m-41 21c4-6 10-10 16-14m14-17 7-7" fill="none" stroke="#a2c8aa" stroke-width="2" stroke-linecap="round"/>
+  <path d="M74 191c-14-20-21-44-18-70m126 70c14-20 21-44 18-70" fill="none" stroke="#c6a66d" stroke-width="3" stroke-linecap="round"/>
+  <g fill="#c6a66d">
+    <path d="M56 137c-12-1-17-9-16-17 12 1 17 8 16 17Zm1-13c-1-11 4-18 13-21 2 11-3 18-13 21Zm0 29c-13-1-19-8-20-16 12-1 19 7 20 16Zm3-13c-1-11 5-19 14-20 0 11-5 18-14 20Zm3 30c-13 1-21-6-23-14 12-3 20 4 23 14Zm1-13c1-11 7-18 17-18-2 11-8 17-17 18Zm9 28c-13 3-22-3-26-11 11-5 21 0 26 11Zm-2-14c2-11 10-17 19-16-3 10-9 17-19 16Z"/>
+    <path d="M200 137c12-1 17-9 16-17-12 1-17 8-16 17Zm-1-13c1-11-4-18-13-21-2 11 3 18 13 21Zm0 29c13-1 19-8 20-16-12-1-19 7-20 16Zm-3-13c1-11-5-19-14-20 0 11 5 18 14 20Zm-3 30c13 1 21-6 23-14-12-3-20 4-23 14Zm-1-13c-1-11-7-18-17-18 2 11 8 17 17 18Zm-9 28c13 3 22-3 26-11-11-5-21 0-26 11Zm2-14c-2-11-10-17-19-16 3 10 9 17 19 16Z"/>
+  </g>
+  <circle cx="128" cy="55" r="12" fill="#debf83"/>
+  <path d="M94 105h68v43H94Z" fill="#c8b58a"/>
+  <path d="M130 105h32v43h-32Z" fill="#a78d63"/>
+  <path d="m83 106 45-33 45 33-10 5-35-24-35 24Z" fill="#ae6d4d" stroke="#e4b581" stroke-width="2" stroke-linejoin="round"/>
+  <path d="m102 102 26-19 26 19" fill="none" stroke="#c6a66d" stroke-width="1.5"/>
+  <path d="M91 149h75M100 150v18m56-18v18m-28-18v11" fill="none" stroke="#c6a66d" stroke-width="5" stroke-linecap="square"/>
+  <path d="M104 119h12v14h-12Zm35-4h13v33h-13Z" fill="#123e44"/>
+  <path d="M81 174h30m52 0h12" fill="none" stroke="#496360" stroke-width="2" stroke-linecap="round"/>
+  <path d="m126 34 2-4 2 4-2 4Z" fill="#c6a66d"/>
+</svg>

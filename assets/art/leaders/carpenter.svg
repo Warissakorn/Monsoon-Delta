@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+  <title>Carpenter — timber and mallet</title>
+  <desc>A wooden mallet above stacked timber, framed by a lagoon hexagon.</desc>
+  <path d="M80 6 145 43v74l-65 37-65-37V43Z" fill="#122b30" stroke="#496360" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M80 14 138 47v66l-58 33-58-33V47Z" fill="#19343a"/>
+  <path d="m34 105 49-26 46 25-50 28Z" fill="#c8b58a"/>
+  <path d="M34 105v14l45 26v-13Zm45 27v13l50-28v-13Z" fill="#ae6d4d"/>
+  <path d="m45 105 36-19m-24 26 37-20m-25 26 37-20" fill="none" stroke="#a78d63" stroke-width="2" stroke-linecap="round"/>
+  <path d="m42 116 23 13m23 5 32-18" fill="none" stroke="#c6a66d" stroke-width="2" stroke-linecap="round"/>
+  <path d="m75 61 12-7 21 49-11 6Z" fill="#c6a66d" stroke="#122b30" stroke-width="3" stroke-linejoin="round"/>
+  <path d="m97 93 7 13" stroke="#ece9d8" stroke-width="2" stroke-linecap="round"/>
+  <path d="m40 53 47-25 20 13-46 26Z" fill="#debf83"/>
+  <path d="M40 53v23l21 14V67Z" fill="#ae6d4d"/>
+  <path d="m61 67 46-26v24L61 90Z" fill="#c8b58a"/>
+  <path d="m48 59 6 4v15l-6-4Zm30-24 6-3 20 13-6 3Z" fill="#ece9d8" opacity=".55"/>
+  <path d="m69 69 29-16m-29 23 16-9" fill="none" stroke="#a78d63" stroke-width="2" stroke-linecap="round"/>
+</svg>
