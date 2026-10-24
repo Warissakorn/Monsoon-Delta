@@ -460,3 +460,25 @@ func _assert_paddy_reset(tile: Tile) -> void:
 	assert_eq(tile.paddy_yield, 0)
 	assert_eq(tile.paddy_dead, false)
 	assert_eq(tile.paddy_rain_turns, 0)
+
+
+func test_valid_targets_equal_tiles_that_pass_full_check() -> void:
+	var ids: Array[String] = ["unknown"]
+	ids.append_array(CommandRules.DEFS.keys())
+	for ruleset: String in ["legacy", "bracing_v1"]:
+		for seed_value: int in [3, 17]:
+			var s: GameState = GameFlow.new_game({"seed": seed_value, "ruleset": ruleset, "run_mode": "long"})
+			for turn: int in [1, C.DRY_TURNS + 1]:
+				s.turn = turn
+				for resources: Vector2i in [Vector2i(0, 0), Vector2i(2, 1), Vector2i(100, 100)]:
+					s.labor = resources.x
+					s.wood = resources.y
+					for phase: int in [C.Phase.PLANNING, C.Phase.HARVEST]:
+						s.phase = phase
+						for id: String in ids:
+							for param: int in [-1, 0, 5, 6]:
+								var expected: Array[Vector2i] = []
+								for tile: Tile in s.tiles:
+									if CommandRules.check(s, Command.new(id, tile.coord, param)).is_empty():
+										expected.append(tile.coord)
+								assert_eq(CommandRules.valid_targets(s, id, param), expected, "%s %s turn %d %s phase %d param %d" % [ruleset, id, turn, resources, phase, param])
