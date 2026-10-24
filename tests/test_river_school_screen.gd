@@ -80,6 +80,28 @@ func test_lesson_header_and_banner_explain_real_objective_and_memory_only_progre
 		screen.free()
 
 
+func test_retry_and_confirmed_exit_discard_the_suspended_dialog() -> void:
+	var screen: RiverSchoolScreen = _screen()
+	var before: Dictionary = screen.session.state.to_dict()
+	screen.open_pause()
+	var dialog: Control = screen._modal
+	screen._leave_game(func(): fail("retry must never leave"))
+	screen.retry_lesson()
+	assert_eq(screen.modal_kind, "")
+	assert_eq(screen._suspended_modal, null)
+	assert_true(dialog.is_queued_for_deletion())
+	assert_eq(screen.session.state.to_dict(), before)
+	screen.open_pause()
+	dialog = screen._modal
+	var exits: Array[bool] = []
+	screen._leave_game(func(): exits.append(true))
+	(screen._modal.find_child("SchoolLeave", true, false) as Button).pressed.emit()
+	assert_eq(exits, [true])
+	assert_eq(screen._suspended_modal, null)
+	assert_true(dialog.is_queued_for_deletion())
+	screen.free()
+
+
 func test_voluntary_hints_reveal_verified_route_without_changing_state_rng_or_attempt() -> void:
 	for language: String in ["en", "th"]:
 		Localization.setup(language)
@@ -234,3 +256,97 @@ func test_cancel_exit_from_hint_restores_hint_and_its_original_pause_without_adv
 	assert_eq(screen.session.state.to_dict(), before)
 	assert_eq(screen.lesson.turns_resolved, 0)
 	screen.free()
+
+
+func test_cancel_exit_restores_history_selection_focus_and_return_to_pause() -> void:
+	for language: String in ["en", "th"]:
+		Localization.setup(language)
+		var screen: RiverSchoolScreen = _screen()
+		for _turn: int in range(3):
+			screen._finish_turn()
+		screen.open_pause()
+		screen.open_turn_history()
+		screen._change_history(-1)
+		screen._history_previous.grab_focus()
+		var dialog: Control = screen._modal
+		var details: VBoxContainer = screen._history_details
+		var before: Dictionary = screen.session.state.to_dict()
+		var saved: PackedByteArray = FileAccess.get_file_as_bytes(PATH)
+		var exits: Array[bool] = []
+		screen._leave_game(func(): exits.append(true))
+		assert_eq(screen.modal_kind, "school_exit")
+		assert_true(not dialog.is_visible_in_tree())
+		_key(screen, KEY_SPACE)
+		_key(screen, KEY_ESCAPE)
+		assert_eq(screen.modal_kind, "turn_history")
+		assert_eq(screen._modal, dialog)
+		assert_true(dialog.is_visible_in_tree())
+		assert_eq(screen._history_details, details)
+		assert_eq(screen.history_index, 1)
+		assert_eq(screen._history_return, "pause")
+		assert_eq(screen.get_viewport().gui_get_focus_owner(), screen._history_previous)
+		assert_true(screen.board._activity_paused)
+		_key(screen, KEY_ENTER)
+		assert_eq(screen.session.state.to_dict(), before)
+		assert_eq(screen.lesson.turns_resolved, 3)
+		assert_true(exits.is_empty())
+		assert_eq(FileAccess.get_file_as_bytes(PATH), saved)
+		_key(screen, KEY_ESCAPE)
+		assert_eq(screen.modal_kind, "pause")
+		screen.free()
+
+
+func test_cancel_exit_preserves_unsaved_labor_confirmation_until_explicit_confirm() -> void:
+	for language: String in ["en", "th"]:
+		Localization.setup(language)
+		var screen: RiverSchoolScreen = _screen()
+		for _turn: int in range(3):
+			screen._finish_turn()
+		screen.confirm_unused_labor = true
+		screen.request_end_turn()
+		assert_eq(screen.modal_kind, "confirm_labor")
+		var checkbox: CheckBox = screen._skip_confirmation
+		checkbox.button_pressed = true
+		var before: Dictionary = screen.session.state.to_dict()
+		var saved: PackedByteArray = FileAccess.get_file_as_bytes(PATH)
+		var settings: PackedByteArray = FileAccess.get_file_as_bytes(SETTINGS) if FileAccess.file_exists(SETTINGS) else PackedByteArray()
+		for _attempt: int in range(2):
+			screen._leave_game(func(): fail("canceling must never leave"))
+			(screen._modal.find_child("SchoolCancelLeave", true, false) as Button).pressed.emit()
+			assert_eq(screen.modal_kind, "confirm_labor")
+			assert_eq(screen._skip_confirmation, checkbox)
+			assert_true(checkbox.button_pressed)
+			assert_true(screen.confirm_unused_labor)
+			assert_eq(screen.session.state.to_dict(), before)
+			assert_eq(FileAccess.get_file_as_bytes(PATH), saved)
+			assert_eq(FileAccess.get_file_as_bytes(SETTINGS) if FileAccess.file_exists(SETTINGS) else PackedByteArray(), settings)
+		(screen._modal.find_child("ConfirmEndTurn", true, false) as Button).pressed.emit()
+		assert_eq(screen.lesson.turns_resolved, 4)
+		assert_true(not screen.confirm_unused_labor)
+		assert_eq(FileAccess.get_file_as_bytes(PATH), saved)
+		screen.free()
+
+
+func test_cancel_exit_restores_loss_warning_and_cancel_keeps_the_turn_uncommitted() -> void:
+	for language: String in ["en", "th"]:
+		Localization.setup(language)
+		var screen: RiverSchoolScreen = _screen()
+		# Isolate the warning dialog lifecycle from water-fixture setup.
+		screen._predicted_outcome = C.Outcome.LOSE_HALL
+		screen.request_end_turn()
+		assert_eq(screen.modal_kind, "confirm_loss")
+		var dialog: Control = screen._modal
+		var before: Dictionary = screen.session.state.to_dict()
+		var saved: PackedByteArray = FileAccess.get_file_as_bytes(PATH)
+		screen._leave_game(func(): fail("canceling must never leave"))
+		_key(screen, KEY_ESCAPE)
+		assert_eq(screen.modal_kind, "confirm_loss")
+		assert_eq(screen._modal, dialog)
+		assert_true(_labels(screen._modal_content).contains(_text("preview.lose_hall")))
+		(screen._modal.find_child("CancelEndTurn", true, false) as Button).pressed.emit()
+		assert_eq(screen.modal_kind, "")
+		assert_true(not screen.board._activity_paused)
+		assert_eq(screen.lesson.turns_resolved, 0)
+		assert_eq(screen.session.state.to_dict(), before)
+		assert_eq(FileAccess.get_file_as_bytes(PATH), saved)
+		screen.free()
