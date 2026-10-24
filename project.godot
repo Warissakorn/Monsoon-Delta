@@ -3,6 +3,7 @@ config_version=5
 
 [application]
 config/name="Monsoon Delta"
+config/icon="res://assets/art/delta_emblem.svg"
 run/main_scene="res://ui/boot.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 

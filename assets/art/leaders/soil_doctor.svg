@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+  <title>Soil doctor — spade and living soil</title>
+  <desc>A brass spade beside a soil cutaway with roots, a seedling and layered earth.</desc>
+  <path d="M80 6 145 43v74l-65 37-65-37V43Z" fill="#122b30" stroke="#496360" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M80 14 138 47v66l-58 33-58-33V47Z" fill="#19343a"/>
+  <path d="m33 83 45-19 47 20v35l-45 26-47-26Z" fill="#ae6d4d"/>
+  <path d="m33 83 45-19 47 20-45 22Z" fill="#6c845d"/>
+  <path d="m33 103 47 21 45-23v13l-45 23-47-22Z" fill="#c6a66d" opacity=".6"/>
+  <path d="m80 106 1 16m0-8-12-4m12 12 10-8m-10 8-6 7" fill="none" stroke="#ece9d8" stroke-width="2" stroke-linecap="round"/>
+  <path d="M80 86V55" fill="none" stroke="#a2c8aa" stroke-width="4" stroke-linecap="round"/>
+  <path d="M79 66c-17 1-25-8-26-20 16-1 25 7 26 20Zm3-9c0-16 10-25 24-26 0 16-10 25-24 26Z" fill="#a2c8aa"/>
+  <path d="m84 52 13-12M76 62 62 53" fill="none" stroke="#499b9c" stroke-width="2" stroke-linecap="round"/>
+  <path d="m111 46-17 51" fill="none" stroke="#c6a66d" stroke-width="7" stroke-linecap="round"/>
+  <path d="m106 41 17 6 4-12-17-6Z" fill="none" stroke="#c6a66d" stroke-width="5" stroke-linejoin="round"/>
+  <path d="m86 92 19 6-4 14-14 8-5-15Z" fill="#ece9d8" stroke="#19343a" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="m96 101-4 11" fill="none" stroke="#a6bab2" stroke-width="2" stroke-linecap="round"/>
+  <path d="m43 109 5 2m63 9 5-3m-60 9 4 2" fill="none" stroke="#ece9d8" stroke-width="2" stroke-linecap="round"/>
+</svg>

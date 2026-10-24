@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+  <title>Farmer — rice and sickle</title>
+  <desc>Golden rice beside a curved harvesting sickle on a lagoon medallion.</desc>
+  <path d="M80 6 145 43v74l-65 37-65-37V43Z" fill="#122b30" stroke="#496360" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M80 14 138 47v66l-58 33-58-33V47Z" fill="#19343a"/>
+  <path d="M37 118c16-10 38-12 66-5l23 7-46 26Z" fill="#2b5747"/>
+  <path d="M46 126 65 59m-3 67 17-81m-1 79L92 65" fill="none" stroke="#c6a66d" stroke-width="3" stroke-linecap="round"/>
+  <g fill="#debf83">
+    <path d="M65 72c-10-1-15-7-14-15 10 1 15 7 14 15Zm2-10c0-10 6-16 14-17 0 10-6 16-14 17Zm-5 23c-10-1-15-7-14-15 10 1 15 7 14 15Zm2-10c0-10 6-16 14-17 0 10-6 16-14 17ZM79 59c-10-1-15-7-14-15 10 1 15 7 14 15Zm2-10c0-10 6-16 14-17 0 10-6 16-14 17Zm-5 23c-10-1-15-7-14-15 10 1 15 7 14 15Zm2-10c0-10 6-16 14-17 0 10-6 16-14 17Zm14 17c-10-1-15-7-14-15 10 1 15 7 14 15Zm2-10c0-10 6-16 14-17 0 10-6 16-14 17Z"/>
+  </g>
+  <path d="M51 115c-12-3-18-12-19-23 13 3 19 10 19 23Zm17 0c2-15 11-23 23-25-3 13-11 21-23 25Z" fill="#a2c8aa"/>
+  <path d="M95 97c20-6 32-18 29-37 10 18 4 40-17 50Z" fill="#ece9d8"/>
+  <path d="m97 105 8 5-16 24-10-7Z" fill="#ae6d4d" stroke="#c6a66d" stroke-width="2" stroke-linejoin="round"/>
+  <path d="m83 124 8 6" stroke="#c6a66d" stroke-width="2"/>
+</svg>

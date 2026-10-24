@@ -1,0 +1,106 @@
+{
+  "captures": [
+    {
+      "file": "menu-draft-options-en.png",
+      "language": "en",
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    {
+      "file": "menu-draft-seed-en.png",
+      "language": "en",
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    {
+      "file": "menu-draft-options-th.png",
+      "language": "th",
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    {
+      "file": "menu-draft-seed-th.png",
+      "language": "th",
+      "viewport": [
+        1280,
+        720
+      ]
+    }
+  ],
+  "checks": {
+    "activation_preserves_turn_one": true,
+    "cancel_preserves_checkpoint": true,
+    "cancel_preserves_setup": true,
+    "checkpoint_after_language_en": true,
+    "checkpoint_after_language_th": true,
+    "checkpoint_before_confirmation": true,
+    "clickable_11": true,
+    "clickable_12": true,
+    "clickable_15": true,
+    "clickable_3": true,
+    "clickable_30": true,
+    "clickable_31": true,
+    "clickable_34": true,
+    "confirmed_checkpoint_matches": true,
+    "confirmed_play_starts_game": true,
+    "continue_initially_available": true,
+    "difficulty_description_en": true,
+    "difficulty_description_th": true,
+    "goal_description_en": true,
+    "goal_description_th": true,
+    "isolated_preferences": true,
+    "language_en": true,
+    "language_th": true,
+    "leader_description_en": true,
+    "leader_description_th": true,
+    "menu-draft-options_capture_en": true,
+    "menu-draft-options_capture_th": true,
+    "menu-draft-seed_capture_en": true,
+    "menu-draft-seed_capture_th": true,
+    "menu_panel_fits_en": true,
+    "menu_panel_fits_th": true,
+    "mode_description_en": true,
+    "mode_description_th": true,
+    "native_new_game_opens_setup": true,
+    "normal_checkpoint_created": true,
+    "play_reopens_confirmation": true,
+    "play_requires_overwrite_confirmation": true,
+    "prepared_setup_difficulty": true,
+    "prepared_setup_goal": true,
+    "prepared_setup_leader": true,
+    "prepared_setup_mode": true,
+    "prepared_setup_ruleset": true,
+    "prepared_setup_seed_text": true,
+    "retained_en_difficulty": true,
+    "retained_en_goal": true,
+    "retained_en_leader": true,
+    "retained_en_mode": true,
+    "retained_en_ruleset": true,
+    "retained_en_seed_text": true,
+    "retained_th_difficulty": true,
+    "retained_th_goal": true,
+    "retained_th_leader": true,
+    "retained_th_mode": true,
+    "retained_th_ruleset": true,
+    "retained_th_seed_text": true,
+    "seed_field_reachable_en": true,
+    "seed_field_reachable_th": true,
+    "started_config_exact": true
+  },
+  "display": "X11",
+  "engine": "4.6.3-stable (official)",
+  "initial_language": "th",
+  "note": "Prepared new-game form fixture sets options, toggles and raw seed text through their ordinary control API. Subsequent Back/language/New Game navigation, initial Play and overwrite cancellation use native mouse/keyboard GUI input through real Boot methods, skipping CLI startup only. Final Play re-request and confirmation are programmatic; the real Boot creates the actual session and checkpoint. Selected options, localized descriptions and checkpoint protection are checked before confirmation. All saves/preferences are isolated under out-dir via XDG_DATA_HOME. Screenshots are captured directly from Godot without editing. This is not a native test of option/seed entry or final OK activation, human playtesting or balance validation.",
+  "passed": 58,
+  "total": 58,
+  "viewport": [
+    1280,
+    720
+  ]
+}
