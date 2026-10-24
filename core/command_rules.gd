@@ -119,8 +119,16 @@ static func apply(s: GameState, cmd: Command) -> void:
 
 static func valid_targets(s: GameState, id: String, param: int = -1) -> Array[Vector2i]:
 	var result: Array[Vector2i] = []
+	# Skip per-tile checks that would all fail; check() still decides each tile.
+	if s.phase != C.Phase.PLANNING or not DEFS.has(id):
+		return result
+	if bool(DEFS[id].get("dry_only", false)) and s.is_rain():
+		return result
+	var price: Vector2i = cost(s, Command.new(id, Vector2i.ZERO, param))
+	if s.labor < price.x or s.wood < price.y:
+		return result
 	for tile: Tile in s.tiles:
-		if check(s, Command.new(id, tile.coord, param)).is_empty():
+		if _target_matches(tile, id) and check(s, Command.new(id, tile.coord, param)).is_empty():
 			result.append(tile.coord)
 	return result
 
