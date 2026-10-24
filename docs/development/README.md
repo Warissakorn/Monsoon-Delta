@@ -59,6 +59,14 @@ mkdir -p screenshots
 godot --path . -- --scene=sandbox --seed=42 --lang=th --screenshot=screenshots/sandbox.png
 ```
 
+ตรวจการรักษาตัวเลือกเกมใหม่เมื่อเปลี่ยนภาษาด้วย [menu draft probe](../../tools/menu_draft_probe.gd) บนหน้าต่าง 1280×720; probe ตั้งแบบฟอร์ม fixture ไว้ก่อน แล้วใช้เมาส์/คีย์บอร์ดสลับภาษา เปิดเกมใหม่และยกเลิกคำยืนยัน ตรวจว่า Continue คงเดิม ขั้นเริ่มรอบสุดท้ายเรียก controller และสัญญาณยืนยันโดยตรงเพื่อตรวจ config ที่ส่งให้ session ตั้ง XDG แยกเมื่อทดลอง เปลี่ยน `en` เป็น `th` เพื่อตรวจอีกทิศทาง:
+
+```sh
+XDG_DATA_HOME="$PWD/work/menu-draft-qa/en/data" XDG_CONFIG_HOME="$PWD/work/menu-draft-qa/en/config" XDG_CACHE_HOME="$PWD/work/menu-draft-qa/en/cache" godot --path . --audio-driver Dummy --resolution 1280x720 --script res://tools/menu_draft_probe.gd -- --out-dir="$PWD/work/menu-draft-qa/en" --lang=en
+```
+
+[River School probe](../../tools/river_school_probe.gd) ตรวจการยกเลิกออกจากประวัติและหน้าต่างยืนยันจบเทิร์นด้วย รวมโฟกัส ตำแหน่งเลื่อน ช่องไม่ถามซ้ำ และการกด Enter ที่ต้องยกเลิกออกเพียงครั้งเดียว เพิ่ม `--modal-only` หลัง `--lang` เมื่อต้องการตรวจเฉพาะส่วนนี้; ไม่ใส่ flag จะตรวจ flow โรงเรียนทั้งชุด ดูคำสั่งและบริบท fixture ใน [คู่มือโรงเรียนสายน้ำ](../features/RIVER_SCHOOL.md#ภาพและหลักฐาน)
+
 ## วิธีอัปเดตโดยไม่สร้างเอกสารซ้ำ
 
 1. ตรวจ `git status`/branch และอ่านข้อกำหนดเฉพาะเรื่อง ระบุว่ากำลังแก้พฤติกรรมที่มีอยู่หรือทำตามแบบที่ยอมรับแล้ว

@@ -482,6 +482,32 @@ func _change_language() -> void:
 	language_changed.emit("en" if language == "th" else "th")
 
 
+func setup_draft() -> Dictionary:
+	# Keep text seeds as typed; parsing belongs to the eventual Play request.
+	return {
+		"seed_text": _seed_input.text,
+		"leader": LEADERS[_leader_option.selected],
+		"run_mode": RUN_MODES[_run_mode_option.selected],
+		"village_goal": GOALS[_goal_option.selected],
+		"difficulty": _difficulty_option.get_selected_id(),
+		"bracing": _bracing_toggle.button_pressed,
+		"moisture": _moisture_toggle.button_pressed,
+	}
+
+
+func restore_setup_draft(draft: Dictionary) -> void:
+	_seed_input.text = draft["seed_text"]
+	_leader_option.select(LEADERS.find(draft["leader"]))
+	_run_mode_option.select(RUN_MODES.find(draft["run_mode"]))
+	_goal_option.select(GOALS.find(draft["village_goal"]))
+	_difficulty_option.select(int(draft["difficulty"]))
+	_bracing_toggle.set_pressed_no_signal(draft["bracing"])
+	_moisture_toggle.set_pressed_no_signal(draft["moisture"])
+	_select_leader(_leader_option.selected)
+	_select_run_mode(_run_mode_option.selected)
+	_select_goal(_goal_option.selected)
+
+
 func _request_start() -> void:
 	if _overwrite_dialog.visible:
 		return

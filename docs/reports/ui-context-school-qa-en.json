@@ -1,0 +1,105 @@
+{
+  "balance_sha256": "fb7c1fc15245c8df59875118b60bc4a5353e4ad6b16214fbfcbbab0fd6c19953",
+  "captures": [
+    {
+      "context": "PLAYABLE PREPARED BOARD / HISTORY RESTORED AFTER CANCELING EXIT",
+      "file": "school-restored-history-en.png",
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    {
+      "context": "PLAYABLE PREPARED BOARD / UNSAVED LABOR CHECKBOX RESTORED",
+      "file": "school-restored-labor-warning-en.png",
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    {
+      "context": "CONTROLLED UI FIXTURE / PREDICTED LOSS WARNING RESTORED",
+      "file": "school-restored-loss-warning-en.png",
+      "viewport": [
+        1280,
+        720
+      ]
+    }
+  ],
+  "checks": {
+    "available_ConfirmEndTurn_52": true,
+    "available_PauseHistory_17": true,
+    "available_PreviousTurnResult_19": true,
+    "available_Resume_39": true,
+    "available_SchoolCancelLeave_48": true,
+    "available_SchoolCancelLeave_58": true,
+    "available_SchoolNextHint_31": true,
+    "available_SchoolNextHint_33": true,
+    "available_SchoolPauseHint_29": true,
+    "clickable_@CheckBox@4523_44": true,
+    "clickable_ConfirmEndTurn_53": true,
+    "clickable_PauseHistory_18": true,
+    "clickable_Pause_15": true,
+    "clickable_PreviousTurnResult_20": true,
+    "clickable_Resume_40": true,
+    "clickable_SchoolCancelLeave_49": true,
+    "clickable_SchoolCancelLeave_59": true,
+    "clickable_SchoolNextHint_32": true,
+    "clickable_SchoolNextHint_34": true,
+    "clickable_SchoolPauseHint_30": true,
+    "commit_modal_setup_turn_1": true,
+    "commit_modal_setup_turn_2": true,
+    "commit_modal_setup_turn_3": true,
+    "controlled_loss_cancel_read_only": true,
+    "controlled_loss_cancel_restores_warning_and_focus": true,
+    "controlled_loss_warning_focuses_cancel": true,
+    "controlled_loss_warning_opens": true,
+    "enter_cancel_restores_labor_focus_without_commit": true,
+    "exit_interrupts_checked_labor_warning": true,
+    "history_cancel_preserves_index_scroll_focus": true,
+    "history_cancel_read_only": true,
+    "history_cancel_restores_same_controls": true,
+    "interrupted_history_has_previous_turn": true,
+    "isolated_preferences": true,
+    "labor_cancel_preserves_unsaved_checkbox": true,
+    "labor_confirmation_preserves_normal_checkpoint": true,
+    "labor_warning_uses_real_rain_and_labor": true,
+    "legal_modal_setup_turn_1_dig_1_-2": true,
+    "legal_modal_setup_turn_1_dig_2_-2": true,
+    "legal_modal_setup_turn_1_paddy_2_-2": true,
+    "modal_history_setup_opens_pause": true,
+    "native_close_interrupts_history": true,
+    "native_labor_warning_opens": true,
+    "native_modal_setup_turn_1_dig_1_-2": true,
+    "native_modal_setup_turn_1_dig_2_-2": true,
+    "native_modal_setup_turn_1_paddy_2_-2": true,
+    "nested_hint_cancel_preserves_scroll_focus_and_return": true,
+    "nested_hint_exit_cancel_read_only": true,
+    "normal_checkpoint_created": true,
+    "repeated_labor_cancel_restores_same_checkbox": true,
+    "repeated_native_close_preserves_exit_dialog": true,
+    "restored_history_returns_pause": true,
+    "restored_labor_warning_commits_only_explicitly": true,
+    "restored_loss_warning_escape_cancels_turn": true,
+    "restored_nested_hint_returns_pause": true,
+    "restored_pause_resumes_board": true,
+    "save_preserved_modal_setup_turn_1": true,
+    "save_preserved_modal_setup_turn_2": true,
+    "save_preserved_modal_setup_turn_3": true,
+    "school-restored-history_screenshot": true,
+    "school-restored-labor-warning_screenshot": true,
+    "school-restored-loss-warning_screenshot": true,
+    "start_river_school_01": true,
+    "third_hint_has_real_scroll_offset": true
+  },
+  "display": "X11",
+  "engine": "4.6.3-stable (official)",
+  "language": "en",
+  "note": "Automated native mouse/keyboard integration at 1280x720 on the actual playable prepared lesson boards. No gameplay state is injected after lesson start. Verified command replays use the live rules; hints, interrupted-dialog cancellation and retry do not change player saves or RNG. The loss-warning restoration check is a labeled controlled UI fixture: only the screen's predicted-outcome presentation field is supplied; no board, resources, commands, state, RNG or lesson outcome changes. All normal-save/settings files are isolated under out-dir. Screenshots are captured directly from Godot without editing. This is not human playtesting, proof of fun, balance validation, or a performance benchmark.",
+  "revision": 1,
+  "scenarios": [
+    "river_school_01",
+    "river_school_03"
+  ],
+  "scope": "modal_restoration"
+}
