@@ -12,7 +12,7 @@ signal quit_requested()
 const LEADERS: Array[String] = ["farmer", "carpenter", "fisher", "soil_doctor"]
 const RUN_MODES: Array[String] = ["classic", "long"]
 const GOALS: Array[String] = ["none", "growth", "forest", "rice"]
-const LandscapeArt: GDScript = preload("res://view/menu_landscape.gd")
+const LandscapeArt: GDScript = preload("res://view/menu_artwork.gd")
 
 var save_path: String = SaveIO.DEFAULT_PATH
 var initial_seed: int = 42
@@ -36,6 +36,7 @@ var _menu_panel: PanelContainer
 var _seed_input: LineEdit
 var _leader_option: OptionButton
 var _leader_description: Label
+var _leader_art: TextureRect
 var _run_mode_option: OptionButton
 var _run_mode_description: Label
 var _goal_option: OptionButton
@@ -148,6 +149,16 @@ func _button(key: String, callback: Callable, variant: String = "QuietButton", a
 	return button
 
 
+func _art(id: String, width: int) -> TextureRect:
+	var art: TextureRect = TextureRect.new()
+	art.texture = load("res://assets/art/%s.svg" % id)
+	art.custom_minimum_size = Vector2(width, width)
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return art
+
+
 func _build_ui() -> void:
 	var background: LagoonBackdrop = LagoonBackdrop.new()
 	background.colors = _colors
@@ -170,26 +181,42 @@ func _build_ui() -> void:
 	introduction.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	introduction.add_theme_constant_override("separation", 20)
 	_columns.add_child(introduction)
+	var title_row: HBoxContainer = HBoxContainer.new()
+	title_row.add_theme_constant_override("separation", 18)
+	introduction.add_child(title_row)
+	var emblem: TextureRect = _art("delta_emblem", 82)
+	emblem.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	title_row.add_child(emblem)
 	var title_group: VBoxContainer = VBoxContainer.new()
+	title_group.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_group.add_theme_constant_override("separation", 4)
-	introduction.add_child(title_group)
-	title_group.add_child(_label("map.plains.name", "Kicker"))
+	title_row.add_child(title_group)
+	title_group.add_child(_label("art.kicker", "Kicker"))
 	_title_label = _label("app.title", "Title")
 	_title_label.add_theme_color_override("font_shadow_color", Color(_colors.background, 0.8))
 	_title_label.add_theme_constant_override("shadow_offset_y", 3)
 	title_group.add_child(_title_label)
 	_illustration = LandscapeArt.new()
-	_illustration.set("colors", _colors)
 	_illustration.custom_minimum_size.y = 340
 	_illustration.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	introduction.add_child(_illustration)
 	var seasons: HBoxContainer = HBoxContainer.new()
 	seasons.add_theme_constant_override("separation", 24)
 	introduction.add_child(seasons)
-	seasons.add_child(_label("run_mode.classic.name", "Caption", true))
-	var long_label: Label = _label("run_mode.long.name", "Caption", true)
-	long_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	seasons.add_child(long_label)
+	for season: String in ["dry", "rain"]:
+		var season_row: HBoxContainer = HBoxContainer.new()
+		season_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		season_row.add_theme_constant_override("separation", 10)
+		seasons.add_child(season_row)
+		var season_icon: TextureRect = TextureRect.new()
+		season_icon.texture = load("res://assets/icons/%s.svg" % ("sun" if season == "dry" else "rain"))
+		season_icon.custom_minimum_size = Vector2(24, 24)
+		season_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		season_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		season_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		season_icon.modulate = Color(_colors.accent)
+		season_row.add_child(season_icon)
+		season_row.add_child(_label("art." + season, "Caption", true))
 	_menu_panel = PanelContainer.new()
 	_menu_panel.theme_type_variation = "CardPanel"
 	_menu_panel.custom_minimum_size.x = 560
@@ -336,10 +363,17 @@ func _build_setup(parent: Node) -> void:
 		_leader_option.add_item(tr("leader." + leader + ".name"))
 	_leader_option.item_selected.connect(_select_leader)
 	_setup.add_child(_leader_option)
+	var leader_details: HBoxContainer = HBoxContainer.new()
+	leader_details.add_theme_constant_override("separation", 16)
+	_setup.add_child(leader_details)
+	_leader_art = _art("leaders/farmer", 80)
+	_leader_art.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	leader_details.add_child(_leader_art)
 	_leader_description = _label("leader.farmer.desc", "", true)
 	_leader_description.custom_minimum_size.y = 58
+	_leader_description.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_leader_description.add_theme_font_size_override("font_size", 18)
-	_setup.add_child(_leader_description)
+	leader_details.add_child(_leader_description)
 	var run_options: HBoxContainer = HBoxContainer.new()
 	run_options.add_theme_constant_override("separation", 20)
 	_setup.add_child(run_options)
@@ -453,6 +487,7 @@ func _show_page(page: Control) -> void:
 
 func _select_leader(index: int) -> void:
 	_leader_description.text = tr("leader." + LEADERS[index] + ".desc")
+	_leader_art.texture = load("res://assets/art/leaders/%s.svg" % LEADERS[index])
 	_update_difficulty_description()
 
 

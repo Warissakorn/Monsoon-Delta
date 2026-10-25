@@ -58,4 +58,4 @@ scripts/test.sh
 - [GDD](docs/GDD.md), [ROADMAP](docs/ROADMAP.md), สเปกและตัวอย่างนำเข้าเก็บตาม [manifest 54 ไฟล์](docs/IMPORT_MANIFEST.json) ไม่ติดตั้ง hooks/permissions จากตัวอย่าง
 - ยังไม่ได้รับ `03_hex_map.md` และ `15tech` ฉบับเต็ม ข้อสมมติ/ข้อจำกัดแผนที่อยู่ใน STATUS และประวัติ
 
-ฟอนต์ Noto Sans Thai แนบใบอนุญาตไว้ใน [assets/fonts/OFL.txt](assets/fonts/OFL.txt) รูปทรงเกมสร้างจากโค้ด
+ฟอนต์ Noto Sans Thai แนบใบอนุญาตไว้ใน [assets/fonts/OFL.txt](assets/fonts/OFL.txt) รูปทรงกระดานสร้างจากโค้ด ภาพประกอบเมนูและตราผู้นำเก็บพร้อมที่มาใน [assets/art](assets/art/README.md)
