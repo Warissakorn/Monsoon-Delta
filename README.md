@@ -38,6 +38,8 @@ godot --path . -- --scene=sandbox --seed=42 --lang=th
 
 ห้องทดลองเริ่มด้วยเครื่องมือขุด คลิกขวาถมดิน Space จำลองน้ำ R เปลี่ยน seed และ V สลับตัวเลข ไม่มีต้นทุน/การเก็บเกี่ยว/แพ้ชนะ ดู [คู่มือหน้าจอเกม](docs/features/M4_PLAYABLE.md), [รอบยาวและเป้าหมาย](docs/features/LONG_RUNS.md), [ภาพ](docs/features/VISUAL_REFRESH.md) และ [ผลตอบรับ/Reduce motion](docs/features/ACTION_FEEDBACK.md)
 
+ดาวน์โหลดเกมที่ build ผ่านแล้วได้ที่ **Actions → Build desktop games → run ที่สำเร็จ → Artifacts** (Windows/Linux x86_64) ดู [วิธี build และรัน workflow](docs/development/README.md#build-เกมแจกด้วย-github-actions)
+
 ## พัฒนาต่อด้วย AI
 
 เริ่มตามลำดับ **[AGENTS.md](AGENTS.md) → [STATUS.md](docs/STATUS.md) → [คู่มือพัฒนา](docs/development/README.md)** แล้วเปิดเอกสารเฉพาะงานจาก [สารบัญ](docs/README.md)

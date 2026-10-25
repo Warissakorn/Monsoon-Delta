@@ -50,6 +50,23 @@ git diff --check
 
 โรงเรียนสายน้ำใช้ [fixture/replay](../../core/river_school_fixtures.gd), [controller](../../core/river_school_run.gd) และ [หน้าจอเฉพาะ](../../ui/river_school_screen.gd) บนกฎเดิม ใช้ `scripts/test.sh --filter=river_school` ตรวจผลจริง/Retry/RNG/การรักษาเซฟปกติ แล้วตรวจทั้งชุด การผ่านเทสต์ไม่แทนการทดลองความเข้าใจหรือความสนุกกับผู้เล่นตาม [แผนตรวจ](../design/FUN_DESIGN.md)
 
+### Build เกมแจกด้วย GitHub Actions
+
+[Build desktop games](../../.github/workflows/build.yml) ใช้ Godot 4.6.3 Standard พร้อม export templates และ [presets](../../export_presets.cfg) สำหรับ Windows/Linux x86_64 รันเมื่อ push เข้า `main`, push tag `v*`, เปิด/อัปเดต PR หรือกด **Actions → Build desktop games → Run workflow** บน branch ที่มี workflow นี้
+
+Workflow ตรวจเอกสารและรัน `scripts/test.sh` ก่อน export แบบ release จากนั้น smoke เปิดเมนู เกม และ sandbox ของ Linux build ทั้งไทยและอังกฤษ เมื่อผ่าน ดาวน์โหลด `MonsoonDelta-windows-x86_64` หรือ `MonsoonDelta-linux-x86_64` จากส่วน **Artifacts** ของ run แล้วแตก archive ภายในอีกครั้ง เก็บ artifacts และ build logs 14 วัน; Linux ใช้ tar.gz เพื่อรักษาสิทธิ์ executable ไม่เผยแพร่ Release อัตโนมัติ และ Windows build ยังไม่ได้ smoke บน Windows จริง
+
+Build ในเครื่องหลังติดตั้ง export templates รุ่นเดียวกัน:
+
+```sh
+mkdir -p exports/windows exports/linux
+godot --headless --editor --import --path .
+godot --headless --path . --export-release "Windows Desktop" exports/windows/MonsoonDelta.exe
+godot --headless --path . --export-release "Linux" exports/linux/MonsoonDelta.x86_64
+```
+
+Presets ฝัง PCK ใน executable และไม่บรรจุเอกสาร เครื่องมือพัฒนา/เทสต์ หรือผลทดลอง Windows build ไม่เซ็นโค้ดและปิดการแก้ Windows resources เพื่อ cross-export บน Linux โดยไม่ต้องติดตั้ง Wine/rcedit
+
 ### ตรวจภาพและการควบคุม
 
 เปิดหน้าต่างที่เรนเดอร์ได้; `--headless` ถ่ายภาพเกมไม่ได้ ตรวจเมาส์ Tab/Shift+Tab/Enter/Space, modal, Undo/Redo, preview, Continue และ Reduce motion ตามส่วนที่เปลี่ยน ภาพจาก fixture ต้องระบุว่าเป็น fixture แยกจากการเล่น seed จริง

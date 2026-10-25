@@ -2,6 +2,13 @@
 
 บันทึกย้อนหลังตามวัน ข้อความและจำนวนเทสต์แต่ละรายการสะท้อนเวลานั้น อ่าน [STATUS](../STATUS.md) สำหรับพฤติกรรมปัจจุบันและงานที่ยังค้าง
 
+## 2026-10-25 — Build เกม Windows/Linux ด้วย GitHub Actions
+
+- เพิ่ม [Build desktop games](../../.github/workflows/build.yml) และ [export presets](../../export_presets.cfg) Godot 4.6.3 Standard สำหรับ Windows/Linux x86_64 พร้อม PCK ฝังใน executable รันจาก main, tag `v*`, PR และ manual dispatch ตรวจเอกสาร/ชุดเทสต์ก่อน export และ smoke Linux artifact เมนู เกม sandbox ไทย–อังกฤษ เก็บเกมและ log เป็น artifacts 14 วัน
+- `scripts/test.sh` ผ่าน **446/446 tests**; documentation checker และ `git diff --check` ผ่าน
+- ตรวจใน Linux environment ด้วย Godot 4.6.3: export release ทั้งสองแพลตฟอร์มผ่าน ไม่มี script/export errors; Linux artifact smoke ผ่านทั้ง 6 scene/language combinations แพ็ก ZIP ของ Windows ตรวจ integrity ผ่าน และ tar.gz ของ Linux รักษา executable bit; workflow ผ่าน actionlint ยังไม่ได้เปิด Windows build บน Windows จริงหรือยืนยันหน้าตาด้วย native window
+- วิธีรันและดาวน์โหลดอยู่ใน [คู่มือพัฒนา](../development/README.md#build-เกมแจกด้วย-github-actions) ไม่เปลี่ยน runtime กฎหรือเซฟ และไม่เผยแพร่ GitHub Release อัตโนมัติ
+
 ## 2026-10-24 — ชุดกราฟิกหน้าเมนูและผู้นำ
 
 - เพิ่มภาพประกอบ AI ของหมู่บ้านริมน้ำก่อนมรสุม ตราหมู่บ้าน SVG สำหรับหัวเมนู/ไอคอนแอป และตราอาชีพผู้นำ 4 แบบพร้อมไฟล์ต้นฉบับแก้ไขได้ใน `assets/art/` ดู [คู่มืองานภาพ](../features/VISUAL_REFRESH.md)

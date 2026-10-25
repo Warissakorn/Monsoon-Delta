@@ -38,6 +38,8 @@
 
 เหรียญให้คะแนนพื้นฐาน 50 เพียงครั้งเดียว การไม่สำเร็จเป้าหมายไม่ทำให้แพ้หรือขัดขวางการชนะ ดูรายละเอียด [รอบยาวและเป้าหมาย](features/LONG_RUNS.md)
 
+Build สำหรับแจก: เพิ่ม [workflow Windows/Linux x86_64](../.github/workflows/build.yml) พร้อม export presets, tests ก่อน export และ Linux artifact smoke ไทย–อังกฤษ ดู [วิธีรันและดาวน์โหลด](development/README.md#build-เกมแจกด้วย-github-actions); ยังไม่ได้ตรวจ Windows build บน Windows จริง
+
 ## กฎที่ต้องรักษาเมื่อแก้ระบบ
 
 - เทิร์น: จำลองน้ำ → ซับน้ำ → ระเหยเฉพาะฤดูแล้ง → ความเสียหาย → ผลผลิต; ศาลาถึงระดับน้ำ 2 แพ้ทันทีตามค่าเริ่มต้น

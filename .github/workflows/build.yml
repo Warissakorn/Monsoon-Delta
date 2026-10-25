@@ -1,0 +1,82 @@
+name: Build desktop games
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.6.3
+          use-dotnet: false
+          include-templates: true
+      - name: Check documentation
+        run: python3 scripts/check_docs.py
+      - name: Import project and run tests
+        run: scripts/test.sh
+      - name: Export Windows and Linux releases
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p exports/windows exports/linux
+          godot --headless --path . --export-release "Windows Desktop" exports/windows/MonsoonDelta.exe 2>&1 | tee windows-export.log
+          ! grep -Eq 'SCRIPT ERROR:|^ERROR:' windows-export.log
+          godot --headless --path . --export-release "Linux" exports/linux/MonsoonDelta.x86_64 2>&1 | tee linux-export.log
+          ! grep -Eq 'SCRIPT ERROR:|^ERROR:' linux-export.log
+          test -s exports/windows/MonsoonDelta.exe
+          test -s exports/linux/MonsoonDelta.x86_64
+      - name: Smoke test exported Linux game
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x exports/linux/MonsoonDelta.x86_64
+          for scene in menu game sandbox; do
+            for lang in th en; do
+              exports/linux/MonsoonDelta.x86_64 --headless --quit-after 5 -- --scene="$scene" --lang="$lang" --save-path=user://ci-export-smoke.json 2>&1 | tee -a linux-smoke.log
+              ! grep -Eq 'SCRIPT ERROR:|^ERROR:' linux-smoke.log
+            done
+          done
+      - name: Package games
+        run: |
+          cd exports
+          zip -j MonsoonDelta-windows-x86_64.zip windows/*
+          tar -czf MonsoonDelta-linux-x86_64.tar.gz -C linux .
+      - name: Upload Windows game
+        uses: actions/upload-artifact@v4
+        with:
+          name: MonsoonDelta-windows-x86_64
+          path: exports/MonsoonDelta-windows-x86_64.zip
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload Linux game
+        uses: actions/upload-artifact@v4
+        with:
+          name: MonsoonDelta-linux-x86_64
+          path: exports/MonsoonDelta-linux-x86_64.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-build-logs
+          path: |
+            *-export.log
+            linux-smoke.log
+          if-no-files-found: ignore
+          retention-days: 14
