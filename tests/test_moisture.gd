@@ -32,7 +32,7 @@ func _modifier(state: GameState, key: String, value: float) -> void:
 
 
 func test_rulesets_are_explicit_and_independent_for_new_runs() -> void:
-	assert_eq(GameState.RULESETS, ["legacy", "bracing_v1", "moisture_v1", "bracing_moisture_v1"])
+	assert_eq(GameState.RULESETS.slice(0, 4), ["legacy", "bracing_v1", "moisture_v1", "bracing_moisture_v1"])
 	for bracing: bool in [false, true]:
 		for moisture: bool in [false, true]:
 			var ruleset: String = GameState.ruleset_for(bracing, moisture)

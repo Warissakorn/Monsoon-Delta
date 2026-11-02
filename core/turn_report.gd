@@ -11,6 +11,7 @@ var destroyed: Array[Dictionary] = []
 # Semantic results also available with visual recording disabled.
 var brace_results: Array[Dictionary] = []
 var moisture_changes: Array[Dictionary] = []
+var irrigation_results: Array[Dictionary] = []
 var paddies_died: Array[Vector2i] = []
 var paddy_gains: Array[Vector2i] = []
 var fish_food: int = 0
@@ -25,6 +26,8 @@ var snapshots: Array[PackedFloat32Array] = []
 # Each iteration has tile_count * 6 directed transfers in Hex.DIRECTIONS order.
 var flow_edges: Array[PackedFloat32Array] = []
 var wheel_transfers: Array[Dictionary] = []
+# Per-trap food is also kept in session history for inspecting actual results;
+# it remains outside GameState, checkpoint envelopes and serialized reports.
 var fish_food_by_tile: Dictionary = {}
 
 # Irrigation consumes water after simulation and its ordinary water sinks.
@@ -88,6 +91,16 @@ func to_dict() -> Dictionary:
 			serialized["coord"] = pair
 			serialized_moisture.append(serialized)
 		data["moisture_changes"] = serialized_moisture
+	if not irrigation_results.is_empty():
+		var serialized_irrigation: Array[Dictionary] = []
+		for entry: Dictionary in irrigation_results:
+			var serialized: Dictionary = entry.duplicate(true)
+			for key: String in ["coord", "reservoir"]:
+				if entry.has(key):
+					var coord: Vector2i = entry[key]
+					serialized[key] = [coord.x, coord.y]
+			serialized_irrigation.append(serialized)
+		data["irrigation_results"] = serialized_irrigation
 	return data
 
 

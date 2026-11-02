@@ -382,7 +382,7 @@ func test_seeded_game_runs_through_annual_summaries_resume_and_terminal_score() 
 	while screen.session.state.phase != C.Phase.GAME_OVER and completed_turns < C.YEARS * C.TURNS_PER_YEAR:
 		_play_farmer_commands(screen)
 		screen.request_end_turn()
-		if screen.modal_kind in ["confirm_loss", "confirm_labor"]:
+		if screen.modal_kind in GameScreen.END_TURN_CONFIRMATIONS:
 			screen._confirm_end_turn()
 		completed_turns += 1
 		if screen.session.state.phase != C.Phase.HARVEST:
@@ -418,7 +418,7 @@ func test_failed_window_close_from_harvest_can_resume_the_same_summary() -> void
 	for turn_number: int in range(C.TURNS_PER_YEAR):
 		_play_farmer_commands(screen)
 		screen.request_end_turn()
-		if screen.modal_kind in ["confirm_loss", "confirm_labor"]:
+		if screen.modal_kind in GameScreen.END_TURN_CONFIRMATIONS:
 			screen._confirm_end_turn()
 	assert_eq(screen.modal_kind, "harvest")
 	var summary: Dictionary = screen.session.state.to_dict()

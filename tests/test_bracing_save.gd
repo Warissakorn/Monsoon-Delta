@@ -176,7 +176,7 @@ func test_unknown_rulesets_and_future_envelopes_preserve_files() -> void:
 	unknown["state"]["ruleset"] = "bracing_v99"
 	_reject(unknown, true)
 	var future: Dictionary = _envelope(_state())
-	future["version"] = 6
+	future["version"] = 7
 	_reject(future, true)
 	for wrong_type: Variant in [1, true, null]:
 		var malformed: Dictionary = _envelope(_state())

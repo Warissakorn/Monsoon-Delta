@@ -2,7 +2,7 @@ class_name RiverSchoolFixtures
 extends RefCounted
 ## Prepared, deterministic practice boards. No checkpoints or runtime rule edits.
 
-const IDS: Array[String] = ["river_school_01", "river_school_03"]
+const IDS: Array[String] = ["river_school_01", "river_school_02", "river_school_03"]
 const REVISION: int = 1
 const HALL: Vector2i = Vector2i(-2, 0)
 const HOUSES: Array[Vector2i] = [Vector2i(-2, 1), Vector2i(-1, 1), Vector2i(-1, 0)]
@@ -12,14 +12,17 @@ const FISH: Vector2i = Vector2i(0, -3)
 const DRAIN: Vector2i = Vector2i(2, -1)
 const FIRST_SITES: Array[Vector2i] = [CHANNEL, PADDY]
 const PADDY_SITES: Array[Vector2i] = [Vector2i(1, -3), CHANNEL, Vector2i(1, -1), PADDY, Vector2i(2, -1)]
+const FLOW_HOUSES: Array[Vector2i] = [Vector2i(3, -2), Vector2i(3, -1)]
+const FLOW_PADDIES: Array[Vector2i] = [PADDY, DRAIN]
+const FLOW_DRAINS: Array[Vector2i] = [Vector2i(1, -1), Vector2i(1, 0)]
 
 
 static func create(id: String) -> GameState:
 	if id not in IDS:
 		return null
 	var state: GameState = GameFlow.new_game({
-		"seed": 1701 if id == "river_school_01" else 1703,
-		"leader": "farmer" if id == "river_school_01" else "fisher",
+		"seed": 1701 + IDS.find(id),
+		"leader": ["farmer", "soil_doctor", "fisher"][IDS.find(id)],
 		"is_tutorial": true,
 	})
 	if state == null:
@@ -61,8 +64,10 @@ static func create(id: String) -> GameState:
 		house.building = C.Building.HOUSE
 		house.start_house = true
 	state.population = 6
-	state.food = 6 if id == "river_school_01" else 0
-	state.wood = 2
+	state.food = 0 if id == "river_school_03" else 6
+	state.wood = 4 if id == "river_school_02" else 2
+	if id == "river_school_02":
+		_prepare_share_flow(state)
 	# A declared practice weather schedule, not a modifier to live balance.
 	# Forecast generation already consumed its usual draws in new_game; retry
 	# reconstructs that exact RNG state, and preview/turn resolution draw none.
@@ -73,9 +78,54 @@ static func create(id: String) -> GameState:
 	return state
 
 
+static func _prepare_share_flow(state: GameState) -> void:
+	# Two low homes share the gate's catchment with two prepared rice fields.
+	# The third home stays on high ground; all six people start with housing.
+	for coord: Vector2i in HOUSES:
+		state.get_tile(coord).building = C.Building.NONE
+		state.get_tile(coord).start_house = false
+	for coord: Vector2i in FLOW_HOUSES + [HOUSES[0]]:
+		var house: Tile = state.get_tile(coord)
+		house.elevation = 1 if coord in FLOW_HOUSES else 4
+		house.building = C.Building.HOUSE
+		house.start_house = true
+	var gate: Tile = state.get_tile(CHANNEL)
+	gate.elevation = 1
+	gate.building = C.Building.GATE
+	for coord: Vector2i in FLOW_PADDIES:
+		var paddy: Tile = state.get_tile(coord)
+		paddy.elevation = 1
+		paddy.feature = C.Feature.PADDY
+	# Only these sites differ from the common board. The drainage route starts
+	# at elevation 3 so opening it costs ordinary soil-doctor earthworks.
+	state.get_tile(Vector2i(1, -3)).elevation = 3
+	state.get_tile(FLOW_DRAINS[0]).elevation = 3
+
+
+static func target_houses(id: String) -> Array[Vector2i]:
+	if id == "river_school_02":
+		return FLOW_HOUSES.duplicate()
+	return []
+
+
+static func next_lesson(id: String) -> String:
+	var index: int = IDS.find(id)
+	return IDS[index + 1] if index >= 0 and index + 1 < IDS.size() else ""
+
+
 static func solutions(id: String) -> Array[Dictionary]:
 	if id not in IDS:
 		return []
+	if id == "river_school_02":
+		var gate_plan: Array = _empty_turns()
+		gate_plan[0] = [_command("dig", PADDY)]
+		gate_plan[4] = [_command("toggle_gate", CHANNEL)]
+		var drainage: Array = _empty_turns()
+		drainage[0] = [
+			_command("dig", FLOW_DRAINS[0]), _command("dig", FLOW_DRAINS[0]),
+			_command("dig", FLOW_DRAINS[1]), _command("dig", FLOW_DRAINS[1]), _command("dig", FLOW_DRAINS[1]),
+		]
+		return [{"id": "retain_then_close", "turns": gate_plan}, {"id": "open_drainage", "turns": drainage}]
 	var canal: Array = _empty_turns()
 	canal[0] = [_command("dig", CHANNEL), _command("dig", PADDY), _command("paddy", PADDY)]
 	if id == "river_school_01":
@@ -105,6 +155,18 @@ static func manifest(id: String) -> Dictionary:
 	var state: GameState = create(id)
 	if state == null:
 		return {}
+	if id == "river_school_02":
+		return {
+			"scenario_id": id, "revision": REVISION, "ruleset": state.ruleset,
+			"balance_sha256": FileAccess.get_sha256("res://data/balance.json"),
+			"initial_state": state.to_dict(),
+			"targets": {"hall": HALL, "houses": FLOW_HOUSES.duplicate(), "gate": CHANNEL, "paddy_sites": FLOW_PADDIES.duplicate(), "drains": FLOW_DRAINS.duplicate()},
+			"resources": {"population": state.population, "food": state.food, "wood": state.wood, "labor": state.labor},
+			"weather": {"rain_inflows": state.rain_inflows.duplicate(), "forecast_min": state.forecast_min, "forecast_max": state.forecast_max},
+			"prepared": {"background_elevation": 3, "village_elevation": 4, "target_house_elevation": 1, "paddy_site_elevation": 1, "starting_paddies": 2, "starting_gates": 1, "gate_open": true, "starting_houses": 3, "starting_fish_traps": 0, "starting_forests": 0},
+			"solutions": solutions(id),
+			"expected": {"retain_then_close_paddy_food": 3, "open_drainage_paddy_food": 1, "target_losses": 0, "paddies_lost": 0},
+		}
 	return {
 		"scenario_id": id, "revision": REVISION, "ruleset": state.ruleset,
 		"balance_sha256": FileAccess.get_sha256("res://data/balance.json"),

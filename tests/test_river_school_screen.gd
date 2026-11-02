@@ -350,3 +350,66 @@ func test_cancel_exit_restores_loss_warning_and_cancel_keeps_the_turn_uncommitte
 		assert_eq(screen.session.state.to_dict(), before)
 		assert_eq(FileAccess.get_file_as_bytes(PATH), saved)
 		screen.free()
+
+
+func test_next_lesson_button_follows_the_available_order_and_emits_only_the_next_id() -> void:
+	for language: String in ["en", "th"]:
+		Localization.setup(language)
+		for id: String in RiverSchoolFixtures.IDS:
+			var screen: RiverSchoolScreen = _screen(id)
+			_solve(screen)
+			assert_true(screen.lesson.passed)
+			var button: Button = screen._modal.find_child("SchoolNext", true, false) as Button
+			var next: String = RiverSchoolFixtures.next_lesson(id)
+			if next.is_empty():
+				assert_true(button == null)
+			else:
+				assert_true(button != null)
+				var requested: Array[String] = []
+				screen.lesson_requested.connect(func(value: String): requested.append(value))
+				assert_eq(button.text, _text("school.next_lesson") % _text("school." + next + ".name"))
+				button.pressed.emit()
+				assert_eq(requested, [next])
+			screen.free()
+
+
+func test_share_flow_home_inspection_and_hints_are_read_only_in_both_languages() -> void:
+	for language: String in ["en", "th"]:
+		Localization.setup(language)
+		var screen: RiverSchoolScreen = _screen("river_school_02")
+		var before: Dictionary = screen.session.state.to_dict()
+		var result: Dictionary = screen.lesson.result()
+		for coord: Vector2i in RiverSchoolFixtures.FLOW_HOUSES:
+			var inspect: Button = screen._goal_bars.find_child("SchoolHome_%d_%d" % [coord.x, coord.y], true, false) as Button
+			assert_true(inspect != null)
+			inspect.pressed.emit()
+			assert_eq(screen.hovered_coord, coord)
+			assert_eq(screen.board._selected_coord, coord)
+			assert_eq(screen.session.state.to_dict(), before)
+			assert_eq(screen.lesson.result(), result)
+		var targets: Label = screen._goal_bars.find_child("SchoolTargetProgress", true, false) as Label
+		assert_eq(targets.text, _text("school.target_progress") % [2, 2])
+		screen.open_hint()
+		screen._next_hint()
+		screen._next_hint()
+		assert_true(_labels(screen._modal_content).contains(_text("school.river_school_02.hint3")))
+		assert_true(_labels(screen._modal_content).contains(_text("school.solution_command") % [_text("cmd.toggle_gate.name"), RiverSchoolFixtures.CHANNEL.x, RiverSchoolFixtures.CHANNEL.y]))
+		assert_eq(screen.session.state.to_dict(), before)
+		assert_eq(screen.lesson.result(), result)
+		screen.free()
+
+
+func test_share_flow_result_explains_actual_target_loss_and_preserved_home_count() -> void:
+	for language: String in ["en", "th"]:
+		Localization.setup(language)
+		var screen: RiverSchoolScreen = _screen("river_school_02")
+		for _turn: int in range(6):
+			screen._finish_turn()
+		assert_true(not screen.lesson.passed)
+		var labels: String = _labels(screen._modal_content)
+		assert_true(labels.contains(_text("school.reason.target_houses")))
+		assert_true(labels.contains(_text("school.result_target_houses") % [0, 2]))
+		for coord: Vector2i in RiverSchoolFixtures.FLOW_HOUSES:
+			assert_true(labels.contains(_text("school.result_target_lost") % [coord.x, coord.y]))
+		assert_true(screen._modal.find_child("SchoolNext", true, false) == null)
+		screen.free()

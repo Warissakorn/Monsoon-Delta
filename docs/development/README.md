@@ -18,6 +18,8 @@ godot --path . -- --scene=game --ruleset=bracing_v1 --seed=42 --save-path=user:/
 # ความชื้นสะสมในนา แยกเดี่ยวหรือใช้ร่วมกับค้ำบ้าน
 godot --path . -- --scene=game --ruleset=moisture_v1 --seed=42 --save-path=user://dev-moisture.json
 godot --path . -- --scene=game --ruleset=bracing_moisture_v1 --seed=42 --save-path=user://dev-seasonal.json
+# นโยบายจัดสรรน้ำในเกมหลัก (เดี่ยวหรือร่วมค้ำ/ความชื้น)
+godot --path . -- --scene=game --ruleset=moisture_irrigation_v1 --seed=42 --save-path=user://dev-irrigation.json
 # เลือกโจทย์สั้น / เข้าโจทย์โดยตรง ไม่มี checkpoint บทเรียน
 godot --path . -- --scene=school --lang=th
 godot --path . -- --scene=school --lesson=river_school_01 --lang=th
@@ -48,7 +50,19 @@ git diff --check
 
 [CI](../../.github/workflows/tests.yml) ตรวจเอกสาร Godot tests, smoke เมนู/เกม/sandbox/รอบยาว, บอท, balance CLI และ Python report checker ใช้ผลที่รันกับ commit ที่กำลังส่ง ไม่ใช้ CI เก่ารับรองการเปลี่ยน runtime ใหม่
 
-โรงเรียนสายน้ำใช้ [fixture/replay](../../core/river_school_fixtures.gd), [controller](../../core/river_school_run.gd) และ [หน้าจอเฉพาะ](../../ui/river_school_screen.gd) บนกฎเดิม ใช้ `scripts/test.sh --filter=river_school` ตรวจผลจริง/Retry/RNG/การรักษาเซฟปกติ แล้วตรวจทั้งชุด การผ่านเทสต์ไม่แทนการทดลองความเข้าใจหรือความสนุกกับผู้เล่นตาม [แผนตรวจ](../design/FUN_DESIGN.md)
+โรงเรียนสายน้ำใช้ [fixture/replay](../../core/river_school_fixtures.gd), [controller](../../core/river_school_run.gd), [session สำหรับประวัติรื้อบ้านคู่ Undo/Redo](../../core/river_school_session.gd) และ [หน้าจอเฉพาะ](../../ui/river_school_screen.gd) บนกฎเดิม ใช้ `scripts/test.sh --filter=river_school` ตรวจผลจริง/Retry/RNG/การรักษาเซฟปกติ แล้วตรวจทั้งชุด การผ่านเทสต์ไม่แทนการทดลองความเข้าใจหรือความสนุกกับผู้เล่นตาม [แผนตรวจ](../design/FUN_DESIGN.md)
+
+[จัดสรรน้ำให้นา](../features/IRRIGATION.md) ใช้ [pure planner](../../core/irrigation.gd) หลังน้ำ/ระเหย/ความเสียหาย แล้ว resolver ใช้ผลครั้งเดียว ตรวจ `scripts/test.sh --filter=irrigation` และชุดเต็มเมื่อแก้กฎ/เซฟ ตรวจ native ผ่าน [irrigation probe](../../tools/irrigation_probe.gd) ตามคู่มือฟีเจอร์ บอทมีนโยบายเฉพาะ ruleset ที่เปิด ไม่ใช่ผลยืนยันสมดุลใหม่
+
+[การกดจบเทิร์น](../features/END_TURN.md) ใช้ `scripts/test.sh --filter=end_turn_flow` ตรวจคำเตือน/ผลจริง/การโหลด/โรงเรียน และคีย์บอร์ดบนปุ่ม ใช้ [end-turn probe](../../tools/end_turn_probe.gd) ตรวจ mouse/keyboard bursts กับเวลา 400 ms จริงบน native window ทั้งสองภาษา ตามคำสั่งในคู่มือฟีเจอร์ กระดานเริ่มต้นเป็น [authored fixtures](../../tools/end_turn_fixtures.gd) และแยก XDG/เซฟจากผู้เล่น เทสต์ controller เรียกเมธอด synchronous ได้ ส่วน input ของผู้เล่นต้องผ่านตัวห่อที่กันการกดซ้ำ
+
+การดูจุดจากรายงานใช้ `scripts/test.sh --filter=turn_result_inspection` ตรวจข้อมูลจริงที่ไม่ขึ้นกับสภาพช่องปัจจุบัน การพักเครื่องมือ/Undo/Redo และการคืนรายงาน/สรุปปี/โรงเรียน ตรวจ native ด้วย [turn-result inspection probe](../../tools/turn_result_inspection_probe.gd) ตาม [คู่มือฟีเจอร์](../features/END_TURN.md#ดูตำแหน่งผลจริงจากประวัติ) มีกรณีก่อสร้างจริงหลังจบเทิร์นและพิกัดที่ถูกอาคารบัง พิกัดอาหารปลาอยู่ใน GameSession เท่านั้น ไม่เพิ่ม schema เซฟ
+
+[พัฒนาพื้นที่แต่ละช่อง](../features/AREA_DEVELOPMENT.md) ใช้ `scripts/test.sh --filter=area_development` ตรวจ pure planner เทียบคำสั่ง/resolve จริง พารามิเตอร์ เก็บเกี่ยว การใช้แผนครั้งเดียว Undo/Redo/โหลด และโรงเรียน ตรวจ native ทั้งสองภาษาผ่าน [area development probe](../../tools/area_development_probe.gd) ตามคู่มือฟีเจอร์ ใช้ [กระดานตรวจที่จัดไว้](../../tools/area_development_fixtures.gd) และ XDG แยก `CommandRules.supports_target()` ตรวจเฉพาะลักษณะช่อง ส่วน `check()` ยังตัดสินฤดู น้ำ ทรัพยากรและ unlock ทั้งหมด
+
+[เอฟเฟกต์ทรัพยากร](../features/RESOURCE_FEEDBACK.md) ใช้ `scripts/test.sh --filter=resource_feedback` ตรวจ snapshot/delta ของ commit จริง อายุ/เพดาน/การล้าง input passthrough และ Reduce motion แล้วตรวจทั้งชุด [Native probe](../../tools/resource_feedback_probe.gd) ใช้ input จริงและพักเฉพาะนาฬิกาภาพหลังเห็นการเคลื่อนไหวเพื่อจับภาพ จากนั้นเดินต่อเพื่อตรวจ expiry จริงบนไทย/อังกฤษ ดูคำสั่ง XDG แยกในคู่มือ ไม่แก้ GameState เพื่อสร้างเอฟเฟกต์
+
+[บัญชีทรัพยากร](../features/RESOURCE_FEEDBACK.md#ดูบัญชีทรัพยากรของแต่ละเทิร์น) อยู่ใน `GameSession.turn_history()` แยกจาก GameState/เซฟ ใช้ `scripts/test.sh --filter=resource_ledger` ตรวจ `ก่อน + ผลรวมสาเหตุ = หลัง` ทั้งห้าทรัพยากร และอ่านข้อมูลเดิมหลังวางแผนต่อ/ขึ้นปี/โหลด/Retry ตรวจ [native probe](../../tools/resource_ledger_probe.gd) ทั้งสองภาษาตามคำสั่ง XDG ในคู่มือฟีเจอร์ รวมใช้คำสั่งสร้างบ้านจริงก่อนอ่านยอดประวัติ ห้ามประกอบสาเหตุจากกระดานปัจจุบันหรือใช้ harvest report ปีก่อนกับเทิร์นธรรมดา
 
 ### Build เกมแจกด้วย GitHub Actions
 

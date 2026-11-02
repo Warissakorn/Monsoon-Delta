@@ -95,6 +95,7 @@ static func _damage(s: GameState, report: TurnReport, levels: PackedInt32Array) 
 			tile.paddy_dead = true
 			tile.paddy_yield = 0
 			tile.soil_moisture = 0
+			tile.irrigation_policy = "normal"
 			s.stats["paddies_lost"] = int(s.stats.get("paddies_lost", 0)) + 1
 			report.paddies_died.append(tile.coord)
 
@@ -107,6 +108,7 @@ static func _produce(s: GameState, report: TurnReport, levels: PackedInt32Array,
 	var water_use: float = maxf(0.0, float(s.mod("dry_paddy_water_use")))
 	var fish_yield: int = roundi(float(s.mod("fish_trap_yield")))
 	var fish_food: int = roundi(float(fish_yield) * float(s.mod("fish_trap_multiplier")))
+	var irrigation: Dictionary = Irrigation.plan(s) if s.has_irrigation() and not s.is_rain() else {}
 	for index: int in range(s.tiles.size()):
 		var tile: Tile = s.tiles[index]
 		var level: int = levels[index]
@@ -120,6 +122,16 @@ static func _produce(s: GameState, report: TurnReport, levels: PackedInt32Array,
 						tile.soil_moisture = 2
 				elif s.has_moisture():
 					tile.soil_moisture = maxi(0, tile.soil_moisture - 1)
+			elif not irrigation.is_empty():
+				var entry: Dictionary = irrigation["by_tile"][tile.coord]
+				if int(entry["yield_gain"]) > 0:
+					tile.paddy_yield += 1
+					report.paddy_gains.append(tile.coord)
+				if entry["source"] == "moisture":
+					moisture_yields[tile.coord] = 1
+				if s.has_moisture():
+					tile.soil_moisture = int(entry["moisture_after"])
+				report.dry_paddy_water_used += float(entry["water_used"])
 			else:
 				var reservoir: Tile = _best_reservoir(s, tile, reservoir_min)
 				if reservoir != null:
@@ -139,6 +151,10 @@ static func _produce(s: GameState, report: TurnReport, levels: PackedInt32Array,
 			report.fish_food += fish_food
 			if record_visuals:
 				report.fish_food_by_tile[tile.coord] = fish_food
+	if not irrigation.is_empty():
+		for coord: Vector2i in irrigation["reservoir_water"]:
+			s.get_tile(coord).water = float(irrigation["reservoir_water"][coord])
+		report.irrigation_results.assign(irrigation["receipts"])
 	return moisture_yields
 
 

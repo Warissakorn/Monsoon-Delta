@@ -16,7 +16,9 @@ var _targets_root: Node3D
 var _preview_root: Node3D
 var _brace_status_root: Node3D
 var _moisture_status_root: Node3D
+var _irrigation_status_root: Node3D
 var _selection: MeshInstance3D
+var _result_marker: MeshInstance3D
 var _hover: MeshInstance3D
 var _selected_coord: Vector2i = NO_COORD
 var _hover_coord: Vector2i = NO_COORD
@@ -51,6 +53,7 @@ func set_reduced_motion(enabled: bool) -> void:
 
 
 func set_state(next_state: GameState) -> void:
+	clear_result_location()
 	if state != next_state:
 		clear_activity()
 	state = next_state
@@ -69,6 +72,7 @@ func refresh() -> void:
 	_clear_root(_labels_root)
 	_clear_root(_brace_status_root)
 	_clear_root(_moisture_status_root)
+	_clear_root(_irrigation_status_root)
 	if state == null:
 		_selection.hide()
 		_hover.hide()
@@ -199,6 +203,30 @@ func select(coord: Vector2i) -> void:
 	_update_markers()
 
 
+func show_result_location(coord: Vector2i) -> void:
+	# An inspection overlay must remain visible in recessed fields and behind
+	# buildings. Use a separate material so ordinary selection keeps its depth.
+	_ensure_nodes()
+	if _result_marker == null:
+		_result_marker = MeshInstance3D.new()
+		_result_marker.name = "ResolvedLocation"
+		_result_marker.mesh = MeshLib.hex_ring(1.045, 0.91)
+		var color: Color = _color("accent")
+		color.a = 0.95
+		var material: StandardMaterial3D = _material(color, true).duplicate() as StandardMaterial3D
+		material.no_depth_test = true
+		material.render_priority = 127
+		_result_marker.material_override = material
+		_result_marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(_result_marker)
+	_position_marker(_result_marker, coord, 0.06)
+
+
+func clear_result_location() -> void:
+	if _result_marker != null:
+		_result_marker.hide()
+
+
 func hover(coord: Vector2i) -> void:
 	_hover_coord = coord
 	_ensure_nodes()
@@ -267,6 +295,9 @@ func _ensure_nodes() -> void:
 	_moisture_status_root = Node3D.new()
 	_moisture_status_root.name = "MoistureStatus"
 	add_child(_moisture_status_root)
+	_irrigation_status_root = Node3D.new()
+	_irrigation_status_root.name = "IrrigationStatus"
+	add_child(_irrigation_status_root)
 	_route_view = RouteNetworkView.new()
 	_route_view.name = "Routes"
 	add_child(_route_view)
@@ -1164,6 +1195,7 @@ func _preview_label(text: String, coord: Vector2i, color: Color, prefix: String,
 
 func _update_markers() -> void:
 	_refresh_moisture_status()
+	_refresh_irrigation_status()
 	if state == null:
 		_selection.hide()
 		_hover.hide()
@@ -1171,6 +1203,28 @@ func _update_markers() -> void:
 	_position_marker(_selection, _selected_coord, 0.045)
 	_position_marker(_hover, _hover_coord, 0.06)
 	_hover.visible = _hover.visible and _hover_coord != _selected_coord
+
+
+func _refresh_irrigation_status() -> void:
+	_clear_root(_irrigation_status_root)
+	if state == null or not state.has_irrigation():
+		return
+	for tile: Tile in state.tiles:
+		if tile.feature != C.Feature.PADDY or tile.paddy_dead or tile.irrigation_policy == "normal":
+			continue
+		var label: Label3D = Label3D.new()
+		label.name = "Irrigation_%d_%d" % [tile.q, tile.r]
+		label.text = String(TranslationServer.translate("irrigation." + tile.irrigation_policy))
+		label.font = load("res://assets/fonts/NotoSansThai.ttf")
+		label.font_size = 48
+		label.pixel_size = 0.005
+		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		label.no_depth_test = true
+		label.position = Hex.to_world(tile.coord)
+		label.position.y = _surface_y(tile) + 0.85
+		label.modulate = _color("highlight") if tile.irrigation_policy == "first" else _color("muted")
+		label.set_meta("irrigation_policy", tile.irrigation_policy)
+		_irrigation_status_root.add_child(label)
 
 
 func _refresh_moisture_status() -> void:

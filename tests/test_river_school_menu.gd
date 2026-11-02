@@ -3,7 +3,7 @@ extends TestCase
 
 const PATH: String = "user://tests/river_school_menu/checkpoint.json"
 const SETTINGS: String = "user://tests/river_school_menu/settings.json"
-const IDS: Array[String] = ["river_school_01", "river_school_03"]
+const IDS: Array[String] = ["river_school_01", "river_school_02", "river_school_03"]
 
 
 func before_each() -> void:

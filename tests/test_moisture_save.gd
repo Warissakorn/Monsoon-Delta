@@ -240,7 +240,7 @@ func test_unsupported_rulesets_or_future_versions_preserve_the_existing_file() -
 	var unknown: Dictionary = _envelope(_state())
 	unknown["state"]["ruleset"] = "moisture_v99"
 	_reject(unknown, true)
-	_reject(_envelope(_state(), 6), true)
+	_reject(_envelope(_state(), 7), true)
 	for wrong_type: Variant in [1, true, null]:
 		var malformed: Dictionary = _envelope(_state())
 		malformed["state"]["ruleset"] = wrong_type

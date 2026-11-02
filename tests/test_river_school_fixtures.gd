@@ -39,6 +39,11 @@ func _passed(id: String, state: GameState) -> bool:
 		return false
 	if id == "river_school_01":
 		return int(state.harvest_report["paddy_food"]) >= 1 and int(state.harvest_report["left_hunger"]) == 0
+	if id == "river_school_02":
+		for coord: Vector2i in Fixtures.FLOW_HOUSES:
+			if state.get_tile(coord).building != C.Building.HOUSE:
+				return false
+		return int(state.harvest_report["paddy_food"]) >= 1
 	return int(state.harvest_report["left_hunger"]) == 0 and int(state.harvest_report["left_housing"]) == 0 and int(state.harvest_report["population_after"]) >= 6
 
 
@@ -56,10 +61,10 @@ func test_initial_fixtures_are_exact_repeatable_tutorial_states_with_declared_re
 		assert_eq(state.year, 1)
 		assert_eq(state.turn, 1)
 		assert_eq(state.population, 6)
-		assert_eq(state.food, 6 if id == "river_school_01" else 0)
-		assert_eq(state.wood, 2)
+		assert_eq(state.food, 0 if id == "river_school_03" else 6)
+		assert_eq(state.wood, 4 if id == "river_school_02" else 2)
 		assert_eq(state.labor, 6)
-		assert_eq(state.leader, "farmer" if id == "river_school_01" else "fisher")
+		assert_eq(state.leader, ["farmer", "soil_doctor", "fisher"][Fixtures.IDS.find(id)])
 		assert_eq(state.tiles.size(), 61)
 		assert_eq(state.capacity(), 6)
 		assert_eq(state.get_tile(Fixtures.HALL).building, C.Building.HALL)
@@ -73,7 +78,7 @@ func test_initial_fixtures_are_exact_repeatable_tutorial_states_with_declared_re
 			assert_eq(tile.paddy_yield, 0)
 			assert_eq(tile.soil_moisture, 0)
 			assert_eq(tile.brace_turns, 0)
-			assert_true(tile.feature != C.Feature.PADDY)
+			assert_eq(tile.feature == C.Feature.PADDY, id == "river_school_02" and tile.coord in Fixtures.FLOW_PADDIES)
 			assert_true(tile.building != C.Building.FISH_TRAP)
 		for _draw: int in range(4):
 			assert_eq(state.rng.randi(), repeat.rng.randi())
@@ -134,12 +139,12 @@ func test_food_lesson_has_fish_only_rice_only_and_mixed_solutions_with_real_trad
 				assert_eq(state.stats["paddies_lost"], 0)
 
 
-func test_untouched_attempts_fail_both_goals_and_leave_hall_and_houses_safe() -> void:
+func test_untouched_attempts_fail_their_goals_with_actual_damage_and_harvest() -> void:
 	for id: String in Fixtures.IDS:
 		var state: GameState = _play(id, [[], [], [], [], [], []])["state"]
 		assert_true(not _passed(id, state))
-		assert_eq(state.harvest_report["paddy_food"], 0)
-		assert_eq(state.stats["houses_lost"], 0)
+		assert_eq(state.harvest_report["paddy_food"], 4 if id == "river_school_02" else 0)
+		assert_eq(state.stats["houses_lost"], 2 if id == "river_school_02" else 0)
 		assert_true(not state.stats["hall_ever_wet"])
 		if id == "river_school_03":
 			assert_eq(state.harvest_report["left_hunger"], 6)
@@ -169,12 +174,46 @@ func test_manifest_identifies_balance_preparation_targets_and_exact_initial_rng(
 		assert_eq(manifest["balance_sha256"], FileAccess.get_sha256("res://data/balance.json"))
 		assert_eq(manifest["initial_state"], Fixtures.create(id).to_dict())
 		assert_true(manifest["initial_state"]["rng_state"] is String)
-		assert_eq(manifest["targets"]["channel"], Fixtures.CHANNEL)
-		assert_eq(manifest["targets"]["paddy"], Fixtures.PADDY)
-		assert_eq(manifest["targets"]["fish"], Fixtures.FISH)
+		if id == "river_school_02":
+			assert_eq(manifest["targets"]["gate"], Fixtures.CHANNEL)
+			assert_eq(manifest["targets"]["paddy_sites"], Fixtures.FLOW_PADDIES)
+			assert_eq(manifest["targets"]["houses"], Fixtures.FLOW_HOUSES)
+		else:
+			assert_eq(manifest["targets"]["channel"], Fixtures.CHANNEL)
+			assert_eq(manifest["targets"]["paddy"], Fixtures.PADDY)
+			assert_eq(manifest["targets"]["fish"], Fixtures.FISH)
 		assert_eq(manifest["weather"]["rain_inflows"], [3.0, 3.0, 4.0])
-		assert_eq(manifest["prepared"]["starting_paddies"], 0)
+		assert_eq(manifest["prepared"]["starting_paddies"], 2 if id == "river_school_02" else 0)
 		assert_eq(manifest["prepared"]["starting_fish_traps"], 0)
 		assert_eq(manifest["solutions"], Fixtures.solutions(id))
 		manifest["targets"]["houses"].clear()
-		assert_eq(Fixtures.manifest(id)["targets"]["houses"].size(), 3)
+		assert_eq(Fixtures.manifest(id)["targets"]["houses"].size(), 2 if id == "river_school_02" else 3)
+
+
+func test_share_flow_gate_and_drainage_are_distinct_legal_preview_matching_solutions() -> void:
+	var solutions: Array[Dictionary] = Fixtures.solutions("river_school_02")
+	assert_eq(solutions.size(), 2)
+	for solution: Dictionary in solutions:
+		var result: Dictionary = _play("river_school_02", solution["turns"], true)
+		var state: GameState = result["state"]
+		assert_true(_passed("river_school_02", state), solution["id"])
+		assert_eq(state.population, 6)
+		assert_eq(state.stats["houses_lost"], 0)
+		assert_eq(state.stats["paddies_lost"], 0)
+		assert_true(not state.stats["hall_ever_wet"])
+		assert_eq(state.wood, 4, "both approaches use ordinary labor without spending the supplied wood")
+		if solution["id"] == "retain_then_close":
+			assert_true(not state.get_tile(Fixtures.CHANNEL).gate_open)
+			assert_eq(state.harvest_report["paddy_food"], 3)
+		else:
+			assert_true(state.get_tile(Fixtures.CHANNEL).gate_open)
+			assert_eq(state.harvest_report["paddy_food"], 1)
+
+
+func test_share_flow_closing_the_gate_without_a_water_plan_keeps_homes_but_produces_no_rice() -> void:
+	var turns: Array = [[], [], [], [], [], []]
+	turns[0] = [{"id": "toggle_gate", "coord": Fixtures.CHANNEL}]
+	var state: GameState = _play("river_school_02", turns, true)["state"]
+	assert_true(not _passed("river_school_02", state))
+	assert_eq(state.harvest_report["paddy_food"], 0)
+	assert_eq(state.stats["houses_lost"], 0)

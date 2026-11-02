@@ -5,10 +5,12 @@ extends RefCounted
 const GREEDY_COMMANDS: Array[String] = [
 	"dig", "fill", "paddy", "house", "stilt_house", "chop", "plant", "gate",
 	"toggle_gate", "fish_trap", "granary",
+	"irrigation_policy",
 ]
 const RANDOM_COMMANDS: Array[String] = [
 	"dig", "fill", "paddy", "house", "stilt_house", "raft_house", "chop", "plant",
 	"gate", "toggle_gate", "reservoir", "fish_trap", "granary", "waterwheel", "demolish",
+	"irrigation_policy",
 ]
 
 
@@ -29,6 +31,11 @@ static func legal_commands(state: GameState, ids: Array[String] = GREEDY_COMMAND
 			for direction: int in 6:
 				for coord: Vector2i in CommandRules.valid_targets(state, id, direction):
 					commands.append(Command.new(id, coord, direction))
+		elif id == "irrigation_policy":
+			if state.has_irrigation():
+				for parameter: int in range(Irrigation.POLICIES.size()):
+					for coord: Vector2i in CommandRules.valid_targets(state, id, parameter):
+						commands.append(Command.new(id, coord, parameter))
 		else:
 			for coord: Vector2i in CommandRules.valid_targets(state, id, -1):
 				commands.append(Command.new(id, coord))

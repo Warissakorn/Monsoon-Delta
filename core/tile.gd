@@ -35,6 +35,7 @@ var paddy_rain_turns: int = 0
 var start_house: bool = false
 var brace_turns: int = 0
 var soil_moisture: int = 0
+var irrigation_policy: String = "normal"
 
 
 func _init(initial_q: int = 0, initial_r: int = 0) -> void:
@@ -42,7 +43,7 @@ func _init(initial_q: int = 0, initial_r: int = 0) -> void:
 	_r = initial_r
 
 
-func to_dict(include_bracing: bool = false, include_moisture: bool = false) -> Dictionary:
+func to_dict(include_bracing: bool = false, include_moisture: bool = false, include_irrigation: bool = false) -> Dictionary:
 	var data: Dictionary = {
 		"q": q,
 		"r": r,
@@ -64,6 +65,8 @@ func to_dict(include_bracing: bool = false, include_moisture: bool = false) -> D
 		data["brace_turns"] = brace_turns
 	if include_moisture:
 		data["soil_moisture"] = soil_moisture
+	if include_irrigation:
+		data["irrigation_policy"] = irrigation_policy
 	return data
 
 
@@ -84,4 +87,5 @@ static func from_dict(data: Dictionary) -> Tile:
 	tile.start_house = bool(data.get("start_house", false))
 	tile.brace_turns = int(data.get("brace_turns", 0))
 	tile.soil_moisture = int(data.get("soil_moisture", 0))
+	tile.irrigation_policy = String(data.get("irrigation_policy", "normal"))
 	return tile

@@ -42,6 +42,7 @@ func _assert_report(actual: Dictionary, expected: TurnReport) -> void:
 		"paddies_died": expected.paddies_died,
 		"paddy_gains": expected.paddy_gains,
 		"fish_food": expected.fish_food,
+		"fish_food_by_tile": expected.fish_food_by_tile,
 		"hall_wet": expected.hall_wet,
 		"dry_paddy_water_used": expected.dry_paddy_water_used,
 	})

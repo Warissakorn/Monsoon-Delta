@@ -14,6 +14,7 @@ const DEFS: Dictionary = {
 	"plant": {"labor": "plant_labor", "dry_only": true},
 	"gate": {"labor": "gate_labor", "wood": "gate_wood", "building": C.Building.GATE},
 	"toggle_gate": {},
+	"irrigation_policy": {"dry_only": true},
 	"reservoir": {"labor": "reservoir_labor", "dry_only": true, "building": C.Building.RESERVOIR},
 	"fish_trap": {"labor": "fish_trap_labor", "wood": "fish_trap_wood", "building": C.Building.FISH_TRAP},
 	"granary": {"labor": "granary_labor", "wood": "granary_wood", "building": C.Building.GRANARY},
@@ -28,6 +29,8 @@ static func check(s: GameState, cmd: Command) -> String:
 	if not DEFS.has(cmd.id):
 		return "err.unknown"
 	if cmd.id == "brace_house" and not s.has_bracing():
+		return "err.locked"
+	if cmd.id == "irrigation_policy" and not s.has_irrigation():
 		return "err.locked"
 	var definition: Dictionary = DEFS[cmd.id]
 	var unlock: String = String(definition.get("unlock", ""))
@@ -53,6 +56,11 @@ static func check(s: GameState, cmd: Command) -> String:
 		var neighbor: Tile = s.neighbor_in_dir(tile, cmd.param)
 		if neighbor == null or neighbor.is_sea:
 			return "err.param"
+	elif cmd.id == "irrigation_policy":
+		if cmd.param < 0 or cmd.param >= Irrigation.POLICIES.size():
+			return "err.param"
+		if tile.irrigation_policy == Irrigation.POLICIES[cmd.param]:
+			return "err.irrigation_same"
 	elif cmd.param != -1:
 		return "err.param"
 	var price: Vector2i = cost(s, cmd)
@@ -86,6 +94,8 @@ static func apply(s: GameState, cmd: Command) -> void:
 	s.labor -= price.x
 	s.wood -= price.y
 	match cmd.id:
+		"irrigation_policy":
+			tile.irrigation_policy = Irrigation.POLICIES[cmd.param]
 		"brace_house":
 			tile.brace_turns = 1
 		"dig":
@@ -133,8 +143,16 @@ static func valid_targets(s: GameState, id: String, param: int = -1) -> Array[Ve
 	return result
 
 
+static func supports_target(tile: Tile, id: String) -> bool:
+	# Structural suitability only. check() remains the authority for phase,
+	# season, unlocks, water, parameters and current resources.
+	return tile != null and DEFS.has(id) and _target_matches(tile, id)
+
+
 static func _target_matches(tile: Tile, id: String) -> bool:
 	match id:
+		"irrigation_policy":
+			return tile.feature == C.Feature.PADDY and not tile.paddy_dead
 		"brace_house":
 			return tile.building in [C.Building.HOUSE, C.Building.STILT_HOUSE]
 		"dig", "fill":
@@ -165,6 +183,7 @@ static func _reset_paddy(tile: Tile) -> void:
 	tile.paddy_dead = false
 	tile.paddy_rain_turns = 0
 	tile.soil_moisture = 0
+	tile.irrigation_policy = "normal"
 
 
 static func _demolish(s: GameState, tile: Tile) -> void:
