@@ -35,7 +35,7 @@ git diff --check
 
 `scripts/test.sh` import โปรเจกต์ก่อนและตรวจ error จาก log แม้ Godot ออกด้วย status 0 ใช้ `--filter=game_screen`, `session`, `water` หรือชื่อส่วนที่เกี่ยวข้องได้ จำนวนเทสต์ฐานและหลักฐานล่าสุดอ้างใน STATUS; อย่าเปลี่ยนจำนวนเทสต์ในรายงานเก่าให้เป็นจำนวนปัจจุบัน
 
-เมื่อแก้ boot/ตัวเลือก CLI รัน `python3 scripts/test_boot_cli.py` และ `python3 scripts/test_school_cli.py` เพิ่มเพื่อตรวจระดับความยาก seed เริ่มต้น และการปฏิเสธค่าผิดก่อนแตะ checkpoint ด้วยการเปิด Godot จริงบนเซฟ/ค่าตั้งแยก
+เมื่อแก้ boot/ตัวเลือก CLI รัน `python3 scripts/test_boot_cli.py` และ `python3 scripts/test_school_cli.py` เพิ่มเพื่อตรวจระดับความยาก seed เริ่มต้น ruleset/บทเรียน และการปฏิเสธค่าผิดก่อนแตะ checkpoint ด้วยการเปิด Godot จริงบนเซฟ/ค่าตั้งแยก โหมดรอบรับ `--run-mode=classic|long` และเป้าหมายรับ `--goal=none|growth|forest|rice` (เลือกค่าเดียวหลัง `=`); ระบุ flag เปล่า ค่าว่างหรือค่าผิดจะออกด้วยรหัส 2 พร้อมค่าที่ใช้ได้ก่อนเปิด scene ทุกชนิด ไม่อ่าน/สร้าง/เขียนทับ checkpoint และ flag ที่ถูกต้องภายหลังไม่กลบค่าผิดที่พบก่อนหน้า ดู [คู่มือโหมดและเป้าหมาย](../features/LONG_RUNS.md)
 
 ## เลือกการตรวจตามสิ่งที่เปลี่ยน
 
