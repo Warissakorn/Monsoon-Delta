@@ -189,7 +189,7 @@ func test_loss_confirmation_shows_the_same_harvest_forecast_with_preview_hidden(
 	var dialog_labels: PackedStringArray = _label_texts(screen._modal)
 	for line: String in lines:
 		assert_true(dialog_labels.has(line), "the confirmation must explain the same annual forecast: " + line)
-	_assert_safe_focus(screen, "action.cancel")
+	_assert_safe_focus(screen, "turn.back_to_plan")
 	screen.close_modal()
 	assert_eq(screen.session.state.to_dict(), original)
 	assert_eq(screen.harvest_projection, forecast)
@@ -286,7 +286,7 @@ func test_each_modal_offers_keyboard_focus_on_its_safe_default_action() -> void:
 	screen.refresh_state()
 	screen.request_end_turn()
 	assert_eq(screen.modal_kind, "confirm_labor")
-	_assert_safe_focus(screen, "action.cancel")
+	_assert_safe_focus(screen, "turn.back_to_plan")
 	screen.close_modal()
 	_close(screen)
 	var annual: GameState = _state()

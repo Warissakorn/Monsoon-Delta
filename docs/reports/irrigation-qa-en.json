@@ -1,0 +1,53 @@
+{
+  "balance_sha256": "fb7c1fc15245c8df59875118b60bc4a5353e4ad6b16214fbfcbbab0fd6c19953",
+  "captures": [
+    "irrigation-planning-en.png",
+    "irrigation-history-en.png",
+    "irrigation-continue-en.png"
+  ],
+  "checks": {
+    "actual_allocation_once": true,
+    "board_markers_follow_policy": true,
+    "cancel_preserves_draft_and_continue": true,
+    "continue_exact_policy_float64_rng": true,
+    "continue_renders_saved_policy": true,
+    "fixture_checkpoint_v6": true,
+    "history_fits": true,
+    "irrigation-continue_capture": true,
+    "irrigation-history_capture": true,
+    "irrigation-planning_capture": true,
+    "isolated_preferences": true,
+    "menu_does_not_replace_continue": true,
+    "native_commit_matches_preview": true,
+    "native_enter_policy_cannot_end_turn": true,
+    "native_field_selection": true,
+    "native_history_has_receipts": true,
+    "native_new_run_opt_in": true,
+    "native_overwrite_confirmation": true,
+    "native_pause": true,
+    "native_redo_policy": true,
+    "native_reduce_motion_read_only": true,
+    "native_resume_returns_to_board": true,
+    "native_skip_changes_policy_only": true,
+    "native_undo_policy": true,
+    "normal_continue_untouched": true,
+    "normal_save_created": true,
+    "policy_buttons_fit": true,
+    "preview_uses_moisture_and_preserves_water_for_others": true,
+    "visible_control_11": true,
+    "visible_control_19": true,
+    "visible_control_2": true,
+    "visible_control_21": true,
+    "visible_control_5": true,
+    "visible_control_7": true
+  },
+  "display": "X11",
+  "engine": "4.6.3-stable (official)",
+  "fixture_sha256": "9f1dfb634fa0b333811017116a13b3fe5dc543e68f6b989bb4fe84d1d2fbd433",
+  "language": "en",
+  "note": "Automated native mouse/keyboard checks on an authored main-game fixture. The initial board has a 1.0-water reservoir, three fields and one stored moisture unit. No gameplay state is injected after start. Policies, undo/redo, commit and load use actual game commands, resolver and isolated checkpoint I/O. Focus is set programmatically to reveal controls in scroll areas. This is not a generated-map playthrough, human playtest, balance validation or performance benchmark.",
+  "viewport": [
+    1280,
+    720
+  ]
+}

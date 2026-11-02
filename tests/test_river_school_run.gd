@@ -70,7 +70,7 @@ func test_start_and_invalid_selection_do_not_lose_the_current_attempt() -> void:
 		assert_eq(run.turns_resolved, 0)
 		assert_eq(run.fish_food, 0)
 		var before: Dictionary = run.session.state.to_dict()
-		assert_true(not run.start("river_school_02"), "unimplemented lesson is not silently substituted")
+		assert_true(not run.start("river_school_04"), "unimplemented lesson is not silently substituted")
 		assert_eq(run.scenario_id, id)
 		assert_eq(run.session.state.to_dict(), before)
 	assert_true(not FileAccess.file_exists(PATH))
@@ -129,7 +129,8 @@ func test_no_action_attempts_fail_for_their_actual_missing_goals() -> void:
 		assert_true(not run.passed)
 		assert_true(not run.mastered)
 		var reasons: Array = run.result()["reasons"]
-		assert_true(reasons.has("school.reason.no_rice") if id == "river_school_01" else reasons.has("school.reason.hunger"))
+		var expected: String = {"river_school_01": "school.reason.no_rice", "river_school_02": "school.reason.target_houses", "river_school_03": "school.reason.hunger"}[id]
+		assert_true(reasons.has(expected))
 
 
 func test_only_committed_turns_count_fish_and_final_result_is_idempotent() -> void:
@@ -289,3 +290,138 @@ func test_non_tutorial_or_nonplanning_states_cannot_escape_the_controller_bounda
 	run.session.state.phase = C.Phase.HARVEST
 	assert_eq(run.advance_turn(), null)
 	assert_eq(run.turns_resolved, 0)
+
+
+func test_share_flow_mastery_is_reachable_by_both_distinct_water_plans() -> void:
+	for solution: Dictionary in Fixtures.solutions("river_school_02"):
+		var run: RiverSchoolRun = _new("river_school_02")
+		_replay(run, solution)
+		assert_true(run.passed and run.mastered, solution["id"])
+		assert_true(run.result()["target_losses"].is_empty())
+		assert_eq(run.progress()["target_houses"], 2)
+		assert_eq(run.progress()["target_total"], 2)
+
+
+func test_share_flow_pending_demolition_follows_undo_redo_and_does_not_penalize_undone_actions() -> void:
+	var run: RiverSchoolRun = _new("river_school_02")
+	var home: Vector2i = Fixtures.FLOW_HOUSES[0]
+	var before: Dictionary = run.session.state.to_dict()
+	assert_eq(run.session.apply(Command.new("demolish", home)), "")
+	assert_eq(run.progress()["target_houses"], 1)
+	assert_eq(run.session.apply(Command.new("house", home)), "")
+	assert_eq(run.progress()["target_houses"], 1, "rebuilding before commit must not conceal removal")
+	assert_true(run.result()["target_losses"].is_empty(), "pending commands are not committed losses")
+	var pending: Array[Vector2i] = run.session.target_removals()
+	pending.clear()
+	assert_eq(run.session.target_removals(), [home], "metadata receipts are detached")
+	for _preview: int in range(3):
+		GameFlow.preview(run.session.state)
+		assert_eq(run.progress()["target_houses"], 1)
+		assert_true(run.result()["target_losses"].is_empty())
+	assert_true(run.session.undo())
+	assert_eq(run.session.target_removals(), [home])
+	assert_true(run.session.undo())
+	assert_eq(run.session.state.to_dict(), before)
+	assert_eq(run.progress()["target_houses"], 2)
+	assert_true(run.session.redo())
+	assert_eq(run.session.target_removals(), [home])
+	assert_true(run.session.redo())
+	assert_eq(run.progress()["target_houses"], 1)
+	assert_true(run.session.undo())
+	assert_true(run.session.undo())
+	# A new plan clears the abandoned Redo branch in model and lesson metadata.
+	_replay(run, Fixtures.solutions("river_school_02")[0])
+	assert_true(run.passed and run.mastered)
+	assert_true(run.result()["target_losses"].is_empty())
+	assert_true(not run.session.redo())
+
+
+func test_share_flow_same_turn_rebuilding_cannot_restore_the_preservation_goal() -> void:
+	var run: RiverSchoolRun = _new("river_school_02")
+	var home: Vector2i = Fixtures.FLOW_HOUSES[0]
+	assert_eq(run.session.apply(Command.new("demolish", home)), "")
+	assert_eq(run.session.apply(Command.new("house", home)), "")
+	_replay(run, Fixtures.solutions("river_school_02")[0])
+	assert_true(run.completed and not run.passed and not run.mastered)
+	assert_eq(run.session.state.get_tile(home).building, C.Building.HOUSE)
+	assert_eq(run.session.state.stats["houses_lost"], 0, "removal is distinct from flood damage")
+	assert_eq(run.result()["target_losses"], [home])
+	assert_eq(run.result()["reasons"], ["school.reason.target_houses"])
+	var receipt: Dictionary = run.result()
+	receipt["target_losses"].clear()
+	assert_eq(run.result()["target_losses"], [home])
+	assert_true(run.retry())
+	assert_true(run.session.target_removals().is_empty())
+	assert_true(run.result()["target_losses"].is_empty())
+	assert_eq(run.progress()["target_houses"], 2)
+	_replay(run, Fixtures.solutions("river_school_02")[0])
+	assert_true(run.passed and run.mastered)
+
+
+func test_share_flow_committed_removal_stays_lost_after_a_later_rebuild() -> void:
+	var run: RiverSchoolRun = _new("river_school_02")
+	var home: Vector2i = Fixtures.FLOW_HOUSES[1]
+	var plan: Dictionary = Fixtures.solutions("river_school_02")[0]
+	assert_eq(run.session.apply(Command.new("demolish", home)), "")
+	assert_eq(run.session.apply(_command(plan["turns"][0][0])), "")
+	assert_true(run.advance_turn() != null)
+	assert_eq(run.result()["target_losses"], [home])
+	assert_true(run.session.target_removals().is_empty())
+	assert_eq(run.session.apply(Command.new("house", home)), "")
+	assert_eq(run.progress()["target_houses"], 1)
+	_replay(run, {"turns": plan["turns"].slice(1)})
+	assert_true(run.completed and not run.passed)
+	assert_eq(run.result()["target_losses"], [home])
+
+
+func test_share_flow_pending_metadata_survives_the_bounded_undo_history() -> void:
+	var run: RiverSchoolRun = _new("river_school_02")
+	var home: Vector2i = Fixtures.FLOW_HOUSES[0]
+	var rng_before: int = run.session.state.rng.state
+	assert_eq(run.session.apply(Command.new("demolish", home)), "")
+	assert_eq(run.session.apply(Command.new("house", home)), "")
+	for _toggle: int in range(UndoStack.MAX_SIZE + 20):
+		assert_eq(run.session.apply(Command.new("toggle_gate", Fixtures.CHANNEL)), "")
+	assert_eq(run.session.state.undo.size(), UndoStack.MAX_SIZE)
+	for _undo: int in range(UndoStack.MAX_SIZE):
+		assert_true(run.session.undo())
+		assert_eq(run.session.target_removals(), [home])
+	assert_true(not run.session.undo())
+	assert_eq(run.progress()["target_houses"], 1)
+	for _redo: int in range(UndoStack.MAX_SIZE):
+		assert_true(run.session.redo())
+		assert_eq(run.session.target_removals(), [home])
+	assert_true(not run.session.redo())
+	var model: Dictionary = run.session.state.to_dict()
+	assert_eq(run.session.apply(Command.new("demolish", Fixtures.HALL)), "err.target")
+	assert_eq(run.session.state.to_dict(), model)
+	assert_eq(run.session.target_removals(), [home])
+	assert_eq(run.session.state.rng.state, rng_before)
+	_replay(run, Fixtures.solutions("river_school_02")[0])
+	assert_true(run.completed and not run.passed)
+	assert_eq(run.result()["target_losses"], [home])
+
+
+func test_share_flow_repeated_gate_toggling_does_not_replace_a_real_water_plan() -> void:
+	var run: RiverSchoolRun = _new("river_school_02")
+	for _toggle: int in range(20):
+		assert_eq(run.session.apply(Command.new("toggle_gate", Fixtures.CHANNEL)), "")
+	_replay(run, {"turns": [[], [], [], [], [], []]})
+	assert_true(run.completed and not run.passed and not run.mastered)
+	assert_eq(run.result()["target_losses"], Fixtures.FLOW_HOUSES)
+	assert_eq(run.progress()["target_houses"], 0)
+	assert_eq(run.result()["reasons"], ["school.reason.target_houses"])
+
+
+func test_share_flow_optional_no_crop_loss_is_separate_from_the_required_house_and_rice_goal() -> void:
+	var run: RiverSchoolRun = _new("river_school_02")
+	var plan: Dictionary = Fixtures.solutions("river_school_02")[0]
+	# The river dries after turn one, allowing a legal extra upstream field.
+	# It later floods without altering the two homes' prepared water plan.
+	plan["turns"][1] = [{"id": "paddy", "coord": Fixtures.FISH}]
+	_replay(run, plan)
+	assert_true(run.passed)
+	assert_true(not run.mastered)
+	assert_true(int(run.session.state.stats["paddies_lost"]) > 0)
+	assert_true(run.result()["target_losses"].is_empty())
+	assert_true(int(run.result()["harvest"]["paddy_food"]) >= 1)

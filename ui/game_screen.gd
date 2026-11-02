@@ -17,6 +17,8 @@ const SHORTCUTS: Dictionary = {
 const KEY_LABELS: Array[String] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "C", "P", "B", "X", "R"]
 const Advisor = preload("res://ui/village_advisor.gd")
 const Progress = preload("res://core/settlement_progress.gd")
+const END_TURN_CONFIRMATIONS: Array[String] = ["confirm_loss", "confirm_impact", "confirm_labor"]
+const END_TURN_INPUT_GUARD_MS: int = 400
 
 var session: GameSession
 var preferences_path: String = GamePreferences.DEFAULT_PATH
@@ -41,6 +43,11 @@ var _history_details: VBoxContainer
 var _history_previous: Button
 var _history_next: Button
 var _history_scroll: ScrollContainer
+var _history_map_panel: PanelContainer
+var _history_map_locations: Array[Dictionary] = []
+var _history_map_index: int = -1
+var _history_map_context: Dictionary = {}
+var _history_map_focus: Control
 var _latest_panel: Control
 var _latest_result: Label
 var _modal: Control
@@ -57,6 +64,7 @@ var _survival_progress: ProgressBar
 var _condition_icon: TextureRect
 var _condition_label: Label
 var _resource_chips: Dictionary = {}
+var _resource_feedback: ResourceFeedback
 var _goal_bars: VBoxContainer
 var _advisor: Dictionary = {}
 var _advisor_panel: PanelContainer
@@ -74,6 +82,14 @@ var _save_label: Label
 var _tile_title: Label
 var _tile_details: Label
 var _tile_note: Label
+var _pinned_coord: Vector2i = BoardView.NO_COORD
+var _area_button: Button
+var _unpin_area_button: Button
+var _area_coord: Vector2i = BoardView.NO_COORD
+var _area_panel: AreaDevelopmentPanel
+var _irrigation_controls: VBoxContainer
+var _irrigation_buttons: Dictionary = {}
+var _irrigation_coord: Vector2i = BoardView.NO_COORD
 var _preview_label: Label
 var _preview_legend: Label
 var _status_label: Label
@@ -94,6 +110,11 @@ var _feedback: ActionFeedback
 var _motion_toggle: CheckBox
 var _motion_error: Label
 var _turn_feedback_active: bool = false
+var _end_input_locked_until: int = 0
+var _turn_receipt: PanelContainer
+var _turn_receipt_label: Label
+var _turn_receipt_resources: Label
+var _hidden_turn_receipt: String = ""
 
 
 func _ready() -> void:
@@ -103,6 +124,10 @@ func _ready() -> void:
 	reduced_motion = bool(preferences.get("reduced_motion", false))
 	_build_world()
 	_build_hud()
+	_resource_feedback = ResourceFeedback.new()
+	_resource_feedback.name = "ResourceFeedback"
+	hud.add_child(_resource_feedback)
+	_resource_feedback.bind_chips(_resource_chips)
 	_apply_motion_preference()
 	if session == null or session.state == null:
 		return
@@ -270,6 +295,7 @@ func _build_hud() -> void:
 	board_space.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	board_space.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	middle.add_child(board_space)
+	_build_turn_receipt(board_space)
 	var side_column := VBoxContainer.new()
 	side_column.custom_minimum_size.x = 400
 	middle.add_child(side_column)
@@ -323,6 +349,20 @@ func _build_hud() -> void:
 	inspector.add_child(_tile_details)
 	_tile_note = _label("", 18, true)
 	inspector.add_child(_tile_note)
+	var area_actions: HBoxContainer = HBoxContainer.new()
+	inspector.add_child(area_actions)
+	_area_button = _button(tr("area.open"), open_area_development, "OpenAreaDevelopment")
+	_area_button.focus_mode = Control.FOCUS_ALL
+	_area_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_area_button.custom_minimum_size.y = 42
+	_area_button.tooltip_text = tr("area.select_hint")
+	area_actions.add_child(_area_button)
+	_unpin_area_button = _button("×", _clear_area_selection, "UnpinArea")
+	_unpin_area_button.focus_mode = Control.FOCUS_ALL
+	_unpin_area_button.custom_minimum_size = Vector2(42, 42)
+	_unpin_area_button.tooltip_text = tr("area.unpin")
+	area_actions.add_child(_unpin_area_button)
+	_build_irrigation_controls(inspector)
 	var preview_panel := _panel(sidebar)
 	preview_panel.add_child(_label(tr("preview.title"), 24))
 	_preview_label = _label()
@@ -379,7 +419,7 @@ func _build_hud() -> void:
 	_redo_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_redo_button.tooltip_text = tr("help.redo")
 	undo_row.add_child(_redo_button)
-	_end_button = _button(tr("action.end_turn"), request_end_turn, "EndTurn")
+	_end_button = _button(tr("action.end_turn"), request_end_turn_from_input, "EndTurn")
 	_end_button.theme_type_variation = "PrimaryButton"
 	_end_button.icon = preload("res://assets/icons/next.svg")
 	_end_button.add_theme_constant_override("icon_max_width", 26)
@@ -387,6 +427,8 @@ func _build_hud() -> void:
 
 
 func refresh_state() -> void:
+	if _resource_feedback != null:
+		_resource_feedback.clear()
 	var state: GameState = session.state
 	_turn_feedback_active = false
 	_feedback.clear()
@@ -418,6 +460,8 @@ func refresh_state() -> void:
 			_predicted_outcome = harvested.outcome
 	board.set_preview(prediction, preview_enabled)
 	board.hover(hovered_coord)
+	if state.get_tile(_pinned_coord) != null:
+		board.select(_pinned_coord)
 	_targets.clear()
 	for index: int in range(COMMANDS.size()):
 		var id: String = COMMANDS[index]
@@ -466,7 +510,7 @@ func refresh_state() -> void:
 	_water_label.text = tr("hud.water") % [state.current_inflow(), state.forecast_min, state.forecast_max]
 	_undo_button.disabled = state.phase != C.Phase.PLANNING or state.undo.is_empty()
 	_redo_button.disabled = state.phase != C.Phase.PLANNING or state.redo.is_empty()
-	_end_button.disabled = state.phase != C.Phase.PLANNING
+	_refresh_end_turn_button()
 	_preview_button.set_pressed_no_signal(preview_enabled)
 	_refresh_save_status()
 	_update_preview_text()
@@ -602,6 +646,7 @@ func _act_on_advice() -> void:
 	cancel_command()
 	hovered_coord = _advisor_coord
 	_inspection_focus = _advisor_coord
+	_pinned_coord = _advisor_coord
 	_inspection_pointer = get_viewport().get_mouse_position()
 	board.select(_advisor_coord)
 	board.hover(_advisor_coord)
@@ -618,11 +663,20 @@ func _turn_stamp(entry: Dictionary) -> String:
 func _refresh_turn_result() -> void:
 	var entries: Array[Dictionary] = session.turn_history()
 	_latest_panel.visible = not entries.is_empty()
+	_turn_receipt.visible = not entries.is_empty()
 	_latest_result.text = ""
+	_turn_receipt_resources.text = ""
+	_turn_receipt_resources.hide()
 	if entries.is_empty():
 		return
 	var entry: Dictionary = entries[-1]
 	var report: Dictionary = entry["report"]
+	_turn_receipt.visible = _receipt_stamp(entry) != _hidden_turn_receipt
+	var summary: String = tr("turn.receipt") % [_turn_stamp(entry), report["paddy_gains"].size(), int(report["fish_food"]), report["destroyed"].size(), report["paddies_died"].size()]
+	_turn_receipt_label.text = summary
+	_turn_receipt_resources.text = ResourceLedgerPanel.summary(entry.get("resources", {}))
+	_turn_receipt_resources.visible = not _turn_receipt_resources.text.is_empty()
+	_turn_receipt_label.add_theme_color_override("font_color", Color(_colors.danger if not report["destroyed"].is_empty() or not report["paddies_died"].is_empty() else _colors.paper))
 	var lines := PackedStringArray([
 		_turn_stamp(entry),
 		tr("history.damage_summary") % [report["destroyed"].size(), report["paddies_died"].size()],
@@ -633,9 +687,54 @@ func _refresh_turn_result() -> void:
 	_latest_result.text = "\n".join(lines)
 
 
+func _build_turn_receipt(parent: Node) -> void:
+	_turn_receipt = PanelContainer.new()
+	_turn_receipt.name = "TurnReceipt"
+	_turn_receipt.theme_type_variation = "CardPanel"
+	_turn_receipt.visible = false
+	_turn_receipt.custom_minimum_size.x = 320
+	_turn_receipt.size.x = 320
+	parent.add_child(_turn_receipt)
+	var content: VBoxContainer = VBoxContainer.new()
+	_turn_receipt.add_child(content)
+	var row: HBoxContainer = HBoxContainer.new()
+	_turn_receipt_label = _label("", 18)
+	_turn_receipt_label.name = "TurnReceiptText"
+	_turn_receipt_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.add_child(_turn_receipt_label)
+	_turn_receipt_resources = _label("", 16)
+	_turn_receipt_resources.name = "TurnReceiptResourceChanges"
+	content.add_child(_turn_receipt_resources)
+	content.add_child(row)
+	var details: Button = _button(tr("turn.details"), open_turn_history, "TurnReceiptHistory")
+	details.focus_mode = Control.FOCUS_ALL
+	details.custom_minimum_size.y = 38
+	details.theme_type_variation = "QuietButton"
+	row.add_child(details)
+	var dismiss: Button = _button("×", _dismiss_turn_receipt, "DismissTurnReceipt")
+	dismiss.focus_mode = Control.FOCUS_ALL
+	dismiss.custom_minimum_size = Vector2(38, 38)
+	dismiss.tooltip_text = tr("turn.hide_receipt")
+	dismiss.theme_type_variation = "QuietButton"
+	row.add_child(dismiss)
+
+
+func _receipt_stamp(entry: Dictionary) -> String:
+	return "%d:%d" % [int(entry["year"]), int(entry["turn"])]
+
+
+func _dismiss_turn_receipt() -> void:
+	get_viewport().set_input_as_handled()
+	var entries: Array[Dictionary] = session.turn_history()
+	if not entries.is_empty():
+		_hidden_turn_receipt = _receipt_stamp(entries[-1])
+	_turn_receipt.hide()
+
+
 func open_turn_history() -> void:
 	if modal_kind not in ["", "pause", "harvest", "game_over"]:
 		return
+	get_viewport().set_input_as_handled()
 	_history_return = modal_kind
 	_open_modal("turn_history", tr("history.title"))
 	_modal_content.add_child(_label(tr("history.session_only"), 18, true))
@@ -652,6 +751,7 @@ func open_turn_history() -> void:
 	_history_scroll = ScrollContainer.new()
 	_history_scroll.custom_minimum_size = Vector2(704, 420)
 	_history_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_history_scroll.follow_focus = true
 	_modal_content.add_child(_history_scroll)
 	_history_details = VBoxContainer.new()
 	_history_details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -691,6 +791,7 @@ func _history_coords(coords: Array) -> String:
 
 
 func _render_turn_history() -> void:
+	_history_map_locations.clear()
 	for child: Node in _history_details.get_children():
 		_history_details.remove_child(child)
 		child.queue_free()
@@ -705,6 +806,10 @@ func _render_turn_history() -> void:
 	var entry: Dictionary = entries[history_index]
 	var report: Dictionary = entry["report"]
 	_history_title.text = _turn_stamp(entry)
+	var resources: ResourceLedgerPanel = ResourceLedgerPanel.new()
+	resources.name = "TurnResourceLedger"
+	_history_details.add_child(resources)
+	resources.configure(entry.get("resources", {}))
 	_history_details.add_child(_label(tr("history.inflow") % float(report["inflow"])))
 	_history_details.add_child(_label(tr("history.hall_wet" if report["hall_wet"] else "history.hall_dry")))
 	_history_details.add_child(_label(tr("history.buildings") % report["destroyed"].size()))
@@ -729,12 +834,148 @@ func _render_turn_history() -> void:
 			_history_details.add_child(_label(tr("history.moisture_yield"), 18))
 	if float(report["dry_paddy_water_used"]) > 0.0:
 		_history_details.add_child(_label(tr("history.irrigation") % float(report["dry_paddy_water_used"])))
+	for irrigation: Dictionary in report.get("irrigation_results", []):
+		for line: String in _irrigation_lines(irrigation):
+			_history_details.add_child(_label(line, 18))
 	if not entry["harvest"].is_empty():
 		_history_details.add_child(_label(tr("summary.title") % int(entry["year"]), 24))
 		for key: String in ["paddy_food", "eaten", "left_hunger", "left_housing", "born", "spoiled", "food_after", "population_after"]:
 			_history_details.add_child(_label(tr("summary." + key) % int(entry["harvest"][key])))
 	if int(entry["outcome"]) != C.Outcome.NONE:
 		_history_details.add_child(_label(tr("gameover." + C.enum_name(C.Outcome, int(entry["outcome"]))), 24))
+	_history_map_locations = TurnResultLocations.collect(entry)
+	if not _history_map_locations.is_empty():
+		_history_details.add_child(_label(tr("history.map_title"), 22))
+		_history_details.add_child(_label(tr("history.map_current"), 18, true))
+		var locations: HFlowContainer = HFlowContainer.new()
+		_history_details.add_child(locations)
+		for index: int in range(_history_map_locations.size()):
+			var coord: Vector2i = _history_map_locations[index]["coord"]
+			var inspect: Button = _button(tr("history.map_location") % [coord.x, coord.y], _inspect_history_location.bind(index), "HistoryLocation_%d_%d" % [coord.x, coord.y])
+			inspect.focus_mode = Control.FOCUS_ALL
+			inspect.custom_minimum_size = Vector2(214, 42)
+			inspect.tooltip_text = "\n".join(_history_map_locations[index]["lines"])
+			inspect.disabled = session.state.get_tile(coord) == null
+			locations.add_child(inspect)
+
+
+func _inspect_history_location(index: int) -> void:
+	if modal_kind != "turn_history" or index < 0 or index >= _history_map_locations.size():
+		return
+	if session.state.get_tile(_history_map_locations[index]["coord"]) == null:
+		return
+	get_viewport().set_input_as_handled()
+	_history_map_context = {
+		"camera": camera_rig.position,
+		"selected": board._selected_coord,
+		"hovered": hovered_coord,
+		"inspection_focus": _inspection_focus,
+		"inspection_pointer": _inspection_pointer,
+		"preview": preview_enabled,
+		"receipt": _turn_receipt.visible,
+	}
+	_history_map_focus = get_viewport().gui_get_focus_owner()
+	modal_kind = "history_map"
+	# Keep the report's controls, selection and scroll alive behind this view.
+	_modal.get_child(0).hide()
+	_modal.get_child(1).hide()
+	_turn_receipt.hide()
+	preview_enabled = false
+	_preview_button.set_pressed_no_signal(false)
+	board.set_preview({}, false)
+	board.clear_targets()
+	_update_preview_text()
+	_history_map_panel = PanelContainer.new()
+	_history_map_panel.name = "HistoryMapPanel"
+	_history_map_panel.theme_type_variation = "CardPanel"
+	_history_map_panel.position = Vector2(24, 255)
+	_history_map_panel.custom_minimum_size.x = 320
+	_history_map_panel.size.x = 320
+	_modal.add_child(_history_map_panel)
+	_show_history_location(index)
+
+
+func _show_history_location(index: int) -> void:
+	if modal_kind != "history_map" or index < 0 or index >= _history_map_locations.size():
+		return
+	get_viewport().set_input_as_handled()
+	_history_map_index = index
+	for child: Node in _history_map_panel.get_children():
+		_history_map_panel.remove_child(child)
+		child.queue_free()
+	var entry: Dictionary = session.turn_history()[history_index]
+	var location: Dictionary = _history_map_locations[index]
+	var coord: Vector2i = location["coord"]
+	var content: VBoxContainer = VBoxContainer.new()
+	_history_map_panel.add_child(content)
+	content.add_child(_label(tr("history.map_stamp") % _turn_stamp(entry), 18, true))
+	content.add_child(_label(tr("history.map_position") % [index + 1, _history_map_locations.size(), coord.x, coord.y], 20))
+	var scroll: ScrollContainer = ScrollContainer.new()
+	scroll.name = "HistoryMapFacts"
+	scroll.custom_minimum_size = Vector2(296, 126)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	content.add_child(scroll)
+	var facts: VBoxContainer = VBoxContainer.new()
+	facts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(facts)
+	for line: String in location["lines"]:
+		facts.add_child(_label(line, 20))
+	content.add_child(_label(tr("history.map_current"), 16, true))
+	var navigation: HBoxContainer = HBoxContainer.new()
+	content.add_child(navigation)
+	for direction: int in [-1, 1]:
+		var next: Button = _button(tr("history.map_previous" if direction < 0 else "history.map_next"), _show_history_location.bind(index + direction), "PreviousHistoryLocation" if direction < 0 else "NextHistoryLocation")
+		next.focus_mode = Control.FOCUS_ALL
+		next.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		next.custom_minimum_size.y = 42
+		next.disabled = index + direction < 0 or index + direction >= _history_map_locations.size()
+		navigation.add_child(next)
+	var back: Button = _button(tr("history.map_back"), _return_from_history_map, "ReturnToTurnReport")
+	back.focus_mode = Control.FOCUS_ALL
+	back.custom_minimum_size.y = 42
+	content.add_child(back)
+	back.grab_focus()
+	hovered_coord = coord
+	board.select(coord)
+	board.show_result_location(coord)
+	board.hover(coord)
+	var at: Vector3 = Hex.to_world(coord)
+	camera_rig.position.x = clampf(at.x, -5.0, 5.0)
+	camera_rig.position.z = clampf(at.z, -5.0, 5.0)
+	_update_inspector()
+
+
+func _return_from_history_map() -> void:
+	if modal_kind != "history_map":
+		return
+	get_viewport().set_input_as_handled()
+	modal_kind = "turn_history"
+	_modal.remove_child(_history_map_panel)
+	_history_map_panel.queue_free()
+	_history_map_panel = null
+	camera_rig.position = _history_map_context["camera"]
+	hovered_coord = _history_map_context["hovered"]
+	_inspection_focus = _history_map_context["inspection_focus"]
+	_inspection_pointer = _history_map_context["inspection_pointer"]
+	preview_enabled = _history_map_context["preview"]
+	_turn_receipt.visible = _history_map_context["receipt"]
+	board.clear_result_location()
+	board.select(_history_map_context["selected"])
+	board.clear_hover()
+	board.set_preview(prediction, preview_enabled)
+	_preview_button.set_pressed_no_signal(preview_enabled)
+	_update_targets()
+	_update_inspector()
+	_update_preview_text()
+	_modal.get_child(0).show()
+	_modal.get_child(1).show()
+	if is_instance_valid(_history_map_focus) and _history_map_focus.is_visible_in_tree():
+		_history_map_focus.grab_focus()
+	else:
+		(_modal.find_child("CloseTurnHistory", true, false) as Button).grab_focus()
+	_history_map_focus = null
+	_history_map_context.clear()
+	_history_map_index = -1
 
 
 func valid_targets(id: String) -> Array[Vector2i]:
@@ -803,7 +1044,11 @@ func apply_at(coord: Vector2i) -> void:
 	var parameter: int = -1
 	if id.is_empty():
 		if tile.building != C.Building.GATE:
+			_pinned_coord = coord
 			board.select(coord)
+			_irrigation_coord = coord if state.has_irrigation() and tile.feature == C.Feature.PADDY and not tile.paddy_dead else BoardView.NO_COORD
+			hovered_coord = coord
+			_update_inspector()
 			return
 		id = "toggle_gate"
 	elif id == "waterwheel":
@@ -833,6 +1078,7 @@ func apply_at(coord: Vector2i) -> void:
 		return
 	wheel_origin = BoardView.NO_COORD
 	hovered_coord = coord
+	_pinned_coord = origin
 	refresh_state()
 	board.select(origin)
 	board.show_command_activity(id, origin)
@@ -985,6 +1231,12 @@ func _update_targets() -> void:
 func _update_inspector() -> void:
 	var state: GameState = session.state
 	var tile: Tile = state.get_tile(hovered_coord)
+	if tile == null and command_mode.is_empty():
+		tile = state.get_tile(_pinned_coord)
+	_area_button.visible = tile != null
+	_area_button.disabled = tile == null or tile.coord != _pinned_coord or state.phase != C.Phase.PLANNING or not modal_kind.is_empty()
+	_unpin_area_button.visible = state.get_tile(_pinned_coord) != null
+	_update_irrigation_controls(tile)
 	if tile == null:
 		_tile_title.text = tr("tile.none")
 		_tile_details.text = ""
@@ -1016,6 +1268,9 @@ func _update_inspector() -> void:
 		if state.has_moisture():
 			_tile_note.text += "\n" + tr("tile.moisture") % [tile.soil_moisture, 2]
 			_tile_note.text += "\n" + tr("tile.moisture_hint")
+		if state.has_irrigation() and not tile.paddy_dead:
+			_tile_note.text += "\n" + tr("irrigation.policy") % tr("irrigation." + tile.irrigation_policy)
+			_tile_note.text += "\n" + tr("irrigation.dormant" if state.is_rain() else "irrigation.select_hint")
 	elif tile.building == C.Building.GATE:
 		_tile_note.text = tr("tile.gate_open" if tile.gate_open else "tile.gate_closed")
 		if command_mode.is_empty() and state.phase == C.Phase.PLANNING:
@@ -1048,12 +1303,82 @@ func _update_inspector() -> void:
 			_tile_note.text += ("\n" if not _tile_note.text.is_empty() else "") + tr(error)
 
 
+func open_area_development(coord: Vector2i = BoardView.NO_COORD) -> void:
+	if not modal_kind.is_empty() or session.state.phase != C.Phase.PLANNING:
+		return
+	if coord == BoardView.NO_COORD:
+		coord = _pinned_coord
+	if session.state.get_tile(coord) == null:
+		return
+	get_viewport().set_input_as_handled()
+	_area_coord = coord
+	_pinned_coord = coord
+	board.select(coord)
+	_open_modal("area_development", tr("area.title"))
+	_area_panel = AreaDevelopmentPanel.new()
+	_area_panel.name = "AreaDevelopmentPanel"
+	_modal_content.add_child(_area_panel)
+	_area_panel.command_requested.connect(_apply_area_command)
+	_area_panel.close_requested.connect(_close_area_development)
+	_area_panel.configure(session.state, coord, prediction)
+
+
+func _apply_area_command(cmd: Command) -> void:
+	if modal_kind != "area_development" or _area_panel == null or cmd == null or cmd.coord != _area_coord:
+		return
+	get_viewport().set_input_as_handled()
+	if session.state.to_dict() != _area_panel.source_snapshot:
+		refresh_state()
+		_area_panel.configure(session.state, _area_coord, prediction, false, tr("area.changed"))
+		return
+	var labor_before: int = session.state.labor
+	var wood_before: int = session.state.wood
+	var error: String = session.apply(cmd)
+	if not error.is_empty():
+		_area_panel.configure(session.state, _area_coord, prediction, false, tr(error))
+		return
+	hovered_coord = _area_coord
+	_pinned_coord = _area_coord
+	refresh_state()
+	board.select(_area_coord)
+	board.show_command_activity(cmd.id, cmd.coord)
+	var name_text: String = tr("area.irrigation") if cmd.id == "irrigation_policy" else tr("cmd." + cmd.id + ".name")
+	var receipt: String = tr("area.receipt") % [name_text, session.state.labor - labor_before, session.state.wood - wood_before]
+	if not session.last_save_error.is_empty():
+		receipt += "\n" + tr(session.last_save_error)
+	_area_panel.configure(session.state, _area_coord, prediction, true, receipt)
+
+
+func _close_area_development() -> void:
+	if modal_kind != "area_development":
+		return
+	get_viewport().set_input_as_handled()
+	close_modal()
+	_update_inspector()
+
+
+func _clear_area_selection() -> void:
+	if not modal_kind.is_empty():
+		return
+	get_viewport().set_input_as_handled()
+	_pinned_coord = BoardView.NO_COORD
+	_irrigation_coord = BoardView.NO_COORD
+	_inspection_focus = BoardView.NO_COORD
+	hovered_coord = BoardView.NO_COORD
+	board.select(BoardView.NO_COORD)
+	board.clear_hover()
+	_update_inspector()
+
+
 func _tile_preview_lines(tile: Tile) -> PackedStringArray:
 	var lines: PackedStringArray = PackedStringArray()
 	if not preview_enabled or prediction.is_empty():
 		return lines
 	var predicted: GameState = prediction["state"]
 	var report: TurnReport = prediction["report"]
+	for entry: Dictionary in report.irrigation_results:
+		if entry["coord"] == tile.coord or entry.get("reservoir") == tile.coord:
+			lines.append_array(_irrigation_lines(entry))
 	var moisture_production: bool = false
 	for moisture: Dictionary in report.moisture_changes:
 		if moisture["coord"] == tile.coord:
@@ -1098,6 +1423,66 @@ func _tile_preview_lines(tile: Tile) -> PackedStringArray:
 
 func _flood_limit_line(predicted: GameState, key: String) -> String:
 	return _flood_threshold_line(roundi(float(predicted.mods[key])))
+
+
+func _build_irrigation_controls(parent: Node) -> void:
+	_irrigation_controls = VBoxContainer.new()
+	_irrigation_controls.name = "IrrigationControls"
+	_irrigation_controls.visible = false
+	parent.add_child(_irrigation_controls)
+	var row: HBoxContainer = HBoxContainer.new()
+	_irrigation_controls.add_child(row)
+	for policy: String in Irrigation.POLICIES:
+		var button: Button = _button(tr("irrigation." + policy), _set_irrigation.bind(policy), "Irrigation_" + policy)
+		button.toggle_mode = true
+		button.focus_mode = Control.FOCUS_ALL
+		button.custom_minimum_size.y = 38
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.tooltip_text = tr("irrigation." + policy + "_hint")
+		row.add_child(button)
+		_irrigation_buttons[policy] = button
+	if session.state.has_irrigation():
+		(parent.get_parent().get_parent().get_parent() as ScrollContainer).follow_focus = true
+
+
+func _update_irrigation_controls(tile: Tile) -> void:
+	_irrigation_controls.visible = session.state.has_irrigation() and tile != null and tile.feature == C.Feature.PADDY and not tile.paddy_dead
+	if not _irrigation_controls.visible:
+		return
+	for policy: String in _irrigation_buttons:
+		var button: Button = _irrigation_buttons[policy]
+		button.text = ("✓ " if tile.irrigation_policy == policy else "") + tr("irrigation." + policy)
+		button.set_pressed_no_signal(tile.irrigation_policy == policy)
+		button.disabled = tile.coord != _irrigation_coord or not command_mode.is_empty() or not CommandRules.check(session.state, Command.new("irrigation_policy", tile.coord, Irrigation.POLICIES.find(policy))).is_empty()
+
+
+func _set_irrigation(policy: String) -> void:
+	if not modal_kind.is_empty() or not command_mode.is_empty():
+		return
+	# Disabling the newly selected button can release GUI focus during the
+	# activation event. Consume it before rebuilding state so Enter/Space cannot
+	# also reach the screen's end-turn shortcut.
+	get_viewport().set_input_as_handled()
+	var error: String = session.apply(Command.new("irrigation_policy", _irrigation_coord, Irrigation.POLICIES.find(policy)))
+	if not error.is_empty():
+		_status_label.text = tr(error)
+		return
+	hovered_coord = _irrigation_coord
+	refresh_state()
+	_status_label.text = tr("irrigation.policy") % tr("irrigation." + policy)
+
+
+func _irrigation_lines(entry: Dictionary) -> PackedStringArray:
+	var at: Vector2i = entry["coord"]
+	var line: String = tr("irrigation.receipt") % [at.x, at.y]
+	if entry["source"] == "reservoir":
+		var source: Vector2i = entry["reservoir"]
+		line += tr("irrigation.from_reservoir") % [source.x, source.y, float(entry["water_before"]), float(entry["water_after"])]
+	elif entry["source"] == "moisture":
+		line += tr("irrigation.from_moisture") % [int(entry["moisture_before"]), int(entry["moisture_after"])]
+	else:
+		line += tr("irrigation.reason." + String(entry["reason"]))
+	return PackedStringArray([line])
 
 
 func _flood_threshold_line(threshold: int) -> String:
@@ -1162,6 +1547,32 @@ func _refresh_save_status() -> void:
 		_save_label.text = tr("msg.saved")
 
 
+func _refresh_end_turn_button() -> void:
+	var waiting: bool = Time.get_ticks_msec() < _end_input_locked_until
+	_end_button.disabled = session.state.phase != C.Phase.PLANNING or waiting
+	_end_button.text = tr("turn.resolved_button" if waiting else "action.end_turn")
+	_end_button.tooltip_text = tr("turn.repeat_guard" if waiting else "turn.end_hint")
+	if modal_kind == "harvest" and _modal != null:
+		var next: Button = _modal.find_child("ContinueHarvest", true, false) as Button
+		if next != null:
+			var was_disabled: bool = next.disabled
+			next.disabled = waiting
+			if was_disabled and not waiting and get_viewport().gui_get_focus_owner() == null:
+				next.grab_focus()
+
+
+func _arm_end_turn_input_guard() -> void:
+	_end_input_locked_until = Time.get_ticks_msec() + END_TURN_INPUT_GUARD_MS
+	_refresh_end_turn_button()
+
+
+func request_end_turn_from_input() -> void:
+	get_viewport().set_input_as_handled()
+	if Time.get_ticks_msec() < _end_input_locked_until:
+		return
+	request_end_turn()
+
+
 func request_end_turn() -> void:
 	if not modal_kind.is_empty() or session.state.phase != C.Phase.PLANNING:
 		return
@@ -1172,25 +1583,94 @@ func request_end_turn() -> void:
 			_modal_content.add_child(_label(tr("preview.lose_hall")))
 		elif _predicted_outcome == C.Outcome.LOSE_POPULATION:
 			_modal_content.add_child(_label(tr("preview.lose_population")))
-		for line: String in _harvest_preview_lines():
-			_modal_content.add_child(_label(line))
-		_add_modal_button(tr("action.confirm"), _confirm_end_turn, "ConfirmEndTurn")
-		_add_modal_button(tr("action.cancel"), close_modal, "CancelEndTurn", true)
+		_add_end_turn_review()
+	elif _has_end_turn_impact():
+		_open_modal("confirm_impact", tr("turn.review_title"))
+		_modal_content.add_child(_label(tr("turn.impact_warning"), 20))
+		_add_end_turn_review()
 	elif confirm_unused_labor and session.state.is_rain() and session.state.labor >= 2:
 		_open_modal("confirm_labor", tr("action.end_turn"))
 		_modal_content.add_child(_label(tr("confirm.unused_labor") % session.state.labor))
 		_skip_confirmation = CheckBox.new()
 		_skip_confirmation.text = tr("confirm.dont_ask")
 		_modal_content.add_child(_skip_confirmation)
-		_add_modal_button(tr("action.confirm"), _confirm_end_turn, "ConfirmEndTurn")
-		_add_modal_button(tr("action.cancel"), close_modal, "CancelEndTurn", true)
+		_add_end_turn_review()
 	else:
 		_finish_turn()
 
 
-func _confirm_end_turn() -> void:
-	if modal_kind not in ["confirm_loss", "confirm_labor"]:
+func _has_end_turn_impact() -> bool:
+	if prediction.is_empty():
+		return false
+	var report: TurnReport = prediction["report"]
+	return not report.destroyed.is_empty() or not report.paddies_died.is_empty() or int(harvest_projection.get("left_hunger", 0)) > 0 or int(harvest_projection.get("left_housing", 0)) > 0
+
+
+func _add_end_turn_review() -> void:
+	var state: GameState = session.state
+	_modal_content.add_child(_label(_turn_stamp({"year": state.year, "turn": state.turn, "season": state.season()}), 20, true))
+	var scroll: ScrollContainer = ScrollContainer.new()
+	scroll.name = "EndTurnReviewScroll"
+	scroll.custom_minimum_size = Vector2(704, 210)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	_modal_content.add_child(scroll)
+	var content: VBoxContainer = VBoxContainer.new()
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(content)
+	content.add_child(_label(tr("turn.review_forecast"), 18, true))
+	content.add_child(_label(tr("turn.review_labor") % state.labor, 18))
+	if not prediction.is_empty():
+		var report: TurnReport = prediction["report"]
+		content.add_child(_label(tr("history.damage_summary") % [report.destroyed.size(), report.paddies_died.size()], 18))
+		content.add_child(_label(tr("history.production_summary") % [report.paddy_gains.size(), report.fish_food], 18))
+		var risks: Array[Vector2i] = []
+		if _predicted_outcome == C.Outcome.LOSE_HALL:
+			for tile: Tile in state.tiles:
+				if tile.building == C.Building.HALL:
+					risks.append(tile.coord)
+		for item: Dictionary in report.destroyed:
+			if item["coord"] not in risks:
+				risks.append(item["coord"])
+		for coord: Vector2i in report.paddies_died:
+			if coord not in risks:
+				risks.append(coord)
+		for coord: Vector2i in risks:
+			var inspect: Button = _button(tr("turn.inspect_risk") % [coord.x, coord.y], _inspect_end_turn_risk.bind(coord), "EndTurnRisk_%d_%d" % [coord.x, coord.y])
+			inspect.focus_mode = Control.FOCUS_ALL
+			inspect.custom_minimum_size.y = 36
+			content.add_child(inspect)
+	for line: String in _harvest_preview_lines():
+		content.add_child(_label(line, 18))
+	content.add_child(_label(tr("turn.commit_explained"), 18, true))
+	_add_modal_button(tr("turn.confirm"), _confirm_end_turn, "ConfirmEndTurn")
+	_add_modal_button(tr("turn.back_to_plan"), close_modal, "CancelEndTurn", true)
+
+
+func _inspect_end_turn_risk(coord: Vector2i) -> void:
+	if modal_kind not in END_TURN_CONFIRMATIONS:
 		return
+	get_viewport().set_input_as_handled()
+	close_modal()
+	cancel_command()
+	if not preview_enabled:
+		toggle_preview()
+	hovered_coord = coord
+	_inspection_focus = coord
+	_pinned_coord = coord
+	_inspection_pointer = get_viewport().get_mouse_position()
+	board.select(coord)
+	board.hover(coord)
+	var at: Vector3 = Hex.to_world(coord)
+	camera_rig.position.x = clampf(at.x, -5.0, 5.0)
+	camera_rig.position.z = clampf(at.z, -5.0, 5.0)
+	_update_inspector()
+
+
+func _confirm_end_turn() -> void:
+	if modal_kind not in END_TURN_CONFIRMATIONS:
+		return
+	get_viewport().set_input_as_handled()
 	if modal_kind == "confirm_labor" and _skip_confirmation.button_pressed:
 		confirm_unused_labor = false
 		_preferences_error = _save_game_preferences()
@@ -1199,6 +1679,7 @@ func _confirm_end_turn() -> void:
 
 
 func _finish_turn() -> void:
+	var resources_before: Dictionary = ResourceFeedback.capture(session.state)
 	var report: TurnReport = session.advance_turn()
 	if report == null:
 		return
@@ -1213,10 +1694,16 @@ func _finish_turn() -> void:
 		_show_harvest()
 	elif session.state.phase == C.Phase.GAME_OVER:
 		_show_game_over()
+	_resource_feedback.show_changes(resources_before, ResourceFeedback.capture(session.state))
+	# Refreshing meshes, forecasts and summaries can take longer than the input
+	# guard on a slow renderer. Protect the next activation after that work ends.
+	_arm_end_turn_input_guard()
 
 
 func _open_modal(kind: String, title: String) -> void:
 	_feedback.clear()
+	if _resource_feedback != null:
+		_resource_feedback.clear()
 	close_modal()
 	modal_kind = kind
 	board.set_activity_paused(true)
@@ -1243,6 +1730,11 @@ func _open_modal(kind: String, title: String) -> void:
 
 
 func close_modal() -> void:
+	if modal_kind == "history_map" and _modal != null:
+		_return_from_history_map()
+	if modal_kind == "area_development" and _modal != null:
+		_area_panel = null
+		_area_coord = BoardView.NO_COORD
 	if _modal != null:
 		hud.remove_child(_modal)
 		_modal.queue_free()
@@ -1253,6 +1745,8 @@ func close_modal() -> void:
 	if board != null:
 		board.set_activity_paused(false)
 		board.hover(hovered_coord)
+	if _area_button != null and session != null and session.state != null:
+		_update_inspector()
 
 
 func _add_modal_button(text: String, callback: Callable, node_name: String = "", preferred: bool = false) -> Button:
@@ -1278,19 +1772,30 @@ func _show_harvest() -> void:
 		_modal_content.add_child(_label(tr("goal." + session.state.village_goal + ".name"), 20))
 		_modal_content.add_child(_label(tr("goal.completed") % [session.state.goal_achieved_year, int(RunGoals.progress(session.state)["score"])], 20))
 	var caption: String = tr("action.finish") if session.state.outcome != C.Outcome.NONE else tr("action.continue")
-	_add_modal_button(caption, continue_harvest, "ContinueHarvest", true)
+	var next: Button = _add_modal_button(caption, continue_harvest_from_input, "ContinueHarvest", true)
+	next.disabled = Time.get_ticks_msec() < _end_input_locked_until
 	_add_modal_button(tr("action.history"), open_turn_history, "HarvestHistory")
 	_add_modal_button(tr("action.menu"), _return_menu, "HarvestMenu")
+
+
+func continue_harvest_from_input() -> void:
+	get_viewport().set_input_as_handled()
+	if modal_kind != "harvest" or Time.get_ticks_msec() < _end_input_locked_until:
+		return
+	continue_harvest()
+	_arm_end_turn_input_guard()
 
 
 func continue_harvest() -> void:
 	if modal_kind != "harvest":
 		return
+	var resources_before: Dictionary = ResourceFeedback.capture(session.state)
 	close_modal()
 	if session.continue_year():
 		refresh_state()
 		if session.state.phase == C.Phase.GAME_OVER:
 			_show_game_over()
+		_resource_feedback.show_changes(resources_before, ResourceFeedback.capture(session.state))
 
 
 func _show_game_over() -> void:
@@ -1353,6 +1858,7 @@ func open_pause() -> void:
 
 func _apply_motion_preference() -> void:
 	_feedback.set_reduced_motion(reduced_motion)
+	_resource_feedback.set_reduced_motion(reduced_motion)
 	_atmosphere.set_reduced_motion(reduced_motion)
 	camera_rig.set_reduced_motion(reduced_motion)
 	board.set_reduced_motion(reduced_motion)
@@ -1412,6 +1918,9 @@ func _restore_phase_modal() -> void:
 
 
 func _process(delta: float) -> void:
+	if _end_input_locked_until > 0 and Time.get_ticks_msec() >= _end_input_locked_until:
+		_end_input_locked_until = 0
+		_refresh_end_turn_button()
 	if session == null or session.state == null or not modal_kind.is_empty():
 		return
 	if not get_viewport().gui_get_focus_owner() is LineEdit:
@@ -1431,6 +1940,11 @@ func _process(delta: float) -> void:
 			var tile: Tile = board.pick(camera_rig.get_camera(), pointer)
 			if tile != null:
 				next_coord = tile.coord
+		elif command_mode.is_empty() and session.state.get_tile(_pinned_coord) != null:
+			next_coord = _pinned_coord
+		elif session.state.has_irrigation() and command_mode.is_empty() and session.state.get_tile(_irrigation_coord) != null:
+			# Keep the explicitly selected field while moving to its policy buttons.
+			next_coord = _irrigation_coord
 	if next_coord != hovered_coord:
 		hovered_coord = next_coord
 		board.hover(hovered_coord)
@@ -1442,6 +1956,8 @@ func _input(event: InputEvent) -> void:
 	# This sees motion over the HUD too, before GUI controls consume the event.
 	if event is InputEventMouseMotion and event.relative != Vector2.ZERO:
 		_inspection_focus = BoardView.NO_COORD
+	if not modal_kind.is_empty() and Time.get_ticks_msec() < _end_input_locked_until and event is InputEventKey and event.pressed and event.is_action("ui_accept"):
+		get_viewport().set_input_as_handled()
 	# Holding the key that opens a summary must not accept its next action.
 	if not modal_kind.is_empty() and event is InputEventKey and event.pressed and event.echo and event.is_action("ui_accept"):
 		get_viewport().set_input_as_handled()
@@ -1455,13 +1971,19 @@ func _unhandled_input(event: InputEvent) -> void:
 			if event.physical_keycode == KEY_H and modal_kind in ["pause", "harvest", "game_over"]:
 				open_turn_history()
 			elif event.physical_keycode == KEY_ESCAPE:
-				if modal_kind == "turn_history":
+				if modal_kind == "history_map":
+					_return_from_history_map()
+				elif modal_kind == "turn_history":
 					close_turn_history()
-				elif modal_kind in ["pause", "confirm_loss", "confirm_labor"]:
+				elif modal_kind in ["pause", "area_development"] or modal_kind in END_TURN_CONFIRMATIONS:
 					close_modal()
 		get_viewport().set_input_as_handled()
 		return
 	if get_viewport().gui_get_focus_owner() is LineEdit:
+		return
+	var focused: Control = get_viewport().gui_get_focus_owner()
+	if event is InputEventKey and event.pressed and event.is_action("ui_accept") and focused is BaseButton:
+		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var key: int = event.physical_keycode
@@ -1473,7 +1995,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			select_command(SHORTCUTS[key])
 		else:
 			match key:
-				KEY_SPACE, KEY_ENTER: request_end_turn()
+				KEY_SPACE, KEY_ENTER: request_end_turn_from_input()
 				KEY_TAB: toggle_preview()
 				KEY_H: open_turn_history()
 				KEY_V:
@@ -1490,6 +2012,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion and event.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
 		camera_rig.pan(-event.relative / 100.0, 1.0)
 	elif event is InputEventMouseButton and event.pressed:
+		# A second click on a disappearing confirmation must not fall through to
+		# a construction tool on the newly revealed board.
+		if event.button_index == MOUSE_BUTTON_LEFT and Time.get_ticks_msec() < _end_input_locked_until:
+			get_viewport().set_input_as_handled()
+			return
 		match event.button_index:
 			MOUSE_BUTTON_WHEEL_UP: camera_rig.zoom_step(-1)
 			MOUSE_BUTTON_WHEEL_DOWN: camera_rig.zoom_step(1)

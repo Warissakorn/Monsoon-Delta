@@ -28,6 +28,10 @@ func _build_hud() -> void:
 	var goal_content: VBoxContainer = _goal_panel.get_child(0) as VBoxContainer
 	var heading: HBoxContainer = goal_content.get_child(0) as HBoxContainer
 	(heading.get_child(1) as Label).text = tr("school.title")
+	if lesson.scenario_id == "river_school_02":
+		var sidebar: VBoxContainer = _goal_panel.get_parent() as VBoxContainer
+		sidebar.move_child(_goal_panel, 0)
+		(sidebar.get_parent() as ScrollContainer).follow_focus = true
 	_hint_button = _button(tr("school.hint") + " · F1", open_hint, "SchoolHint")
 	_hint_button.focus_mode = Control.FOCUS_ALL
 	_hint_button.theme_type_variation = "QuietButton"
@@ -66,6 +70,35 @@ func _refresh_village_goal() -> void:
 		_goal_bars.remove_child(child)
 		child.queue_free()
 	_goal_progress_bar("next", int(progress["turns"]), C.TURNS_PER_YEAR)
+	if int(progress.get("target_total", 0)) > 0:
+		var targets: Label = _label(tr("school.target_progress") % [int(progress["target_houses"]), int(progress["target_total"])], 18)
+		targets.name = "SchoolTargetProgress"
+		targets.add_theme_color_override("font_color", Color(_colors.danger if int(progress["target_houses"]) < int(progress["target_total"]) else _colors.success))
+		_goal_bars.add_child(targets)
+		var row: HBoxContainer = HBoxContainer.new()
+		_goal_bars.add_child(row)
+		for coord: Vector2i in RiverSchoolFixtures.target_houses(lesson.scenario_id):
+			var inspect: Button = _button(tr("school.inspect_home") % [coord.x, coord.y], _inspect_school_home.bind(coord), "SchoolHome_%d_%d" % [coord.x, coord.y])
+			inspect.focus_mode = Control.FOCUS_ALL
+			inspect.custom_minimum_size.y = 36
+			inspect.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_child(inspect)
+
+
+func _inspect_school_home(coord: Vector2i) -> void:
+	if not modal_kind.is_empty():
+		return
+	cancel_command()
+	hovered_coord = coord
+	_pinned_coord = coord
+	_inspection_focus = coord
+	_inspection_pointer = get_viewport().get_mouse_position()
+	board.select(coord)
+	board.hover(coord)
+	var at: Vector3 = Hex.to_world(coord)
+	camera_rig.position.x = clampf(at.x, -5.0, 5.0)
+	camera_rig.position.z = clampf(at.z, -5.0, 5.0)
+	_update_inspector()
 
 
 func _update_command_status() -> void:
@@ -84,6 +117,7 @@ func request_end_turn() -> void:
 func _finish_turn() -> void:
 	if lesson.completed:
 		return
+	var resources_before: Dictionary = ResourceFeedback.capture(session.state)
 	var report: TurnReport = lesson.advance_turn()
 	if report == null:
 		return
@@ -96,6 +130,8 @@ func _finish_turn() -> void:
 		_show_result()
 	else:
 		_show_turn_feedback(report)
+	_resource_feedback.show_changes(resources_before, ResourceFeedback.capture(session.state))
+	_arm_end_turn_input_guard()
 
 
 func _show_harvest() -> void:
@@ -124,12 +160,17 @@ func _show_result() -> void:
 		details.add_child(_label(tr("school.result_migration") % [int(harvest["left_hunger"]), int(harvest["left_housing"])], 18))
 		details.add_child(_label(tr("school.result_population") % int(harvest["population_after"]), 18))
 	details.add_child(_label(tr("school.result_fish") % lesson.fish_food, 18))
+	if lesson.scenario_id == "river_school_02":
+		details.add_child(_label(tr("school.result_target_houses") % [RiverSchoolFixtures.FLOW_HOUSES.size() - result["target_losses"].size(), RiverSchoolFixtures.FLOW_HOUSES.size()], 18))
+		for coord: Vector2i in result["target_losses"]:
+			details.add_child(_label(tr("school.result_target_lost") % [coord.x, coord.y], 18))
 	if lesson.passed:
 		details.add_child(_label(tr("school.mastery_earned" if lesson.mastered else "school.mastery_not_earned"), 20))
 		details.add_child(_label(tr("school." + lesson.scenario_id + ".mastery"), 18, true))
 	_add_modal_button(tr("school.retry"), retry_lesson, "SchoolRetry", true)
-	if lesson.passed and lesson.scenario_id == "river_school_01":
-		_add_modal_button(tr("school.next_lesson"), func(): lesson_requested.emit("river_school_03"), "SchoolNext")
+	var next: String = RiverSchoolFixtures.next_lesson(lesson.scenario_id)
+	if lesson.passed and not next.is_empty():
+		_add_modal_button(tr("school.next_lesson") % tr("school." + next + ".name"), func(): lesson_requested.emit(next), "SchoolNext")
 	_add_modal_button(tr("school.choose"), _choose_school, "SchoolChoose")
 	_add_modal_button(tr("action.history"), open_turn_history, "SchoolHistory")
 	_add_modal_button(tr("action.menu"), _return_menu, "SchoolMenu")
@@ -217,6 +258,9 @@ func _close_school_modal() -> void:
 func retry_lesson() -> void:
 	if not lesson.retry():
 		return
+	_end_input_locked_until = 0
+	_hidden_turn_receipt = ""
+	_pinned_coord = BoardView.NO_COORD
 	_discard_suspended_modal()
 	close_modal()
 	session = lesson.session
@@ -299,6 +343,15 @@ func _confirm_school_exit(exit_action: Callable) -> void:
 
 
 func _discard_suspended_modal() -> void:
+	if _school_modal_return == "area_development":
+		_area_panel = null
+		_area_coord = BoardView.NO_COORD
+	if _school_modal_return == "history_map" and not _history_map_context.is_empty():
+		preview_enabled = bool(_history_map_context["preview"])
+		_history_map_context.clear()
+		_history_map_panel = null
+		_history_map_focus = null
+		_history_map_index = -1
 	if _suspended_modal != null:
 		_suspended_modal.queue_free()
 	_suspended_modal = null

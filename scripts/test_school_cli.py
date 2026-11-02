@@ -12,7 +12,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 GODOT = os.environ.get("GODOT_BIN", "godot")
-LESSONS = ("river_school_01", "river_school_03")
+LESSONS = ("river_school_01", "river_school_02", "river_school_03")
 
 
 class RiverSchoolBootTests(unittest.TestCase):
@@ -52,7 +52,7 @@ class RiverSchoolBootTests(unittest.TestCase):
         self.assertFalse(self.checkpoint.with_suffix(".json.tmp").exists())
         self.assertEqual(list(self.directory.rglob("river-school-unused.json*")), [])
 
-    def test_selector_and_both_lessons_start_without_creating_a_checkpoint(self):
+    def test_selector_and_all_lessons_start_without_creating_a_checkpoint(self):
         for language in ("en", "th"):
             for lesson in (None, *LESSONS):
                 with self.subTest(language=language, lesson=lesson):
@@ -89,7 +89,7 @@ class RiverSchoolBootTests(unittest.TestCase):
         saved = b"invalid JSON sentinel: reject arguments before opening MainMenu\n"
         invalid_arguments = [
             ["--lesson"], ["--lesson", "river_school_01"], ["--lesson="],
-            ["--lesson=river_school_02"], ["--lesson=unknown"],
+            ["--lesson=river_school_04"], ["--lesson=unknown"],
             ["--lesson=RIVER_SCHOOL_01"], ["--lesson= river_school_01"],
             ["--lesson=river_school_01=extra"],
             ["--lesson=bad", "--lesson=river_school_01"],
@@ -101,6 +101,7 @@ class RiverSchoolBootTests(unittest.TestCase):
                     result = self.invoke(*arguments, scene=scene, expected=2)
                     self.assertIn("--lesson=", result.stdout)
                     self.assertIn("river_school_01", result.stdout)
+                    self.assertIn("river_school_02", result.stdout)
                     self.assertIn("river_school_03", result.stdout)
                     self.assertEqual(self.checkpoint.read_bytes(), saved)
                     self.assert_no_lesson_checkpoint()
@@ -108,7 +109,7 @@ class RiverSchoolBootTests(unittest.TestCase):
     def test_invalid_lesson_flags_cannot_create_a_checkpoint_in_other_scenes(self):
         for scene in ("game", "sandbox"):
             with self.subTest(scene=scene):
-                self.invoke("--lesson=river_school_02", scene=scene, expected=2)
+                self.invoke("--lesson=river_school_04", scene=scene, expected=2)
                 self.assertFalse(self.checkpoint.exists())
                 self.assert_no_lesson_checkpoint()
 

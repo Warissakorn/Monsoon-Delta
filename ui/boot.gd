@@ -23,7 +23,7 @@ func _ready() -> void:
 			return
 		if arg.begins_with("--") and "=" in arg:
 			var parts := arg.substr(2).split("=", true, 1)
-			if parts[0] == "lesson" and parts[1] not in ["river_school_01", "river_school_03"]:
+			if parts[0] == "lesson" and parts[1] not in RiverSchoolFixtures.IDS:
 				_reject_lesson(parts[1])
 				return
 			if parts[0] == "ruleset":
@@ -95,7 +95,7 @@ static func _parse_difficulty(value: String) -> int:
 
 
 func _reject_lesson(value: String) -> void:
-	printerr("Invalid --lesson=%s. Use --lesson=river_school_01 or --lesson=river_school_03." % value)
+	printerr("Invalid --lesson=%s. Use --lesson= with one of: %s." % [value, ", ".join(RiverSchoolFixtures.IDS)])
 	get_tree().quit(2)
 
 

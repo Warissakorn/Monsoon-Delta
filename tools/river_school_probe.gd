@@ -111,6 +111,10 @@ func _run() -> void:
 	if _menu == null:
 		_finish()
 		return
+	await _share_flow_checks()
+	if _menu == null:
+		_finish()
+		return
 	var third: Button = _menu._school.find_child("Lesson_river_school_03", true, false) as Button
 	third.grab_focus()
 	await _frames(2)
@@ -205,6 +209,8 @@ func _command(command: Dictionary, context: String) -> void:
 	var error: String = GameFlow.apply_command(expected, Command.new(id, coord, int(command.get("param", -1))))
 	_check("legal_%s_%s_%d_%d" % [context, id, coord.x, coord.y], error.is_empty())
 	root.gui_release_focus()
+	if id == "toggle_gate" and not _screen.command_mode.is_empty():
+		await _key(KEY_ESCAPE)
 	for shortcut: int in GameScreen.SHORTCUTS:
 		if GameScreen.SHORTCUTS[shortcut] == id:
 			await _key(shortcut)
@@ -213,11 +219,60 @@ func _command(command: Dictionary, context: String) -> void:
 	_check("native_%s_%s_%d_%d" % [context, id, coord.x, coord.y], _lesson.session.state.to_dict() == expected.to_dict())
 
 
+func _share_flow_checks() -> void:
+	var second: Button = _menu._school.find_child("Lesson_river_school_02", true, false) as Button
+	second.grab_focus()
+	await _frames(2)
+	await _key(KEY_ENTER)
+	_check("native_share_flow_start", _started == "river_school_02" and _lesson.turns_resolved == 0)
+	var initial: Dictionary = _snapshot()
+	_check("share_flow_declared_resources", _lesson.session.state.leader == "soil_doctor" and _lesson.session.state.wood == 4 and _lesson.session.state.food == 6)
+	_check("share_flow_target_counter", _lesson.progress()["target_houses"] == 2)
+	await _capture("school-share-start", "PLAYABLE PREPARED BOARD / SHARE THE FLOW TARGET HOMES")
+	var inspect: Button = _screen._goal_bars.find_child("SchoolHome_3_-2", true, false) as Button
+	inspect.grab_focus()
+	await _frames(2)
+	await _click_control(inspect)
+	_check("share_flow_home_inspection_read_only", _screen.board._selected_coord == RiverSchoolFixtures.FLOW_HOUSES[0] and _snapshot() == initial)
+	# Restore only the camera after inspecting a target; replay clicks need the
+	# same board framing as the freshly opened lesson, not a changed game state.
+	_screen.camera_rig.position.x = 0.0
+	_screen.camera_rig.position.z = 0.0
+	root.gui_release_focus()
+	await _key(KEY_F1)
+	await _click_named("SchoolNextHint")
+	await _click_named("SchoolNextHint")
+	_check("share_flow_gate_hint_read_only", _screen.hint_level == 3 and _snapshot() == initial and _labels(_screen._modal_content).contains(_tr("school.river_school_02.hint3")))
+	_check("share_flow_hint_fits", root.get_visible_rect().encloses(_screen._modal_content.get_global_rect()))
+	await _capture("school-share-hint", "PLAYABLE PREPARED BOARD / OPTIONAL GATE PLAN")
+	await _key(KEY_ESCAPE)
+	await _replay(RiverSchoolFixtures.solutions("river_school_02")[0])
+	_check("share_flow_gate_actual_mastery", _lesson.passed and _lesson.mastered and int(_lesson.result()["harvest"].get("paddy_food", 0)) == 3 and not _lesson.session.state.get_tile(RiverSchoolFixtures.CHANNEL).gate_open)
+	_check("share_flow_success_fits", root.get_visible_rect().encloses(_screen._modal_content.get_global_rect()))
+	await _capture("school-share-success", "PLAYABLE PREPARED BOARD / GATE PLAN ACTUAL RESULT")
+	await _click_named("SchoolRetry")
+	_check("share_flow_retry_exact", _snapshot() == initial and _screen.hint_level == 0)
+	for turn: int in range(6):
+		await _end_turn("share_flow_untouched_%d" % (turn + 1))
+	_check("share_flow_untouched_actual_target_loss", not _lesson.passed and _lesson.result()["target_losses"] == RiverSchoolFixtures.FLOW_HOUSES and _lesson.result()["reasons"].has("school.reason.target_houses"))
+	_check("share_flow_failure_fits", root.get_visible_rect().encloses(_screen._modal_content.get_global_rect()))
+	await _capture("school-share-failure", "PLAYABLE PREPARED BOARD / UNTOUCHED HOMES LOST")
+	await _click_named("SchoolRetry")
+	await _replay(RiverSchoolFixtures.solutions("river_school_02")[1])
+	_check("share_flow_drainage_actual_mastery", _lesson.passed and _lesson.mastered and int(_lesson.result()["harvest"].get("paddy_food", 0)) == 1 and _lesson.session.state.get_tile(RiverSchoolFixtures.CHANNEL).gate_open)
+	await _capture("school-share-drainage", "PLAYABLE PREPARED BOARD / OPEN GATE DRAINAGE RESULT")
+	await _click_named("SchoolNext")
+	_check("share_flow_next_starts_food_lesson", _started == "river_school_03" and _lesson.turns_resolved == 0 and _lesson.session.state.food == 0)
+	await _exit_confirmation_checks()
+
+
 func _end_turn(context: String) -> void:
+	while Time.get_ticks_msec() < _screen._end_input_locked_until:
+		await _frames(1)
 	var count: int = _lesson.turns_resolved
 	root.gui_release_focus()
 	await _key(KEY_SPACE)
-	if _screen.modal_kind in ["confirm_loss", "confirm_labor"]:
+	if _screen.modal_kind in GameScreen.END_TURN_CONFIRMATIONS:
 		await _click_named("ConfirmEndTurn")
 	_check("commit_" + context, _lesson.turns_resolved == count + 1)
 	_check("save_preserved_" + context, FileAccess.get_file_as_bytes(_normal_path) == _normal_bytes)

@@ -50,7 +50,9 @@ static func save(state: GameState, path: String = DEFAULT_PATH) -> String:
 	# Keep legacy runs on their original schema. Visual history needs version 3
 	# so an older client cannot silently discard building ages or development.
 	var envelope_version: int = 2
-	if state.has_moisture():
+	if state.has_irrigation():
+		envelope_version = 6
+	elif state.has_moisture():
 		envelope_version = 5
 	elif state.has_bracing():
 		envelope_version = 4
@@ -121,7 +123,7 @@ static func load_game(path: String = DEFAULT_PATH) -> Dictionary:
 		return _corrupt(path)
 	# A future build's save is unsupported, not corrupt. Preserve it for that
 	# build instead of deleting progress we cannot interpret.
-	if int(envelope["version"]) > 5:
+	if int(envelope["version"]) > 6:
 		return _result(null, "msg.save_unsupported")
 	if not envelope.get("state") is Dictionary:
 		return _corrupt(path)
@@ -131,7 +133,10 @@ static func load_game(path: String = DEFAULT_PATH) -> Dictionary:
 	if not _valid_state(data):
 		return _corrupt(path)
 	var envelope_version: int = int(envelope["version"])
-	if envelope_version == 5:
+	if envelope_version == 6:
+		if not "irrigation" in String(data.get("ruleset", "")) or not _has_fields(data, RUN_FIELDS):
+			return _corrupt(path)
+	elif envelope_version == 5:
 		if data.get("ruleset") not in ["moisture_v1", "bracing_moisture_v1"] or not _has_fields(data, RUN_FIELDS):
 			return _corrupt(path)
 	elif envelope_version == 4:
@@ -142,7 +147,7 @@ static func load_game(path: String = DEFAULT_PATH) -> Dictionary:
 	if envelope_version == 3:
 		if not _has_fields(data, RUN_FIELDS) or not data.has("settlement_progress"):
 			return _corrupt(path)
-	elif envelope_version not in [4, 5] and data.has("settlement_progress"):
+	elif envelope_version not in [4, 5, 6] and data.has("settlement_progress"):
 		return _corrupt(path)
 	if envelope_version == 2:
 		if not _has_fields(data, RUN_FIELDS):
@@ -206,6 +211,10 @@ static func _can_serialize(state: GameState) -> bool:
 			return false
 		if tile.soil_moisture != 0 and (not state.has_moisture() or tile.feature != C.Feature.PADDY or tile.paddy_dead):
 			return false
+		if tile.irrigation_policy not in Irrigation.POLICIES:
+			return false
+		if tile.irrigation_policy != "normal" and (not state.has_irrigation() or tile.feature != C.Feature.PADDY or tile.paddy_dead):
+			return false
 	return _valid_stats(state.stats, state.target_years()) and _valid_report(state.harvest_report, state.phase == C.Phase.HARVEST) and _valid_modifiers(state.year_mods)
 
 
@@ -215,8 +224,9 @@ static func _valid_state(data: Dictionary) -> bool:
 	var ruleset: Variant = data.get("ruleset", "legacy")
 	if data.has("ruleset") and (not ruleset is String or ruleset not in GameState.RULESETS or ruleset == "legacy" or not _has_fields(data, RUN_FIELDS)):
 		return false
-	var bracing: bool = ruleset in ["bracing_v1", "bracing_moisture_v1"]
-	var moisture: bool = ruleset in ["moisture_v1", "bracing_moisture_v1"]
+	var bracing: bool = String(ruleset).begins_with("bracing_")
+	var moisture: bool = "moisture" in String(ruleset)
+	var irrigation: bool = "irrigation" in String(ruleset)
 	if not _valid_run_fields(data):
 		return false
 	var target_years: int = int(DataDB.balance()["run_modes"][data.get("run_mode", "classic")]["years"])
@@ -297,6 +307,13 @@ static func _valid_state(data: Dictionary) -> bool:
 			if tile["soil_moisture"] != 0 and (tile["feature"] != "paddy" or tile["paddy_dead"]):
 				return false
 		elif tile.has("soil_moisture"):
+			return false
+		if irrigation:
+			if not tile.get("irrigation_policy") is String or tile["irrigation_policy"] not in Irrigation.POLICIES:
+				return false
+			if tile["irrigation_policy"] != "normal" and (tile["feature"] != "paddy" or tile["paddy_dead"]):
+				return false
+		elif tile.has("irrigation_policy"):
 			return false
 	return not data.has("settlement_progress") or _valid_settlement_progress(data)
 

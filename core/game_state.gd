@@ -6,7 +6,10 @@ const Constants = preload("res://core/constants.gd")
 const TileModel = preload("res://core/tile.gd")
 const Database = preload("res://core/data_db.gd")
 const UndoHistory = preload("res://core/undo_stack.gd")
-const RULESETS: Array[String] = ["legacy", "bracing_v1", "moisture_v1", "bracing_moisture_v1"]
+const RULESETS: Array[String] = [
+	"legacy", "bracing_v1", "moisture_v1", "bracing_moisture_v1",
+	"irrigation_v1", "bracing_irrigation_v1", "moisture_irrigation_v1", "bracing_moisture_irrigation_v1",
+]
 const DIRECTIONS: Array[Vector2i] = [
 	Vector2i(1, 0), Vector2i(1, -1), Vector2i(0, -1),
 	Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, 1),
@@ -106,14 +109,20 @@ func target_years() -> int:
 
 
 func has_bracing() -> bool:
-	return ruleset in ["bracing_v1", "bracing_moisture_v1"]
+	return ruleset.begins_with("bracing_")
 
 
 func has_moisture() -> bool:
-	return ruleset in ["moisture_v1", "bracing_moisture_v1"]
+	return "moisture" in ruleset
 
 
-static func ruleset_for(bracing: bool, moisture: bool) -> String:
+func has_irrigation() -> bool:
+	return "irrigation" in ruleset
+
+
+static func ruleset_for(bracing: bool, moisture: bool, irrigation: bool = false) -> String:
+	if irrigation:
+		return ("bracing_" if bracing else "") + ("moisture_" if moisture else "") + "irrigation_v1"
 	if moisture:
 		return "bracing_moisture_v1" if bracing else "moisture_v1"
 	return "bracing_v1" if bracing else "legacy"
@@ -203,7 +212,7 @@ func duplicate_state() -> GameState:
 func to_dict() -> Dictionary:
 	var tile_data: Array[Dictionary] = []
 	for tile: TileModel in tiles:
-		tile_data.append(tile.to_dict(has_bracing(), has_moisture()))
+		tile_data.append(tile.to_dict(has_bracing(), has_moisture(), has_irrigation()))
 	var data: Dictionary = {
 		"version": version,
 		"seed": str(seed),

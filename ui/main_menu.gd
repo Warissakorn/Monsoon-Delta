@@ -45,6 +45,7 @@ var _difficulty_option: OptionButton
 var _difficulty_description: Label
 var _bracing_toggle: CheckBox
 var _moisture_toggle: CheckBox
+var _irrigation_toggle: CheckBox
 var _error_panel: PanelContainer
 var _error_label: Label
 var _error_key: String = ""
@@ -317,7 +318,7 @@ func _build_school(parent: Node) -> void:
 	_school.add_child(_label("school.title", "Heading"))
 	_school.add_child(_label("school.intro", "", true))
 	_school.add_child(_label("school.no_checkpoint", "", true))
-	for id: String in ["river_school_01", "river_school_03"]:
+	for id: String in RiverSchoolFixtures.IDS:
 		var card: PanelContainer = PanelContainer.new()
 		card.theme_type_variation = "CardPanel"
 		_school.add_child(card)
@@ -431,7 +432,7 @@ func _build_setup(parent: Node) -> void:
 	_bracing_toggle.text = tr("setup.bracing")
 	_bracing_toggle.tooltip_text = tr("setup.bracing_hint")
 	_bracing_toggle.custom_minimum_size.y = 44
-	_bracing_toggle.set_pressed_no_signal(initial_ruleset in ["bracing_v1", "bracing_moisture_v1"])
+	_bracing_toggle.set_pressed_no_signal(initial_ruleset.begins_with("bracing_"))
 	_setup.add_child(_bracing_toggle)
 	var bracing_hint: Label = _label("setup.bracing_hint", "", true)
 	bracing_hint.add_theme_font_size_override("font_size", 16)
@@ -441,11 +442,21 @@ func _build_setup(parent: Node) -> void:
 	_moisture_toggle.text = tr("setup.moisture")
 	_moisture_toggle.tooltip_text = tr("setup.moisture_hint")
 	_moisture_toggle.custom_minimum_size.y = 44
-	_moisture_toggle.set_pressed_no_signal(initial_ruleset in ["moisture_v1", "bracing_moisture_v1"])
+	_moisture_toggle.set_pressed_no_signal("moisture" in initial_ruleset)
 	_setup.add_child(_moisture_toggle)
 	var moisture_hint: Label = _label("setup.moisture_hint", "", true)
 	moisture_hint.add_theme_font_size_override("font_size", 16)
 	_setup.add_child(moisture_hint)
+	_irrigation_toggle = CheckBox.new()
+	_irrigation_toggle.name = "EnableIrrigation"
+	_irrigation_toggle.text = tr("setup.irrigation")
+	_irrigation_toggle.tooltip_text = tr("setup.irrigation_hint")
+	_irrigation_toggle.custom_minimum_size.y = 44
+	_irrigation_toggle.set_pressed_no_signal("irrigation" in initial_ruleset)
+	_setup.add_child(_irrigation_toggle)
+	var irrigation_hint: Label = _label("setup.irrigation_hint", "", true)
+	irrigation_hint.add_theme_font_size_override("font_size", 16)
+	_setup.add_child(irrigation_hint)
 	_setup.add_child(_label("setup.seed", "Kicker"))
 	_seed_input = LineEdit.new()
 	_seed_input.text = str(initial_seed)
@@ -527,6 +538,7 @@ func setup_draft() -> Dictionary:
 		"difficulty": _difficulty_option.get_selected_id(),
 		"bracing": _bracing_toggle.button_pressed,
 		"moisture": _moisture_toggle.button_pressed,
+		"irrigation": _irrigation_toggle.button_pressed,
 	}
 
 
@@ -538,6 +550,7 @@ func restore_setup_draft(draft: Dictionary) -> void:
 	_difficulty_option.select(int(draft["difficulty"]))
 	_bracing_toggle.set_pressed_no_signal(draft["bracing"])
 	_moisture_toggle.set_pressed_no_signal(draft["moisture"])
+	_irrigation_toggle.set_pressed_no_signal(bool(draft.get("irrigation", false)))
 	_select_leader(_leader_option.selected)
 	_select_run_mode(_run_mode_option.selected)
 	_select_goal(_goal_option.selected)
@@ -554,7 +567,7 @@ func _request_start() -> void:
 		"run_mode": RUN_MODES[_run_mode_option.selected],
 		"village_goal": GOALS[_goal_option.selected],
 	}
-	var ruleset: String = GameState.ruleset_for(_bracing_toggle.button_pressed, _moisture_toggle.button_pressed)
+	var ruleset: String = GameState.ruleset_for(_bracing_toggle.button_pressed, _moisture_toggle.button_pressed, _irrigation_toggle.button_pressed)
 	if ruleset != "legacy":
 		_pending_config["ruleset"] = ruleset
 	# Existing files are protected even if a temporary read failure disabled

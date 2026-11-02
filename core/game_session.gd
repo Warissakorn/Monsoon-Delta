@@ -72,6 +72,8 @@ func advance_turn() -> TurnReport:
 	var year: int = state.year
 	var turn: int = state.turn
 	var season: int = state.season()
+	var resources_before: Dictionary = ResourceLedger.capture(state)
+	var growth_cost: int = maxi(0, roundi(float(state.mod("food_per_growth"))))
 	var report: TurnReport = GameFlow.end_turn(state)
 	if report != null:
 		if state.phase == C.Phase.HARVEST:
@@ -84,6 +86,7 @@ func advance_turn() -> TurnReport:
 			"paddies_died": report.paddies_died,
 			"paddy_gains": report.paddy_gains,
 			"fish_food": report.fish_food,
+			"fish_food_by_tile": report.fish_food_by_tile,
 			"hall_wet": report.hall_wet,
 			"dry_paddy_water_used": report.dry_paddy_water_used,
 		}
@@ -91,6 +94,8 @@ func advance_turn() -> TurnReport:
 			results["brace_results"] = report.brace_results.duplicate(true)
 		if not report.moisture_changes.is_empty():
 			results["moisture_changes"] = report.moisture_changes.duplicate(true)
+		if not report.irrigation_results.is_empty():
+			results["irrigation_results"] = report.irrigation_results.duplicate(true)
 		_turn_history.append({
 			"year": year,
 			"turn": turn,
@@ -99,6 +104,7 @@ func advance_turn() -> TurnReport:
 			"harvest": state.harvest_report.duplicate(true) if state.phase == C.Phase.HARVEST else {},
 			# Harvest can decide a win or population loss after TurnReport ends.
 			"outcome": state.outcome,
+			"resources": ResourceLedger.for_turn(resources_before, state, report, state.harvest_report if state.phase == C.Phase.HARVEST else {}, growth_cost),
 		})
 		while _turn_history.size() > state.target_years() * C.TURNS_PER_YEAR:
 			_turn_history.pop_front()

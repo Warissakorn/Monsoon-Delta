@@ -114,7 +114,7 @@ func _translate(key: String) -> String:
 
 func _finish_turn(screen: GameScreen) -> void:
 	screen.request_end_turn()
-	if screen.modal_kind in ["confirm_labor", "confirm_loss"]:
+	if screen.modal_kind in GameScreen.END_TURN_CONFIRMATIONS:
 		screen._confirm_end_turn()
 
 

@@ -103,6 +103,28 @@ class BootDifficultyTests(unittest.TestCase):
         self.invoke("--ruleset=bracing_v1", scene="menu")
         self.assertEqual(self.checkpoint.read_bytes(), saved)
 
+    def test_irrigation_rulesets_start_v6_with_only_selected_mechanics(self):
+        for bracing in (False, True):
+            for moisture in (False, True):
+                ruleset = ("bracing_" if bracing else "") + ("moisture_" if moisture else "") + "irrigation_v1"
+                with self.subTest(ruleset=ruleset):
+                    self.invoke(f"--ruleset={ruleset}", "--run-mode=long", "--goal=rice")
+                    envelope = json.loads(self.checkpoint.read_bytes())
+                    self.assertEqual(envelope["version"], 6)
+                    state = envelope["state"]
+                    self.assertEqual(state["ruleset"], ruleset)
+                    self.assertTrue(all(tile["irrigation_policy"] == "normal" for tile in state["tiles"]))
+                    self.assertTrue(all(("brace_turns" in tile) == bracing for tile in state["tiles"]))
+                    self.assertTrue(all(("soil_moisture" in tile) == moisture for tile in state["tiles"]))
+
+    def test_irrigation_menu_presets_preserve_existing_checkpoint(self):
+        self.invoke("--ruleset=moisture_irrigation_v1")
+        saved = self.checkpoint.read_bytes()
+        for ruleset in ("irrigation_v1", "bracing_irrigation_v1", "moisture_irrigation_v1", "bracing_moisture_irrigation_v1"):
+            with self.subTest(ruleset=ruleset):
+                self.invoke(f"--ruleset={ruleset}", scene="menu")
+                self.assertEqual(self.checkpoint.read_bytes(), saved)
+
     def test_invalid_rulesets_exit_before_reading_or_replacing_any_checkpoint(self):
         original = b"existing checkpoint: do not validate or replace\n"
         invalid_arguments = [

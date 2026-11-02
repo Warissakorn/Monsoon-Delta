@@ -279,6 +279,8 @@ func test_busy_committed_turn_bounds_world_feedback_without_dropping_actual_prod
 	assert_eq(report.destroyed.size(), 3)
 	var screen: GameScreen = _screen(state)
 	screen.request_end_turn()
+	assert_eq(screen.modal_kind, "confirm_impact")
+	screen._confirm_end_turn()
 	assert_eq(screen._feedback.get_child_count(), ActionFeedback.MAX_MARKERS)
 	assert_eq(state.to_dict(), expected.to_dict(), "capping visual events cannot cap production or damage")
 	assert_eq(state.food, 1013)
