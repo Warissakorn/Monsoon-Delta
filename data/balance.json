@@ -325,5 +325,133 @@
       "food": 1,
       "wood": 0.5
     }
+  },
+  "daily_prototype": {
+    "duration": 30,
+    "population": 6,
+    "food_per_day": 1,
+    "food_warning": 3,
+    "initial_resources": {
+      "food": 30,
+      "wood": 18,
+      "stone": 8,
+      "clay": 12,
+      "planks": 0,
+      "bricks": 0
+    },
+    "floods": [
+      {
+        "warning_day": 21,
+        "day": 24,
+        "requires": "foundation"
+      },
+      {
+        "warning_day": 27,
+        "day": 30,
+        "requires": "barrier"
+      }
+    ],
+    "jobs": {
+      "gather_food": {
+        "workers": 1,
+        "days": 1,
+        "inputs": {},
+        "outputs": {
+          "food": 2
+        }
+      },
+      "gather_wood": {
+        "workers": 1,
+        "days": 2,
+        "inputs": {},
+        "outputs": {
+          "wood": 2
+        }
+      },
+      "gather_stone": {
+        "workers": 1,
+        "days": 3,
+        "inputs": {},
+        "outputs": {
+          "stone": 1
+        }
+      },
+      "gather_clay": {
+        "workers": 1,
+        "days": 2,
+        "inputs": {},
+        "outputs": {
+          "clay": 2
+        }
+      },
+      "build_sawmill": {
+        "workers": 2,
+        "days": 2,
+        "inputs": {
+          "wood": 4,
+          "stone": 2
+        },
+        "outputs": {},
+        "builds": "sawmill"
+      },
+      "build_kiln": {
+        "workers": 2,
+        "days": 3,
+        "inputs": {
+          "wood": 4,
+          "stone": 2
+        },
+        "outputs": {},
+        "builds": "kiln"
+      },
+      "saw_planks": {
+        "workers": 1,
+        "days": 2,
+        "inputs": {
+          "wood": 2
+        },
+        "outputs": {
+          "planks": 1
+        },
+        "requires": "sawmill"
+      },
+      "fire_bricks": {
+        "workers": 1,
+        "days": 3,
+        "inputs": {
+          "clay": 2,
+          "wood": 1
+        },
+        "outputs": {
+          "bricks": 2
+        },
+        "requires": "kiln"
+      },
+      "build_foundation": {
+        "workers": 2,
+        "days": 3,
+        "inputs": {
+          "planks": 2,
+          "bricks": 4,
+          "stone": 2
+        },
+        "outputs": {},
+        "builds": "foundation",
+        "knowledge": 1
+      },
+      "build_barrier": {
+        "workers": 2,
+        "days": 3,
+        "inputs": {
+          "planks": 2,
+          "bricks": 2,
+          "stone": 2
+        },
+        "outputs": {},
+        "builds": "barrier",
+        "requires": "foundation",
+        "knowledge": 1
+      }
+    }
   }
 }

@@ -291,5 +291,23 @@ class BootDifficultyTests(unittest.TestCase):
         self.assertEqual(self.checkpoint.read_bytes(), original)
 
 
+    def test_daily_scene_preserves_normal_checkpoint_including_corrupt_bytes(self):
+        for original in [b"normal checkpoint sentinel\n", b"{broken"]:
+            self.checkpoint.write_bytes(original)
+            self.invoke(scene="daily")
+            self.assertEqual(self.checkpoint.read_bytes(), original)
+        saves = list((self.directory / "data").rglob("daily-production-prototype.json"))
+        self.assertEqual(len(saves), 1)
+        envelope = json.loads(saves[0].read_text())
+        self.assertEqual(envelope["format"], "monsoon_delta_daily_prototype")
+        self.assertEqual(envelope["state"]["day"], 0)
+
+    def test_invalid_daily_options_are_rejected_before_checkpoint_access(self):
+        self.checkpoint.write_bytes(b"normal checkpoint sentinel\n")
+        for arguments in [["--difficulty=11"], ["--run-mode=bad"], ["--goal"], ["--ruleset=future"]]:
+            self.invoke(*arguments, scene="daily", expected=2)
+            self.assertEqual(self.checkpoint.read_bytes(), b"normal checkpoint sentinel\n")
+
+
 if __name__ == "__main__":
     unittest.main()

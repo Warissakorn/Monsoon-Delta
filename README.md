@@ -50,6 +50,10 @@ HUD มี **[เอฟเฟกต์ทรัพยากรเพิ่ม/�
 
 ดาวน์โหลดเกมที่ build ผ่านแล้วได้ที่ **Actions → Build desktop games → run ที่สำเร็จ → Artifacts** (Windows/Linux x86_64) ดู [วิธี build และรัน workflow](docs/development/README.md#build-เกมแจกด้วย-github-actions)
 
+## ต้นแบบผลิตก่อนน้ำมา
+
+เปิด **ผลิตก่อนน้ำมา · ต้นแบบ** จากเมนู หรือ `godot --path . -- --scene=daily --lang=th` เพื่อทดลองโจทย์ 30 วัน: จัดคน สร้างโรงเลื่อย/เตาเผา คราฟวัสดุ และใช้รางวัลพัฒนาระบบรับน้ำ เซฟแยกจาก Continue ปกติ น้ำเป็นโจทย์กำหนดวัน ยังไม่ใช่รอบเต็ม 365 วัน ดู [คู่มือ](docs/features/DAILY_PRODUCTION.md) และ [แผนพัฒนาต่อ](docs/design/DAILY_YEAR.md)
+
 ## พัฒนาต่อด้วย AI
 
 เริ่มตามลำดับ **[AGENTS.md](AGENTS.md) → [STATUS.md](docs/STATUS.md) → [คู่มือพัฒนา](docs/development/README.md)** แล้วเปิดเอกสารเฉพาะงานจาก [สารบัญ](docs/README.md)

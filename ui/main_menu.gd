@@ -5,6 +5,7 @@ extends Control
 signal start_requested(config: Dictionary)
 signal continue_requested()
 signal sandbox_requested()
+signal daily_requested()
 signal lesson_requested(scenario_id: String)
 signal language_changed(language: String)
 signal quit_requested()
@@ -319,6 +320,9 @@ func _build_home(parent: Node) -> void:
 	_school_button = _button("school.title", show_school, "QuietButton", true)
 	_school_button.name = "RiverSchool"
 	_home.add_child(_school_button)
+	var daily_button: Button = _button("daily.menu", func(): daily_requested.emit(), "QuietButton", true)
+	daily_button.name = "DailyPrototype"
+	_home.add_child(daily_button)
 	var spacer: Control = Control.new()
 	spacer.custom_minimum_size.y = 24
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
