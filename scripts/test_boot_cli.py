@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise difficulty and rulesets through the real boot scene and isolated saves."""
+"""Exercise boot options through the real scene and isolated saves."""
 
 import json
 import os
@@ -175,6 +175,68 @@ class BootDifficultyTests(unittest.TestCase):
     def test_explicit_seed_still_reaches_the_game(self):
         self.invoke("--seed=812", "--difficulty=10")
         self.assertEqual(self.read_checkpoint(expected_seed="812")["state"]["difficulty"], 10)
+
+    def test_all_run_option_choices_reach_the_checkpoint(self):
+        for run_mode in ["classic", "long"]:
+            for goal in ["none", "growth", "forest", "rice"]:
+                with self.subTest(run_mode=run_mode, goal=goal):
+                    self.invoke(f"--run-mode={run_mode}", f"--goal={goal}")
+                    state = self.read_checkpoint()["state"]
+                    self.assertEqual(state["run_mode"], run_mode)
+                    self.assertEqual(state["village_goal"], goal)
+
+    def test_missing_run_option_does_not_create_a_checkpoint(self):
+        for option in ["run-mode", "goal"]:
+            with self.subTest(option=option):
+                self.checkpoint.unlink(missing_ok=True)
+                result = self.invoke(f"--{option}", expected=2)
+                self.assertIn(f"--{option}=", result.stdout)
+                self.assertFalse(self.checkpoint.exists())
+                self.assertFalse(self.checkpoint.with_suffix(".json.tmp").exists())
+
+    def test_invalid_run_options_preserve_existing_checkpoints(self):
+        self.invoke("--difficulty=3", "--run-mode=long", "--goal=forest")
+        valid_checkpoint = self.checkpoint.read_bytes()
+        # Malformed bytes detect unintended menu validation as well as writes.
+        for original in [valid_checkpoint, b"existing checkpoint: do not read or replace\n"]:
+            for scene in ["game", "menu", "sandbox", "school"]:
+                for arguments in [
+                    ["--run-mode"], ["--run-mode=unknown"],
+                    ["--goal"], ["--goal=unknown"],
+                ]:
+                    with self.subTest(scene=scene, arguments=arguments, valid=original == valid_checkpoint):
+                        self.checkpoint.write_bytes(original)
+                        self.invoke(*arguments, scene=scene, expected=2)
+                        self.assertTrue(self.checkpoint.exists())
+                        self.assertEqual(self.checkpoint.read_bytes(), original)
+                        self.assertFalse(self.checkpoint.with_suffix(".json.tmp").exists())
+
+    def test_malformed_run_options_cannot_be_hidden_by_later_flags(self):
+        choices = {
+            "run-mode": ["classic", "long"],
+            "goal": ["none", "growth", "forest", "rice"],
+        }
+        original = b"existing checkpoint: do not read or replace\n"
+        for option, supported in choices.items():
+            valid = supported[-1]
+            arguments_to_reject = [
+                [f"--{option}", valid], [f"--{option}="],
+                [f"--{option}={valid.upper()}"], [f"--{option}= {valid}"],
+                [f"--{option}={valid}=extra"], [f"--{option}=1"],
+                [f"--{option}=ไม่รองรับ"],
+                [f"--{option}=bad", f"--{option}={valid}"],
+                [f"--{option}", f"--{option}={valid}"],
+            ]
+            for scene in ["game", "menu", "sandbox", "school"]:
+                for arguments in arguments_to_reject:
+                    with self.subTest(option=option, scene=scene, arguments=arguments):
+                        self.checkpoint.write_bytes(original)
+                        result = self.invoke(*arguments, scene=scene, expected=2)
+                        self.assertIn(f"--{option}=", result.stdout)
+                        for value in supported:
+                            self.assertIn(value, result.stdout)
+                        self.assertEqual(self.checkpoint.read_bytes(), original)
+                        self.assertFalse(self.checkpoint.with_suffix(".json.tmp").exists())
 
     def test_valid_menu_preset_leaves_the_existing_run_unchanged(self):
         self.invoke("--difficulty=3")

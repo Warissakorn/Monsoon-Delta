@@ -1,5 +1,7 @@
 extends Node
 
+const RUN_OPTION_KEYS: Dictionary = {"run-mode": "run_modes", "goal": "village_goals"}
+
 var _screen: Node
 var _session: GameSession
 var _initial_seed: int = 42
@@ -12,6 +14,9 @@ var _save_path: String = SaveIO.DEFAULT_PATH
 func _ready() -> void:
 	var options: Dictionary = {}
 	for arg in OS.get_cmdline_user_args():
+		if arg in ["--run-mode", "--goal"]:
+			_reject_run_option(arg.trim_prefix("--"), "")
+			return
 		if arg == "--lesson":
 			_reject_lesson("")
 			return
@@ -23,6 +28,11 @@ func _ready() -> void:
 			return
 		if arg.begins_with("--") and "=" in arg:
 			var parts := arg.substr(2).split("=", true, 1)
+			if RUN_OPTION_KEYS.has(parts[0]):
+				var choices: Dictionary = DataDB.balance()[RUN_OPTION_KEYS[parts[0]]]
+				if not choices.has(parts[1]):
+					_reject_run_option(parts[0], parts[1])
+					return
 			if parts[0] == "lesson" and parts[1] not in RiverSchoolFixtures.IDS:
 				_reject_lesson(parts[1])
 				return
@@ -92,6 +102,15 @@ static func _parse_difficulty(value: String) -> int:
 	if digits.length() > 2 or (digits.length() == 2 and digits != "10"):
 		return -1
 	return int(digits)
+
+
+func _reject_run_option(option: String, value: String) -> void:
+	var choices: Dictionary = DataDB.balance()[RUN_OPTION_KEYS[option]]
+	var accepted: PackedStringArray = PackedStringArray()
+	for choice: String in choices:
+		accepted.append("--%s=%s" % [option, choice])
+	printerr("Invalid --%s=%s. Use %s." % [option, value, " or ".join(accepted)])
+	get_tree().quit(2)
 
 
 func _reject_lesson(value: String) -> void:
