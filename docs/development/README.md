@@ -64,6 +64,17 @@ git diff --check
 
 [บัญชีทรัพยากร](../features/RESOURCE_FEEDBACK.md#ดูบัญชีทรัพยากรของแต่ละเทิร์น) อยู่ใน `GameSession.turn_history()` แยกจาก GameState/เซฟ ใช้ `scripts/test.sh --filter=resource_ledger` ตรวจ `ก่อน + ผลรวมสาเหตุ = หลัง` ทั้งห้าทรัพยากร และอ่านข้อมูลเดิมหลังวางแผนต่อ/ขึ้นปี/โหลด/Retry ตรวจ [native probe](../../tools/resource_ledger_probe.gd) ทั้งสองภาษาตามคำสั่ง XDG ในคู่มือฟีเจอร์ รวมใช้คำสั่งสร้างบ้านจริงก่อนอ่านยอดประวัติ ห้ามประกอบสาเหตุจากกระดานปัจจุบันหรือใช้ harvest report ปีก่อนกับเทิร์นธรรมดา
 
+### ตรวจสรุปหมู่บ้านก่อนเล่นต่อ
+
+ใช้ `scripts/test.sh --filter=continue_summary` ตรวจเซฟทุก envelope ที่รองรับ การไม่แก้ไฟล์/RNG สรุปเก็บเกี่ยว และข้อมูลเก่าที่ต้องล้าง แล้วใช้ `scripts/test.sh --filter=menu` ตรวจ flow สลับภาษา/Continue/เกมใหม่ร่วมกับเมนูเดิม ข้อความใช้ `translations/strings.csv` และทรัพยากรแปลที่ import แล้วตามเดิม
+
+ตรวจ native ด้วย [continue summary probe](../../tools/continue_summary_probe.gd) บนหน้าต่าง 1280×720 และเซฟ/ค่าตั้งแยก เปลี่ยน `th` เป็น `en` เพื่อตรวจอีกทิศทาง รายงานและภาพ planning/harvest อยู่ใน `--out-dir`; รายละเอียด fixture และผลล่าสุดอยู่ใน [คู่มือเมนู](../features/M4_PLAYABLE.md#สรุปเกมก่อนเล่นต่อ)
+
+```sh
+mkdir -p work/continue-summary-qa/th
+XDG_DATA_HOME="$PWD/work/continue-summary-qa/th/data" XDG_CONFIG_HOME="$PWD/work/continue-summary-qa/th/config" XDG_CACHE_HOME="$PWD/work/continue-summary-qa/th/cache" godot --path . --audio-driver Dummy --resolution 1280x720 --script res://tools/continue_summary_probe.gd -- --out-dir="$PWD/work/continue-summary-qa/th" --lang=th
+```
+
 ### Build เกมแจกด้วย GitHub Actions
 
 [Build desktop games](../../.github/workflows/build.yml) ใช้ Godot 4.6.3 Standard พร้อม export templates และ [presets](../../export_presets.cfg) สำหรับ Windows/Linux x86_64 รันเมื่อ push เข้า `main`, push tag `v*`, เปิด/อัปเดต PR หรือกด **Actions → Build desktop games → Run workflow** บน branch ที่มี workflow นี้

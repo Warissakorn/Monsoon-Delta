@@ -28,6 +28,8 @@ var _credits: VBoxContainer
 var _school: VBoxContainer
 var _school_button: Button
 var _continue_button: Button
+var _continue_group: VBoxContainer
+var _continue_summary: Label
 var _new_game_button: Button
 var _columns: HBoxContainer
 var _illustration: Control
@@ -121,10 +123,29 @@ func _validate_checkpoint() -> void:
 	var exists: bool = SaveIO.has_save(save_path)
 	var loaded: Dictionary = SaveIO.load_game(save_path)
 	_continue_button.visible = exists and loaded["state"] != null
+	_continue_group.visible = _continue_button.visible
+	_continue_summary.text = ""
+	_continue_button.tooltip_text = ""
+	if _continue_button.visible:
+		_describe_checkpoint(loaded["state"])
 	_new_game_button.theme_type_variation = "QuietButton" if _continue_button.visible else "PrimaryButton"
 	var error: String = loaded["error"]
 	if not error.is_empty():
 		show_error(error)
+
+
+func _describe_checkpoint(saved: GameState) -> void:
+	# Format the already validated model. Reading a resume card must not resolve
+	# a turn, repeat a harvest, draw RNG or rewrite a legacy checkpoint.
+	var lines: PackedStringArray = PackedStringArray()
+	if saved.phase == C.Phase.HARVEST:
+		lines.append(tr("menu.continue_harvest") % [saved.year, saved.target_years()])
+	else:
+		lines.append(tr("menu.continue_turn") % [saved.year, saved.target_years(), tr("season.rain" if saved.is_rain() else "season.dry"), saved.turn, C.TURNS_PER_YEAR])
+	lines.append(tr("menu.continue_run") % [tr("run_mode." + saved.run_mode + ".name"), tr("leader." + saved.leader + ".name"), saved.difficulty])
+	lines.append(tr("menu.continue_resources") % [saved.population, saved.food, saved.wood])
+	_continue_summary.text = "\n".join(lines)
+	_continue_button.tooltip_text = _continue_summary.text + "\n" + tr("menu.continue_seed") % str(saved.seed) + "\n" + tr("goal." + saved.village_goal + ".name")
 
 
 func _label(key: String, variant: String = "", muted: bool = false) -> Label:
@@ -279,8 +300,19 @@ func _build_home(parent: Node) -> void:
 	var top_space: Control = Control.new()
 	top_space.custom_minimum_size.y = 10
 	_home.add_child(top_space)
+	_continue_group = VBoxContainer.new()
+	_continue_group.name = "ContinueCard"
+	_continue_group.add_theme_constant_override("separation", 6)
+	_continue_group.hide()
+	_home.add_child(_continue_group)
 	_continue_button = _button("menu.continue", func(): continue_requested.emit(), "PrimaryButton", true)
-	_home.add_child(_continue_button)
+	_continue_button.name = "ContinueGame"
+	_continue_button.hide()
+	_continue_group.add_child(_continue_button)
+	_continue_summary = _label("", "Caption", true)
+	_continue_summary.name = "ContinueSummary"
+	_continue_summary.add_theme_font_size_override("font_size", 18)
+	_continue_group.add_child(_continue_summary)
 	_new_game_button = _button("menu.new_game", func(): _show_page(_setup), "PrimaryButton", true)
 	_home.add_child(_new_game_button)
 	_home.add_child(_button("menu.sandbox", func(): sandbox_requested.emit(), "QuietButton", true))
