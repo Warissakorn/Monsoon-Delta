@@ -309,5 +309,40 @@ class BootDifficultyTests(unittest.TestCase):
             self.assertEqual(self.checkpoint.read_bytes(), b"normal checkpoint sentinel\n")
 
 
+    def test_year_scene_has_365_day_state_and_preserves_other_saves(self):
+        original = b"normal checkpoint sentinel\n"
+        self.checkpoint.write_bytes(original)
+        self.invoke("--seed=73", "--goal=rice", scene="year")
+        self.assertEqual(self.checkpoint.read_bytes(), original)
+        saves = list((self.directory / "data").rglob("year365.json"))
+        self.assertEqual(len(saves), 1)
+        envelope = json.loads(saves[0].read_text())
+        self.assertEqual(envelope["format"], "monsoon_year")
+        self.assertEqual(envelope["state"]["day"], 0)
+        self.assertEqual(envelope["state"]["board"]["seed"], "73")
+        self.assertEqual(envelope["state"]["goal"], "rice")
+        self.assertEqual(len(envelope["state"]["weather"]), 365)
+        before = saves[0].read_bytes()
+        self.invoke("--difficulty=11", scene="year", expected=2)
+        self.assertEqual(saves[0].read_bytes(), before)
+        self.assertEqual(self.checkpoint.read_bytes(), original)
+
+    def test_year_scene_keeps_future_save_for_a_compatible_version(self):
+        directory = self.directory / "data" / "godot" / "app_userdata" / "Monsoon Delta"
+        directory.mkdir(parents=True, exist_ok=True)
+        path = directory / "year365.json"
+        original = path.read_bytes() if path.exists() else None
+        future = b'{"format":"monsoon_year","version":99,"ruleset":"future"}'
+        path.write_bytes(future)
+        try:
+            self.invoke(scene="year")
+            self.assertEqual(path.read_bytes(), future)
+        finally:
+            if original is None:
+                path.unlink()
+            else:
+                path.write_bytes(original)
+
+
 if __name__ == "__main__":
     unittest.main()

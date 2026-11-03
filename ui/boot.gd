@@ -53,8 +53,8 @@ func _ready() -> void:
 		get_tree().quit(2)
 		return
 	var scene := String(options.get("scene", "menu"))
-	if scene not in ["menu", "game", "sandbox", "school", "daily"]:
-		push_error("Supported scenes: --scene=menu, --scene=game, --scene=sandbox, --scene=school or --scene=daily.")
+	if scene not in ["menu", "game", "sandbox", "school", "daily", "year"]:
+		push_error("Supported scenes: --scene=menu, --scene=game, --scene=sandbox, --scene=school, --scene=daily or --scene=year.")
 		get_tree().quit(2)
 		return
 	_language = String(options.get("lang", GamePreferences.read()["language"]))
@@ -72,6 +72,7 @@ func _ready() -> void:
 		"game": _start_game({"seed": _initial_seed, "difficulty": _initial_difficulty, "ruleset": _initial_ruleset, "run_mode": String(options.get("run-mode", "classic")), "village_goal": String(options.get("goal", "none"))})
 		"sandbox": _show_sandbox()
 		"daily": _show_daily()
+		"year": _show_year(String(options.get("goal", "none")))
 		"school":
 			if options.has("lesson"):
 				_start_lesson(String(options["lesson"]))
@@ -149,6 +150,7 @@ func _show_menu(error: String = "", school_first: bool = false) -> void:
 	menu.continue_requested.connect(_continue_game)
 	menu.sandbox_requested.connect(_show_sandbox)
 	menu.daily_requested.connect(_show_daily)
+	menu.year_requested.connect(_show_year)
 	menu.lesson_requested.connect(_start_lesson)
 	menu.language_changed.connect(_change_language)
 	menu.quit_requested.connect(func(): get_tree().quit())
@@ -210,6 +212,14 @@ func _continue_game() -> void:
 	_initial_difficulty = _session.state.difficulty
 	_initial_ruleset = _session.state.ruleset
 	_show_game()
+
+
+func _show_year(goal: String = "none") -> void:
+	var screen: YearScreen = YearScreen.new()
+	screen.initial_seed = _initial_seed
+	screen.initial_goal = goal
+	screen.menu_requested.connect(_show_menu)
+	_replace_screen(screen)
 
 
 func _show_daily() -> void:

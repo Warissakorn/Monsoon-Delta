@@ -453,5 +453,350 @@
         "knowledge": 1
       }
     }
+  },
+  "year_game": {
+    "duration": 365,
+    "initial_resources": {
+      "food": 80,
+      "wood": 24,
+      "stone": 12,
+      "clay": 16,
+      "planks": 0,
+      "bricks": 0
+    },
+    "food_per_people": 3,
+    "base_storage": 120,
+    "granary_storage": 180,
+    "max_population": 12,
+    "water_iterations": 12,
+    "evaporation": 0.025,
+    "forest_absorb": 0.012,
+    "damage_per_day": 10,
+    "tolerance": {
+      "hall": 0.8,
+      "house": 0.5,
+      "stilt_house": 1.0,
+      "sawmill": 0.65,
+      "kiln": 0.65,
+      "granary": 0.8,
+      "gate": 3.0,
+      "reservoir": 10.0,
+      "waterwheel": 1.2
+    },
+    "weather": {
+      "dry": [
+        80,
+        140
+      ],
+      "early_rain": [
+        300,
+        650
+      ],
+      "flood": [
+        500,
+        900
+      ],
+      "receding": [
+        90,
+        180
+      ],
+      "storms": [
+        {
+          "start": 188,
+          "end": 196,
+          "peak": 5600
+        },
+        {
+          "start": 230,
+          "end": 242,
+          "peak": 7600
+        },
+        {
+          "start": 274,
+          "end": 287,
+          "peak": 9600
+        }
+      ]
+    },
+    "jobs": {
+      "forage": {
+        "workers": 1,
+        "days": 3,
+        "inputs": {},
+        "outputs": {
+          "food": 4
+        },
+        "target": "forest"
+      },
+      "fish": {
+        "workers": 1,
+        "days": 2,
+        "inputs": {},
+        "outputs": {
+          "food": 5
+        },
+        "target": "river"
+      },
+      "gather_wood": {
+        "workers": 1,
+        "days": 3,
+        "inputs": {},
+        "outputs": {
+          "wood": 3
+        },
+        "target": "forest",
+        "stock": 3
+      },
+      "gather_stone": {
+        "workers": 1,
+        "days": 4,
+        "inputs": {},
+        "outputs": {
+          "stone": 2
+        },
+        "target": "stone",
+        "stock": 2
+      },
+      "gather_clay": {
+        "workers": 1,
+        "days": 3,
+        "inputs": {},
+        "outputs": {
+          "clay": 3
+        },
+        "target": "clay",
+        "stock": 3
+      },
+      "build_sawmill": {
+        "workers": 2,
+        "days": 8,
+        "inputs": {
+          "wood": 8,
+          "stone": 3
+        },
+        "outputs": {},
+        "builds": "sawmill",
+        "target": "land"
+      },
+      "build_kiln": {
+        "workers": 2,
+        "days": 10,
+        "inputs": {
+          "wood": 6,
+          "stone": 4
+        },
+        "outputs": {},
+        "builds": "kiln",
+        "target": "land"
+      },
+      "saw_planks": {
+        "workers": 1,
+        "days": 3,
+        "inputs": {
+          "wood": 3
+        },
+        "outputs": {
+          "planks": 2
+        },
+        "target": "sawmill"
+      },
+      "fire_bricks": {
+        "workers": 1,
+        "days": 4,
+        "inputs": {
+          "wood": 1,
+          "clay": 3
+        },
+        "outputs": {
+          "bricks": 3
+        },
+        "target": "kiln"
+      },
+      "build_house": {
+        "workers": 2,
+        "days": 8,
+        "inputs": {
+          "wood": 6,
+          "stone": 2
+        },
+        "outputs": {},
+        "builds": "house",
+        "target": "land"
+      },
+      "build_granary": {
+        "workers": 2,
+        "days": 8,
+        "inputs": {
+          "wood": 4,
+          "planks": 3,
+          "bricks": 2
+        },
+        "outputs": {},
+        "builds": "granary",
+        "target": "land"
+      },
+      "build_reservoir": {
+        "workers": 2,
+        "days": 8,
+        "inputs": {
+          "wood": 2,
+          "stone": 4
+        },
+        "outputs": {},
+        "builds": "reservoir",
+        "target": "land"
+      },
+      "build_gate": {
+        "workers": 2,
+        "days": 6,
+        "inputs": {
+          "wood": 4,
+          "stone": 2
+        },
+        "outputs": {},
+        "builds": "gate",
+        "target": "channel"
+      },
+      "build_wheel": {
+        "workers": 2,
+        "days": 10,
+        "inputs": {
+          "planks": 4,
+          "bricks": 2
+        },
+        "outputs": {},
+        "builds": "waterwheel",
+        "target": "land",
+        "research": "water1"
+      },
+      "upgrade_house": {
+        "workers": 2,
+        "days": 6,
+        "inputs": {
+          "planks": 3,
+          "bricks": 2
+        },
+        "outputs": {},
+        "builds": "stilt_house",
+        "target": "house",
+        "research": "housing1"
+      },
+      "plant_paddy": {
+        "workers": 1,
+        "days": 5,
+        "inputs": {
+          "wood": 1
+        },
+        "outputs": {},
+        "target": "land"
+      },
+      "harvest": {
+        "workers": 1,
+        "days": 3,
+        "inputs": {},
+        "outputs": {},
+        "target": "paddy"
+      },
+      "plant_forest": {
+        "workers": 1,
+        "days": 5,
+        "inputs": {
+          "wood": 2
+        },
+        "outputs": {},
+        "target": "land"
+      },
+      "dig": {
+        "workers": 1,
+        "days": 2,
+        "inputs": {},
+        "outputs": {},
+        "target": "earth"
+      },
+      "fill": {
+        "workers": 1,
+        "days": 3,
+        "inputs": {
+          "stone": 1
+        },
+        "outputs": {},
+        "target": "earth"
+      },
+      "levee": {
+        "workers": 2,
+        "days": 2,
+        "inputs": {
+          "bricks": 4,
+          "stone": 2
+        },
+        "outputs": {},
+        "target": "earth",
+        "research": "water3"
+      },
+      "repair": {
+        "workers": 1,
+        "days": 3,
+        "inputs": {
+          "wood": 2,
+          "stone": 1
+        },
+        "outputs": {},
+        "target": "damaged"
+      },
+      "demolish": {
+        "workers": 1,
+        "days": 3,
+        "inputs": {},
+        "outputs": {},
+        "target": "structure"
+      }
+    },
+    "research": {
+      "water1": {
+        "cost": 1,
+        "requires": ""
+      },
+      "water2": {
+        "cost": 2,
+        "requires": "water1"
+      },
+      "water3": {
+        "cost": 3,
+        "requires": "water2"
+      },
+      "housing1": {
+        "cost": 1,
+        "requires": ""
+      },
+      "housing2": {
+        "cost": 2,
+        "requires": "housing1"
+      },
+      "housing3": {
+        "cost": 3,
+        "requires": "housing2"
+      },
+      "agriculture1": {
+        "cost": 1,
+        "requires": ""
+      },
+      "agriculture2": {
+        "cost": 2,
+        "requires": "agriculture1"
+      },
+      "agriculture3": {
+        "cost": 3,
+        "requires": "agriculture2"
+      }
+    },
+    "challenges": {
+      "production": 2,
+      "reserves": 1,
+      "shelter": 1,
+      "harvest": 2,
+      "early_rain": 2,
+      "flood": 2,
+      "forest": 1
+    }
   }
 }

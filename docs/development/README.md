@@ -122,3 +122,7 @@ XDG_DATA_HOME="$PWD/work/menu-draft-qa/en/data" XDG_CONFIG_HOME="$PWD/work/menu-
 ## ต้นแบบรายวัน
 
 ใช้ [คู่มือต้นแบบผลิตก่อนน้ำมา](../features/DAILY_PRODUCTION.md) สำหรับคำสั่งเล่น เซฟแยก ข้อจำกัดและ native probe และ [แผนหนึ่งปีแห่งสายน้ำ](../design/DAILY_YEAR.md) สำหรับงานที่ยังไม่ทำ ตรวจ `scripts/test.sh --filter=daily` แล้วชุดเต็มเมื่อแก้ core/เซฟ เปิด `--scene=daily` ทั้งสองภาษาเพื่อ smoke UI ใหม่
+
+## รอบเต็ม 365 วัน
+
+เปิด `--scene=year` ดู [คู่มือ](../features/YEAR365.md) สำหรับกฎปัจจุบันและเซฟ แก้ `YearGame`/`YearWeather`/`YearCheckpoint` แล้วตรวจ `scripts/test.sh --filter=year` และชุดเต็ม รวม boot CLI เมื่อแก้ทางเข้า Native ใช้ `tools/year_probe.gd` ผ่าน GUI จนจบปี โดย `tools/year_strategy.gd` วางแผนบนสำเนา ใช้ XDG แยกตามคู่มือ เปลี่ยน format/ruleset อย่างชัดเจนหากแก้กฎที่ทำให้เซฟเก่าเข้ากันไม่ได้
