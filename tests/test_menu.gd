@@ -34,6 +34,8 @@ func test_language_round_trip_preserves_setup_and_starts_the_selected_run() -> v
 		menu._change_language()
 		menu = boot._screen as MainMenu
 		assert_eq(menu.language, language)
+		assert_true(menu._continue_group.visible)
+		assert_true(menu._continue_summary.text.contains("ปี 1/5 · ฤดูแล้ง" if language == "th" else "Year 1/5 · Dry season"))
 		menu._show_page(menu._setup)
 		assert_eq(menu._seed_input.text, "  หมู่บ้าน rain 007  ", "changing display language keeps the original seed text")
 		assert_eq(menu._leader_option.selected, 2)
