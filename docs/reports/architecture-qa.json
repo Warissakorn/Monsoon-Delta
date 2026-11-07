@@ -1,0 +1,79 @@
+{
+  "captures": [
+    {
+      "draw_calls": 11,
+      "id": "village-dry",
+      "primitives": 27146
+    },
+    {
+      "draw_calls": 9,
+      "id": "house",
+      "primitives": 10106
+    },
+    {
+      "draw_calls": 9,
+      "id": "stilt-house",
+      "primitives": 10762
+    },
+    {
+      "draw_calls": 9,
+      "id": "raft-house",
+      "primitives": 12212
+    },
+    {
+      "draw_calls": 10,
+      "id": "hall",
+      "primitives": 9814
+    },
+    {
+      "draw_calls": 9,
+      "id": "granary",
+      "primitives": 12098
+    },
+    {
+      "draw_calls": 11,
+      "id": "village-developed",
+      "primitives": 30472
+    },
+    {
+      "draw_calls": 10,
+      "id": "house-weathered",
+      "primitives": 11174
+    },
+    {
+      "draw_calls": 11,
+      "id": "village-rain",
+      "primitives": 30508
+    },
+    {
+      "draw_calls": 10,
+      "id": "raft-high-water",
+      "primitives": 13202
+    }
+  ],
+  "checks": {
+    "development_is_read_only": true,
+    "exact_checkpoint_load": true,
+    "granary_image": true,
+    "hall_image": true,
+    "house-weathered_image": true,
+    "house_image": true,
+    "isolated_checkpoint": true,
+    "overview_hides_fine_details": true,
+    "preview_and_motion_are_read_only": true,
+    "raft-high-water_image": true,
+    "raft-house_image": true,
+    "refresh_did_not_change_state_or_rng": true,
+    "render_did_not_change_state_or_rng": true,
+    "stilt-house_image": true,
+    "view_did_not_write_checkpoint": true,
+    "village-developed_image": true,
+    "village-dry_image": true,
+    "village-rain_image": true,
+    "zoom_restores_fine_details": true
+  },
+  "display": "X11",
+  "engine": "4.6.3-stable (official)",
+  "fixture": true,
+  "note": "Authored architecture fixtures; not human playtesting or a hardware performance benchmark."
+}
