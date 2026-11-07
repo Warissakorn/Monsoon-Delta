@@ -327,6 +327,55 @@ class BootDifficultyTests(unittest.TestCase):
         self.assertEqual(saves[0].read_bytes(), before)
         self.assertEqual(self.checkpoint.read_bytes(), original)
 
+    def test_transport_scene_has_separate_checkpoint_and_preserves_year_and_normal(self):
+        original = b"normal checkpoint sentinel\n"
+        self.checkpoint.write_bytes(original)
+        directory = self.directory / "data" / "godot" / "app_userdata" / "Monsoon Delta"
+        year_path = directory / "year365.json"
+        transport_path = directory / "transport365.json"
+        previous = {path: path.read_bytes() if path.exists() else None
+                    for path in [year_path, transport_path]}
+        try:
+            self.invoke(scene="year")
+            year_before = year_path.read_bytes()
+            self.invoke("--seed=73", "--goal=rice", scene="transport")
+            envelope = json.loads(transport_path.read_text())
+            self.assertEqual(envelope["format"], "monsoon_transport")
+            self.assertEqual(envelope["version"], 1)
+            self.assertEqual(envelope["ruleset"], "transport365_v1")
+            self.assertEqual(envelope["year"]["state"]["board"]["seed"], "73")
+            self.assertEqual(envelope["year"]["state"]["goal"], "rice")
+            self.assertEqual(envelope["year"]["state"]["day"], 0)
+            before = transport_path.read_bytes()
+            self.invoke("--difficulty=11", scene="transport", expected=2)
+            self.assertEqual(transport_path.read_bytes(), before)
+            self.assertEqual(year_path.read_bytes(), year_before)
+            self.assertEqual(self.checkpoint.read_bytes(), original)
+        finally:
+            # This class shares its temporary XDG directory across cases.
+            # Restore both paths so the legacy year test still starts fresh.
+            for path, contents in previous.items():
+                if contents is None:
+                    path.unlink(missing_ok=True)
+                else:
+                    path.write_bytes(contents)
+
+    def test_transport_scene_preserves_future_checkpoint(self):
+        directory = self.directory / "data" / "godot" / "app_userdata" / "Monsoon Delta"
+        directory.mkdir(parents=True, exist_ok=True)
+        path = directory / "transport365.json"
+        original = path.read_bytes() if path.exists() else None
+        future = b'{"format":"monsoon_transport","version":99,"ruleset":"future"}'
+        path.write_bytes(future)
+        try:
+            self.invoke(scene="transport")
+            self.assertEqual(path.read_bytes(), future)
+        finally:
+            if original is None:
+                path.unlink()
+            else:
+                path.write_bytes(original)
+
     def test_year_scene_keeps_future_save_for_a_compatible_version(self):
         directory = self.directory / "data" / "godot" / "app_userdata" / "Monsoon Delta"
         directory.mkdir(parents=True, exist_ok=True)

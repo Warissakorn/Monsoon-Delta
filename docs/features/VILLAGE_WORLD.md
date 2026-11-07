@@ -50,6 +50,6 @@ XDG_DATA_HOME="$PWD/work/village-world-qa/th/data" XDG_CONFIG_HOME="$PWD/work/vi
 
 เปลี่ยน `th` เป็น `en` เพื่อตรวจอีกภาษา ภาพเป็น controlled fixtures ไม่ใช่รอบเล่นตามฤดูที่เล่นผ่านกฎ การคืนสภาพใน probe คือโหลด checkpoint ที่เตรียมไว้ ไม่ใช่กติกาฟื้นฟูหลังน้ำลด และตัวเลข software renderer ไม่ใช่ benchmark ฮาร์ดแวร์ผู้เล่น
 
-ผลล่าสุดพร้อมภาพและรายงานอยู่ใน [บันทึกพัฒนา](../history/PROGRESS.md) งานทดสอบการอ่านฉากโดยผู้เล่นและกลไกขนส่ง/อัปเกรดใหม่อยู่ในระยะถัดไปของแผน
+ผลล่าสุดพร้อมภาพและรายงานอยู่ใน [บันทึกพัฒนา](../history/PROGRESS.md) งานทดสอบการอ่านฉากโดยผู้เล่นและทางเลือกอัปเกรดยังค้าง; ระยะ 5 มี [ต้นแบบขนส่งแยกในโหมดปี 2D](TRANSPORT.md) แล้ว
 
 ผลวันที่ 2026-11-07: Godot 4.6.3 ผ่าน 632/632 tests (ชุดใหม่ 6/6), native world 28/28 และ living-village 47/47 ทั้งไทยและอังกฤษ ดู [world ไทย](../reports/village-world-qa-th.json) / [อังกฤษ](../reports/village-world-qa-en.json) และ [living ไทย](../reports/village-world-living-qa-th.json) / [อังกฤษ](../reports/village-world-living-qa-en.json)
