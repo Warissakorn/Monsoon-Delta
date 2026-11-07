@@ -80,7 +80,7 @@ func _ready() -> void:
 	_new_button = _button("year.new", func(): _restart.popup_centered(Vector2i(650, 420)))
 	nav.add_child(_new_button)
 	nav.add_child(_button("daily.retry_save", func(): session.checkpoint_year(); _refresh()))
-	var title: Label = _label(tr("year.title"), "Heading")
+	var title: Label = _label(tr(_title_key()), "Heading")
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	nav.add_child(title)
 	_status = _label("")
@@ -113,7 +113,7 @@ func _ready() -> void:
 	map_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	map_column.size_flags_stretch_ratio = 1.3
 	columns.add_child(map_column)
-	board = YearBoard.new()
+	board = _make_board()
 	board.custom_minimum_size = Vector2(600, 400)
 	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	board.tile_selected.connect(select_tile)
@@ -260,6 +260,22 @@ func _label(text: String, style: String = "") -> Label:
 	return label
 
 
+func _title_key() -> String:
+	return "year.title"
+
+
+func _make_board() -> YearBoard:
+	return YearBoard.new()
+
+
+func _preview_year() -> Dictionary:
+	return YearGame.preview(session.year)["state"]
+
+
+func _worker_count() -> int:
+	return YearGame.workers(session.year)
+
+
 func _button(key: String, callback: Callable) -> Button:
 	var button: Button = Button.new()
 	button.text = tr(key)
@@ -370,13 +386,13 @@ func _refresh() -> void:
 		return
 	var s: Dictionary = session.year
 	var need: int = YearGame.food_need(s)
-	_status.text = tr("year.status") % [int(s["day"]), tr("year.season." + DailyProduction.season(maxi(1, int(s["day"])))), int(s["population"]), YearGame.housing(s), YearGame.workers(s), int(s["population"]), int(s["resources"]["food"]) / maxi(1, need), int(s["knowledge"])]
+	_status.text = tr("year.status") % [int(s["day"]), tr("year.season." + DailyProduction.season(maxi(1, int(s["day"])))), int(s["population"]), YearGame.housing(s), _worker_count(), int(s["population"]), int(s["resources"]["food"]) / maxi(1, need), int(s["knowledge"])]
 	_resources.text = _materials(s["resources"])
 	var forecast: PackedStringArray = PackedStringArray()
 	for entry: Dictionary in YearWeather.forecast(s):
 		forecast.append("%d: %.2f" % [int(entry["day"]), float(entry["inflow"])])
 	_forecast.text = tr("year.forecast") + " · ".join(forecast)
-	_predicted = YearGame.preview(s)["state"]
+	_predicted = _preview_year()
 	_refresh_selection()
 	_undo.disabled = session.undo_plans.is_empty()
 	_redo.disabled = session.redo_plans.is_empty()

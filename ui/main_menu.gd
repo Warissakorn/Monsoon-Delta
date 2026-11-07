@@ -7,6 +7,7 @@ signal continue_requested()
 signal sandbox_requested()
 signal daily_requested()
 signal year_requested()
+signal transport_requested()
 signal lesson_requested(scenario_id: String)
 signal language_changed(language: String)
 signal quit_requested()
@@ -320,6 +321,9 @@ func _build_home(parent: Node) -> void:
 	var year_button: Button = _button("year.menu", func(): year_requested.emit(), "PrimaryButton", true)
 	year_button.name = "FullYearGame"
 	_home.add_child(year_button)
+	var transport_button: Button = _button("transport.menu", func(): transport_requested.emit(), "QuietButton", true)
+	transport_button.name = "TransportPilot"
+	_home.add_child(transport_button)
 	_home.add_child(_button("menu.sandbox", func(): sandbox_requested.emit(), "QuietButton", true))
 	_school_button = _button("school.title", show_school, "QuietButton", true)
 	_school_button.name = "RiverSchool"

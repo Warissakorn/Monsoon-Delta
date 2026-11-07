@@ -1,0 +1,355 @@
+{
+  "checks": [
+    {
+      "name": "screenshot menu-en",
+      "passed": true
+    },
+    {
+      "name": "control visible: TransportPilot",
+      "passed": true
+    },
+    {
+      "name": "menu opens separate transport pilot",
+      "passed": true
+    },
+    {
+      "name": "screenshot initial-en",
+      "passed": true
+    },
+    {
+      "name": "control visible: @CheckBox@156",
+      "passed": true
+    },
+    {
+      "name": "control visible: Locate_mill",
+      "passed": true
+    },
+    {
+      "name": "locate mill selects correct site",
+      "passed": true
+    },
+    {
+      "name": "preview and locate are read only",
+      "passed": true
+    },
+    {
+      "name": "control visible: Work_cut",
+      "passed": true
+    },
+    {
+      "name": "cut order reserves finite forest",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@154",
+      "passed": true
+    },
+    {
+      "name": "GUI undo restores year and reservations",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@155",
+      "passed": true
+    },
+    {
+      "name": "GUI redo restores production order",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@151",
+      "passed": true
+    },
+    {
+      "name": "GUI day matches combined preview exactly",
+      "passed": true
+    },
+    {
+      "name": "day checkpoint succeeds",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@151",
+      "passed": true
+    },
+    {
+      "name": "GUI day matches combined preview exactly",
+      "passed": true
+    },
+    {
+      "name": "day checkpoint succeeds",
+      "passed": true
+    },
+    {
+      "name": "cut output remains local",
+      "passed": true
+    },
+    {
+      "name": "control visible: Dock_mill",
+      "passed": true
+    },
+    {
+      "name": "mill dock closes through its own button",
+      "passed": true
+    },
+    {
+      "name": "control visible: Dispatch",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@151",
+      "passed": true
+    },
+    {
+      "name": "GUI day matches combined preview exactly",
+      "passed": true
+    },
+    {
+      "name": "day checkpoint succeeds",
+      "passed": true
+    },
+    {
+      "name": "closed dock holds unloaded reservation",
+      "passed": true
+    },
+    {
+      "name": "blocked shipment never loads",
+      "passed": true
+    },
+    {
+      "name": "screenshot blocked-en",
+      "passed": true
+    },
+    {
+      "name": "control visible: Dock_mill",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@151",
+      "passed": true
+    },
+    {
+      "name": "GUI day matches combined preview exactly",
+      "passed": true
+    },
+    {
+      "name": "day checkpoint succeeds",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@151",
+      "passed": true
+    },
+    {
+      "name": "GUI day matches combined preview exactly",
+      "passed": true
+    },
+    {
+      "name": "day checkpoint succeeds",
+      "passed": true
+    },
+    {
+      "name": "cargo remains in transit at a real canal cell",
+      "passed": true
+    },
+    {
+      "name": "reload cargo checkpoint",
+      "passed": true
+    },
+    {
+      "name": "cargo, nested water and RNG load exactly",
+      "passed": true
+    },
+    {
+      "name": "screenshot transit-en",
+      "passed": true
+    },
+    {
+      "name": "control visible: Cancel_2",
+      "passed": true
+    },
+    {
+      "name": "loaded cancellation requests physical return",
+      "passed": true
+    },
+    {
+      "name": "return request does not teleport cargo",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@151",
+      "passed": true
+    },
+    {
+      "name": "GUI day matches combined preview exactly",
+      "passed": true
+    },
+    {
+      "name": "day checkpoint succeeds",
+      "passed": true
+    },
+    {
+      "name": "boat returns reserved goods to source",
+      "passed": true
+    },
+    {
+      "name": "control visible: Dispatch",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@151",
+      "passed": true
+    },
+    {
+      "name": "GUI day matches combined preview exactly",
+      "passed": true
+    },
+    {
+      "name": "day checkpoint succeeds",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@151",
+      "passed": true
+    },
+    {
+      "name": "GUI day matches combined preview exactly",
+      "passed": true
+    },
+    {
+      "name": "day checkpoint succeeds",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@151",
+      "passed": true
+    },
+    {
+      "name": "GUI day matches combined preview exactly",
+      "passed": true
+    },
+    {
+      "name": "day checkpoint succeeds",
+      "passed": true
+    },
+    {
+      "name": "boat delivers raw wood to mill",
+      "passed": true
+    },
+    {
+      "name": "control visible: Work_saw",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@151",
+      "passed": true
+    },
+    {
+      "name": "GUI day matches combined preview exactly",
+      "passed": true
+    },
+    {
+      "name": "day checkpoint succeeds",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@151",
+      "passed": true
+    },
+    {
+      "name": "GUI day matches combined preview exactly",
+      "passed": true
+    },
+    {
+      "name": "day checkpoint succeeds",
+      "passed": true
+    },
+    {
+      "name": "mill consumes two wood per plank",
+      "passed": true
+    },
+    {
+      "name": "local plank is not yet available to village",
+      "passed": true
+    },
+    {
+      "name": "control visible: Dispatch",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@151",
+      "passed": true
+    },
+    {
+      "name": "GUI day matches combined preview exactly",
+      "passed": true
+    },
+    {
+      "name": "day checkpoint succeeds",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@151",
+      "passed": true
+    },
+    {
+      "name": "GUI day matches combined preview exactly",
+      "passed": true
+    },
+    {
+      "name": "day checkpoint succeeds",
+      "passed": true
+    },
+    {
+      "name": "land carrier delivers plank to store",
+      "passed": true
+    },
+    {
+      "name": "control visible: Claim",
+      "passed": true
+    },
+    {
+      "name": "warehouse claim recorded once",
+      "passed": true
+    },
+    {
+      "name": "warehouse claim becomes spendable village stock",
+      "passed": true
+    },
+    {
+      "name": "empty warehouse prevents a second claim",
+      "passed": true
+    },
+    {
+      "name": "final conserved model is checkpointable",
+      "passed": true
+    },
+    {
+      "name": "reload cargo checkpoint",
+      "passed": true
+    },
+    {
+      "name": "cargo, nested water and RNG load exactly",
+      "passed": true
+    },
+    {
+      "name": "screenshot complete-en",
+      "passed": true
+    },
+    {
+      "name": "other default checkpoint unchanged: user://save.json",
+      "passed": true
+    },
+    {
+      "name": "other default checkpoint unchanged: user://daily-production-prototype.json",
+      "passed": true
+    },
+    {
+      "name": "other default checkpoint unchanged: user://year365.json",
+      "passed": true
+    }
+  ],
+  "failed": 0,
+  "input": "GUI mouse events; form quantities and route options populated directly; new authored pilot seed 42, no simulation fixtures",
+  "language": "en"
+}
