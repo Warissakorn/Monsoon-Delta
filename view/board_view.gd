@@ -38,6 +38,7 @@ var _flow_view: FlowView
 var _activity_paused: bool = false
 var _actual_flow_report: TurnReport
 var _fine_details: MeshInstance3D
+var _scenery: VillageScenery
 
 
 func _process(_delta: float) -> void:
@@ -48,6 +49,8 @@ func _process(_delta: float) -> void:
 	var camera: Camera3D = get_viewport().get_camera_3d()
 	if camera != null:
 		_fine_details.visible = camera.projection != Camera3D.PROJECTION_ORTHOGONAL or camera.size <= 18.0
+		if _scenery != null:
+			_scenery.set_detail(_fine_details.visible)
 
 
 func _ready() -> void:
@@ -61,6 +64,7 @@ func set_reduced_motion(enabled: bool) -> void:
 	if _life_view != null:
 		_life_view.set_reduced_motion(enabled)
 		_flow_view.set_reduced_motion(enabled)
+		_scenery.set_reduced_motion(enabled)
 
 
 func set_state(next_state: GameState) -> void:
@@ -93,6 +97,7 @@ func refresh() -> void:
 		_route_view.set_state(null)
 		_life_view.set_state(null, null)
 		_flow_view.set_state(null)
+		_scenery.set_state(null, null)
 		_water_materials.clear()
 		return
 	# GL Compatibility has no instance shader uniforms. One cached material per
@@ -109,6 +114,7 @@ func refresh() -> void:
 	_refresh_preview()
 	_route_view.set_state(state)
 	_life_view.set_state(state, _route_view.graph)
+	_scenery.set_state(state, _route_view.graph)
 	_flow_view.set_state(state)
 	_flow_view.set_preview(_prediction, not _prediction.is_empty())
 	_update_water_flow()
@@ -144,11 +150,13 @@ func show_command_activity(id: String, coord: Vector2i) -> void:
 func show_turn_activity(report: TurnReport) -> void:
 	_ensure_nodes()
 	_life_view.show_report(report)
+	_scenery.show_report(report)
 
 
 func show_harvest_activity(food_by_tile: Dictionary) -> void:
 	_ensure_nodes()
 	_life_view.show_harvest(food_by_tile)
+	_scenery.show_harvest(food_by_tile)
 
 
 func show_actual_flow(report: TurnReport) -> void:
@@ -166,6 +174,7 @@ func clear_activity() -> void:
 	if _life_view != null:
 		_life_view.clear()
 		_flow_view.clear()
+		_scenery.clear_activity()
 	_update_water_flow()
 
 
@@ -184,6 +193,7 @@ func set_activity_paused(paused: bool) -> void:
 	if _life_view != null:
 		_life_view.set_paused(paused)
 		_flow_view.set_paused(paused)
+		_scenery.set_paused(paused)
 	for material: ShaderMaterial in _water_materials.values():
 		material.set_shader_parameter("motion_scale", 0.0 if paused or _reduced_motion else 1.0)
 
@@ -202,6 +212,8 @@ func _update_water_flow() -> void:
 	if report == null and _prediction.get("report") is TurnReport:
 		report = _prediction["report"]
 	var velocities: Dictionary = FlowView.tile_velocities(state, report) if report != null else {}
+	if _scenery != null:
+		_scenery.set_flow(velocities)
 	for coord: Vector2i in _water_materials:
 		var velocity: Vector2 = velocities.get(coord, Vector2.ZERO)
 		var material: ShaderMaterial = _water_materials[coord]
@@ -320,6 +332,10 @@ func _ensure_nodes() -> void:
 	_flow_view.name = "Flow"
 	_flow_view.actual_finished.connect(_on_actual_flow_finished)
 	add_child(_flow_view)
+	_scenery = VillageScenery.new()
+	_scenery.name = "VillageScenery"
+	add_child(_scenery)
+	_scenery.set_reduced_motion(_reduced_motion)
 	_life_view.set_reduced_motion(_reduced_motion)
 	_flow_view.set_reduced_motion(_reduced_motion)
 	_selection = MeshInstance3D.new()
