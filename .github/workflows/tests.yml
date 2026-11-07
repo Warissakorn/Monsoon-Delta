@@ -28,7 +28,7 @@ jobs:
       - name: Smoke test menu, game and sandbox
         run: |
           set -o pipefail
-          for scene in menu game sandbox; do
+          for scene in menu game sandbox daily year; do
             godot --headless --path . --quit-after 5 -- --scene="$scene" --lang=th --save-path=user://ci-smoke.json 2>&1 | tee smoke.log
             ! grep -Eq 'SCRIPT ERROR:|^ERROR:' smoke.log
           done

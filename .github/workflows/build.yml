@@ -45,7 +45,7 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x exports/linux/MonsoonDelta.x86_64
-          for scene in menu game sandbox; do
+          for scene in menu game sandbox daily year; do
             for lang in th en; do
               exports/linux/MonsoonDelta.x86_64 --headless --quit-after 5 -- --scene="$scene" --lang="$lang" --save-path=user://ci-export-smoke.json 2>&1 | tee -a linux-smoke.log
               ! grep -Eq 'SCRIPT ERROR:|^ERROR:' linux-smoke.log

@@ -1,0 +1,1539 @@
+{
+  "checks": [
+    {
+      "name": "screenshot initial-en",
+      "passed": true
+    },
+    {
+      "name": "control visible: @CheckBox@19",
+      "passed": true
+    },
+    {
+      "name": "risk preview is read only",
+      "passed": true
+    },
+    {
+      "name": "expanded board visible",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@137",
+      "passed": true
+    },
+    {
+      "name": "choose project through village panel",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@17",
+      "passed": true
+    },
+    {
+      "name": "undo project choice",
+      "passed": true
+    },
+    {
+      "name": "screenshot village-en",
+      "passed": true
+    },
+    {
+      "name": "screenshot zoom-en",
+      "passed": true
+    },
+    {
+      "name": "map zoom and pan do not change state",
+      "passed": true
+    },
+    {
+      "name": "hex selected: forage",
+      "passed": true
+    },
+    {
+      "name": "legal order: forage",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "hex selected: forage",
+      "passed": true
+    },
+    {
+      "name": "legal order: forage",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_stone",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_stone",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "hex selected: build_sawmill",
+      "passed": true
+    },
+    {
+      "name": "legal order: build_sawmill",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 0",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "burst advance is ignored",
+      "passed": true
+    },
+    {
+      "name": "hex selected: build_kiln",
+      "passed": true
+    },
+    {
+      "name": "legal order: build_kiln",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 9",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 12",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_stone",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_stone",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 15",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: saw_planks",
+      "passed": true
+    },
+    {
+      "name": "legal order: saw_planks",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "hex selected: fire_bricks",
+      "passed": true
+    },
+    {
+      "name": "legal order: fire_bricks",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 20",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 24",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@101",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_clay",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_clay",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 30",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@103",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_fiber",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_fiber",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@107",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@95",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 36",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "control visible: CancelTile_82",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 40",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: build_camp",
+      "passed": true
+    },
+    {
+      "name": "legal order: build_camp",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 42",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: build_granary",
+      "passed": true
+    },
+    {
+      "name": "legal order: build_granary",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 48",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "hex selected: saw_planks",
+      "passed": true
+    },
+    {
+      "name": "legal order: saw_planks",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 52",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: build_workshop",
+      "passed": true
+    },
+    {
+      "name": "legal order: build_workshop",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 57",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 64",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: fire_bricks",
+      "passed": true
+    },
+    {
+      "name": "legal order: fire_bricks",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_clay",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_clay",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 66",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: assemble_kits",
+      "passed": true
+    },
+    {
+      "name": "legal order: assemble_kits",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 68",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 76",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_stone",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_stone",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "hex selected: saw_planks",
+      "passed": true
+    },
+    {
+      "name": "legal order: saw_planks",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 78",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_clay",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_clay",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 86",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 88",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "control visible: CancelTile_16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 92",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_fiber",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_fiber",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 93",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: assemble_kits",
+      "passed": true
+    },
+    {
+      "name": "legal order: assemble_kits",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 94",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: improve_sawmill_efficient",
+      "passed": true
+    },
+    {
+      "name": "legal order: improve_sawmill_efficient",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 98",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 102",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: build_reservoir",
+      "passed": true
+    },
+    {
+      "name": "legal order: build_reservoir",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "hex selected: assemble_kits",
+      "passed": true
+    },
+    {
+      "name": "legal order: assemble_kits",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@109",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 104",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_stone",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_stone",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 105",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: saw_planks",
+      "passed": true
+    },
+    {
+      "name": "legal order: saw_planks",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 112",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 113",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "screenshot day-120-en",
+      "passed": true
+    },
+    {
+      "name": "reload milestone 120",
+      "passed": true
+    },
+    {
+      "name": "exact milestone 120",
+      "passed": true
+    },
+    {
+      "name": "hex selected: build_gate",
+      "passed": true
+    },
+    {
+      "name": "legal order: build_gate",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 120",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 121",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 125",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_stone",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_stone",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 127",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: build_house",
+      "passed": true
+    },
+    {
+      "name": "legal order: build_house",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 128",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: improve_granary_storage",
+      "passed": true
+    },
+    {
+      "name": "legal order: improve_granary_storage",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 137",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 142",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "screenshot day-180-en",
+      "passed": true
+    },
+    {
+      "name": "reload milestone 180",
+      "passed": true
+    },
+    {
+      "name": "exact milestone 180",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@105",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 180",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 181",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 185",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 228",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 237",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: repair",
+      "passed": true
+    },
+    {
+      "name": "legal order: repair",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 238",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 239",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: repair",
+      "passed": true
+    },
+    {
+      "name": "legal order: repair",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 240",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 241",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "screenshot day-242-en",
+      "passed": true
+    },
+    {
+      "name": "reload milestone 242",
+      "passed": true
+    },
+    {
+      "name": "exact milestone 242",
+      "passed": true
+    },
+    {
+      "name": "hex selected: repair",
+      "passed": true
+    },
+    {
+      "name": "legal order: repair",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_stone",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_stone",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 242",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 243",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "control visible: CancelTile_8",
+      "passed": true
+    },
+    {
+      "name": "hex selected: repair",
+      "passed": true
+    },
+    {
+      "name": "legal order: repair",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 244",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 245",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 256",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 257",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 271",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 280",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: repair",
+      "passed": true
+    },
+    {
+      "name": "legal order: repair",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 281",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 282",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: repair",
+      "passed": true
+    },
+    {
+      "name": "legal order: repair",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 283",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 284",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: repair",
+      "passed": true
+    },
+    {
+      "name": "legal order: repair",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 285",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 286",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: repair",
+      "passed": true
+    },
+    {
+      "name": "legal order: repair",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 287",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 288",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: repair",
+      "passed": true
+    },
+    {
+      "name": "legal order: repair",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "hex selected: gather_stone",
+      "passed": true
+    },
+    {
+      "name": "legal order: gather_stone",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 289",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 290",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: repair",
+      "passed": true
+    },
+    {
+      "name": "legal order: repair",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 291",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 292",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "hex selected: repair",
+      "passed": true
+    },
+    {
+      "name": "legal order: repair",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@82",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 293",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 294",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 299",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "screenshot day-300-en",
+      "passed": true
+    },
+    {
+      "name": "reload milestone 300",
+      "passed": true
+    },
+    {
+      "name": "exact milestone 300",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@97",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 300",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 301",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "GUI orders match plan day 304",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@16",
+      "passed": true
+    },
+    {
+      "name": "screenshot day-365-en",
+      "passed": true
+    },
+    {
+      "name": "reload milestone 365",
+      "passed": true
+    },
+    {
+      "name": "exact milestone 365",
+      "passed": true
+    },
+    {
+      "name": "full 365 days reached",
+      "passed": true
+    },
+    {
+      "name": "year completed through GUI commands",
+      "passed": true
+    },
+    {
+      "name": "production challenge completed",
+      "passed": true
+    },
+    {
+      "name": "rewards used for advanced protection",
+      "passed": true
+    },
+    {
+      "name": "real flood damage handled",
+      "passed": true
+    },
+    {
+      "name": "normal checkpoint unchanged",
+      "passed": true
+    },
+    {
+      "name": "prototype checkpoint unchanged",
+      "passed": true
+    },
+    {
+      "name": "all three project rewards earned",
+      "passed": true
+    },
+    {
+      "name": "mechanism kits crafted",
+      "passed": true
+    },
+    {
+      "name": "kits spent on mutually exclusive building upgrade",
+      "passed": true
+    },
+    {
+      "name": "work camp extends map access",
+      "passed": true
+    },
+    {
+      "name": "screenshot project-complete-en",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@8",
+      "passed": true
+    },
+    {
+      "name": "new year confirmation visible",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@145",
+      "passed": true
+    },
+    {
+      "name": "cancel new year preserves completed run",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@8",
+      "passed": true
+    },
+    {
+      "name": "screenshot new-year-en",
+      "passed": true
+    },
+    {
+      "name": "control visible: @Button@143",
+      "passed": true
+    },
+    {
+      "name": "new year starts at day zero",
+      "passed": true
+    },
+    {
+      "name": "new year uses chosen seed",
+      "passed": true
+    },
+    {
+      "name": "new year uses chosen goal",
+      "passed": true
+    },
+    {
+      "name": "new year uses chosen project",
+      "passed": true
+    },
+    {
+      "name": "control visible: FullYearGame",
+      "passed": true
+    },
+    {
+      "name": "menu opens full year",
+      "passed": true
+    },
+    {
+      "name": "menu keeps normal checkpoint",
+      "passed": true
+    }
+  ],
+  "failed": 0,
+  "input": "GUI mouse events; form fields populated from a reference policy on a copy",
+  "language": "en"
+}

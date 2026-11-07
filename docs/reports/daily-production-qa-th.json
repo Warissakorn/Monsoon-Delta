@@ -1,0 +1,198 @@
+{
+  "checks": [
+    {
+      "name": "normal fixture saved",
+      "passed": true
+    },
+    {
+      "name": "screenshot: initial-th",
+      "passed": true
+    },
+    {
+      "name": "clickable: มอบหมาย",
+      "passed": true
+    },
+    {
+      "name": "order accepted: build_sawmill",
+      "passed": true
+    },
+    {
+      "name": "clickable: มอบหมาย",
+      "passed": true
+    },
+    {
+      "name": "order accepted: build_kiln",
+      "passed": true
+    },
+    {
+      "name": "clickable: มอบหมาย",
+      "passed": true
+    },
+    {
+      "name": "order accepted: gather_wood",
+      "passed": true
+    },
+    {
+      "name": "clickable: ถึงเหตุการณ์ถัดไป",
+      "passed": true
+    },
+    {
+      "name": "stop at sawmill completion",
+      "passed": true
+    },
+    {
+      "name": "clickable: ถึงเหตุการณ์ถัดไป",
+      "passed": true
+    },
+    {
+      "name": "stop at kiln completion",
+      "passed": true
+    },
+    {
+      "name": "clickable: มอบหมาย",
+      "passed": true
+    },
+    {
+      "name": "order accepted: saw_planks",
+      "passed": true
+    },
+    {
+      "name": "clickable: มอบหมาย",
+      "passed": true
+    },
+    {
+      "name": "order accepted: fire_bricks",
+      "passed": true
+    },
+    {
+      "name": "clickable: ถึงเหตุการณ์ถัดไป",
+      "passed": true
+    },
+    {
+      "name": "clickable: ถึงเหตุการณ์ถัดไป",
+      "passed": true
+    },
+    {
+      "name": "clickable: ถึงเหตุการณ์ถัดไป",
+      "passed": true
+    },
+    {
+      "name": "crafting orders finish",
+      "passed": true
+    },
+    {
+      "name": "first challenge grants knowledge",
+      "passed": true
+    },
+    {
+      "name": "clickable: มอบหมาย",
+      "passed": true
+    },
+    {
+      "name": "order accepted: build_foundation",
+      "passed": true
+    },
+    {
+      "name": "clickable: ถึงเหตุการณ์ถัดไป",
+      "passed": true
+    },
+    {
+      "name": "foundation spends and earns next reward",
+      "passed": true
+    },
+    {
+      "name": "clickable: มอบหมาย",
+      "passed": true
+    },
+    {
+      "name": "order accepted: build_barrier",
+      "passed": true
+    },
+    {
+      "name": "clickable: ถึงเหตุการณ์ถัดไป",
+      "passed": true
+    },
+    {
+      "name": "barrier built before floods",
+      "passed": true
+    },
+    {
+      "name": "screenshot: prepared-th",
+      "passed": true
+    },
+    {
+      "name": "prototype reload succeeds",
+      "passed": true
+    },
+    {
+      "name": "prototype reload exact",
+      "passed": true
+    },
+    {
+      "name": "clickable: ถึงเหตุการณ์ถัดไป",
+      "passed": true
+    },
+    {
+      "name": "stop at first flood warning",
+      "passed": true
+    },
+    {
+      "name": "clickable: ถึงเหตุการณ์ถัดไป",
+      "passed": true
+    },
+    {
+      "name": "burst input blocked",
+      "passed": true
+    },
+    {
+      "name": "clickable: ถึงเหตุการณ์ถัดไป",
+      "passed": true
+    },
+    {
+      "name": "clickable: ถึงเหตุการณ์ถัดไป",
+      "passed": true
+    },
+    {
+      "name": "clickable: ถึงเหตุการณ์ถัดไป",
+      "passed": true
+    },
+    {
+      "name": "clickable: ถึงเหตุการณ์ถัดไป",
+      "passed": true
+    },
+    {
+      "name": "clickable: ถึงเหตุการณ์ถัดไป",
+      "passed": true
+    },
+    {
+      "name": "complete reward chain survives both floods",
+      "passed": true
+    },
+    {
+      "name": "normal checkpoint preserved",
+      "passed": true
+    },
+    {
+      "name": "screenshot: complete-th",
+      "passed": true
+    },
+    {
+      "name": "daily entry exists in real menu",
+      "passed": true
+    },
+    {
+      "name": "clickable: ผลิตก่อนน้ำมา · ต้นแบบ",
+      "passed": true
+    },
+    {
+      "name": "menu click opens daily scene",
+      "passed": true
+    },
+    {
+      "name": "menu transition preserves normal save",
+      "passed": true
+    }
+  ],
+  "failed": 0,
+  "language": "th"
+}
