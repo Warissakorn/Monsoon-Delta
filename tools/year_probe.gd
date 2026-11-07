@@ -10,6 +10,7 @@ var _checks: Array = []
 var _out: String = ""
 var _language: String = "en"
 var _captured: Array[int] = []
+var _legacy: bool = false
 
 
 func _initialize() -> void:
@@ -76,7 +77,7 @@ func _command(command: Dictionary) -> void:
 		return
 	_screen._tabs.current_tab = 0
 	var id: String = command["id"]
-	var group: String = "build" if id.begins_with("build_") or id == "upgrade_house" else ("food" if id in ["forage", "fish", "plant_paddy", "harvest"] else ("materials" if id.begins_with("gather_") or id in ["saw_planks", "fire_bricks"] else "land"))
+	var group: String = YearScreen.action_group(id)
 	_screen._group.select(YearScreen.GROUPS.find(group))
 	_screen._group.item_selected.emit(_screen._group.selected)
 	for index: int in range(_screen._action.item_count):
@@ -104,6 +105,8 @@ func _run() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--out-dir="):
 			_out = arg.trim_prefix("--out-dir=")
+		if arg == "--legacy":
+			_legacy = true
 		if arg.begins_with("--lang="):
 			_language = arg.trim_prefix("--lang=")
 	if DisplayServer.get_name() == "headless" or not _out.is_absolute_path() or _language not in ["th", "en"]:
@@ -129,17 +132,40 @@ func _run() -> void:
 	_screen = YearScreen.new()
 	_screen.session = YearSession.new()
 	_screen.session.save_path = path
+	_screen.initial_project = "craft"
+	if _legacy:
+		_screen.session.start_year(42)
 	root.add_child(_screen)
 	await _frames(10)
 	await _shot("initial-" + _language)
 	var snapshot: Dictionary = _screen.session.year.duplicate(true)
 	await _click(_screen._preview)
 	_check(_screen.session.year == snapshot, "risk preview is read only")
+	if not _legacy:
+		_check(_screen.board.model["structures"].size() == 127, "expanded board visible")
+		_screen._tabs.current_tab = 5
+		await _frames()
+		_screen._village_project.select(1)
+		await _click(_screen._project_button)
+		_check(_screen.session.year["project"] == "water", "choose project through village panel")
+		await _click(_screen._undo)
+		_check(_screen.session.year["project"] == "craft", "undo project choice")
+		await _shot("village-" + _language)
+		_screen._tabs.current_tab = 0
+		var before_zoom: Dictionary = _screen.session.year.duplicate(true)
+		_screen.board.zoom_by(1.5)
+		_screen.board.focus_selected()
+		await _shot("zoom-" + _language)
+		_screen.board.fit_map()
+		_check(_screen.session.year == before_zoom, "map zoom and pan do not change state")
 	var iterations: int = 0
 	while _screen.session.year["outcome"] == "running" and iterations < 500:
 		var planned: Dictionary = _screen.session.year.duplicate(true)
 		var commands: Array = []
-		YearStrategy.plan(planned, true, commands)
+		if YearGame.expanded(planned):
+			YearProjectStrategy.plan(planned, commands)
+		else:
+			YearStrategy.plan(planned, true, commands)
 		for command: Dictionary in commands:
 			await _command(command)
 		_check(_screen.session.year == planned, "GUI orders match plan day %d" % int(planned["day"]))
@@ -167,6 +193,13 @@ func _run() -> void:
 	_check(int(_screen.session.year["stats"]["damage"]) > 0, "real flood damage handled")
 	_check(FileAccess.get_file_as_bytes(normal) == normal_bytes, "normal checkpoint unchanged")
 	_check(FileAccess.get_file_as_bytes(prototype) == prototype_bytes, "prototype checkpoint unchanged")
+	if not _legacy:
+		_check(_screen.session.year["project_stage"] == 3, "all three project rewards earned")
+		_check(int(_screen.session.year["stats"]["kits"]) >= 4, "mechanism kits crafted")
+		_check("sawmill_efficient" in _screen.session.year["upgrades"], "kits spent on mutually exclusive building upgrade")
+		_check("camp" in _screen.session.year["structures"], "work camp extends map access")
+		_screen._tabs.current_tab = 5
+		await _shot("project-complete-" + _language)
 	var completed: Dictionary = _screen.session.year.duplicate(true)
 	await _click(_screen._new_button)
 	await _frames()
@@ -176,11 +209,13 @@ func _run() -> void:
 	await _click(_screen._new_button)
 	_screen._seed.text = "73"
 	_screen._goal.select(2)
+	_screen._project.select(1)
 	await _shot("new-year-" + _language)
 	await _click(_screen._restart.get_ok_button())
 	_check(_screen.session.year["day"] == 0, "new year starts at day zero")
 	_check(_screen.session.year["board"]["seed"] == "73", "new year uses chosen seed")
 	_check(_screen.session.year["goal"] == "forest", "new year uses chosen goal")
+	_check(_screen.session.year["project"] == "water", "new year uses chosen project")
 	_screen.free()
 	var boot: MenuBoot = MenuBoot.new()
 	boot._save_path = normal

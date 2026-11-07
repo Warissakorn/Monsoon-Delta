@@ -798,5 +798,214 @@
       "flood": 2,
       "forest": 1
     }
+  },
+  "year_expansion": {
+    "radius": 6,
+    "work_radius": 3,
+    "camp_build_radius": 5,
+    "initial_resources": {
+      "fiber": 0,
+      "kits": 0
+    },
+    "tolerance": {
+      "workshop": 0.65,
+      "camp": 0.8
+    },
+    "jobs": {
+      "gather_fiber": {
+        "days": 3,
+        "workers": 1,
+        "inputs": {},
+        "outputs": {
+          "fiber": 3
+        },
+        "target": "fiber",
+        "stock": 3
+      },
+      "build_workshop": {
+        "days": 8,
+        "workers": 2,
+        "inputs": {
+          "planks": 4,
+          "bricks": 3,
+          "wood": 4
+        },
+        "outputs": {},
+        "builds": "workshop",
+        "target": "land"
+      },
+      "assemble_kits": {
+        "days": 4,
+        "workers": 1,
+        "inputs": {
+          "planks": 2,
+          "stone": 1,
+          "fiber": 2
+        },
+        "outputs": {
+          "kits": 1
+        },
+        "target": "workshop"
+      },
+      "build_camp": {
+        "days": 5,
+        "workers": 2,
+        "inputs": {
+          "wood": 4,
+          "stone": 2
+        },
+        "outputs": {},
+        "builds": "camp",
+        "target": "land"
+      }
+    },
+    "upgrades": {
+      "granary_storage": {
+        "target": "granary",
+        "days": 4,
+        "workers": 2,
+        "inputs": {
+          "planks": 3,
+          "bricks": 2
+        }
+      },
+      "granary_raised": {
+        "target": "granary",
+        "days": 4,
+        "workers": 2,
+        "inputs": {
+          "bricks": 4,
+          "fiber": 2
+        }
+      },
+      "sawmill_fast": {
+        "target": "sawmill",
+        "days": 3,
+        "workers": 1,
+        "inputs": {
+          "kits": 2,
+          "planks": 2
+        }
+      },
+      "sawmill_efficient": {
+        "target": "sawmill",
+        "days": 3,
+        "workers": 1,
+        "inputs": {
+          "kits": 2,
+          "stone": 2
+        }
+      },
+      "reservoir_deep": {
+        "target": "reservoir",
+        "days": 4,
+        "workers": 2,
+        "inputs": {
+          "bricks": 4,
+          "stone": 2
+        }
+      },
+      "reservoir_reach": {
+        "target": "reservoir",
+        "days": 3,
+        "workers": 1,
+        "inputs": {
+          "kits": 2,
+          "fiber": 2
+        }
+      },
+      "house_room": {
+        "target": "home",
+        "days": 4,
+        "workers": 2,
+        "inputs": {
+          "planks": 3,
+          "fiber": 3
+        }
+      },
+      "house_safe": {
+        "target": "home",
+        "days": 4,
+        "workers": 2,
+        "inputs": {
+          "bricks": 3,
+          "fiber": 2
+        }
+      },
+      "gate_control": {
+        "target": "gate",
+        "days": 3,
+        "workers": 1,
+        "inputs": {
+          "kits": 2,
+          "planks": 2
+        }
+      },
+      "gate_service": {
+        "target": "gate",
+        "days": 3,
+        "workers": 1,
+        "inputs": {
+          "kits": 1,
+          "stone": 2
+        }
+      }
+    },
+    "projects": {
+      "food": {
+        "knowledge": [
+          1,
+          1,
+          2
+        ],
+        "materials": [
+          {
+            "fiber": 6
+          },
+          {
+            "bricks": 4
+          },
+          {
+            "wood": 8
+          }
+        ]
+      },
+      "water": {
+        "knowledge": [
+          1,
+          2,
+          2
+        ],
+        "materials": [
+          {
+            "bricks": 4
+          },
+          {
+            "kits": 2
+          },
+          {
+            "wood": 10
+          }
+        ]
+      },
+      "craft": {
+        "knowledge": [
+          2,
+          2,
+          2
+        ],
+        "materials": [
+          {
+            "fiber": 4
+          },
+          {
+            "bricks": 6
+          },
+          {
+            "wood": 10
+          }
+        ]
+      }
+    }
   }
 }

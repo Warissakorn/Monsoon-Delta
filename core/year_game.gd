@@ -7,8 +7,31 @@ const STRUCTURES: Array[String] = ["", "hall", "house", "stilt_house", "sawmill"
 const REPEATABLE: Array[String] = ["forage", "fish", "gather_wood", "gather_stone", "gather_clay", "saw_planks", "fire_bricks", "repair"]
 
 
-static func config() -> Dictionary:
-	return DataDB.balance()["year_game"]
+static func config(s: Dictionary = {}) -> Dictionary:
+	return YearExpansion.config() if expanded(s) else DataDB.balance()["year_game"]
+
+
+static func expanded(s: Dictionary) -> bool:
+	return s.get("ruleset", "year365_v1") == "year365_v2"
+
+
+static func resources(s: Dictionary) -> Array[String]:
+	return YearExpansion.RESOURCES if expanded(s) else RESOURCES
+
+
+static func structures(s: Dictionary) -> Array[String]:
+	return YearExpansion.STRUCTURES if expanded(s) else STRUCTURES
+
+
+static func repeatable(s: Dictionary) -> Array[String]:
+	var result: Array[String] = REPEATABLE.duplicate()
+	if expanded(s):
+		result.append_array(["gather_fiber", "assemble_kits"])
+	return result
+
+
+static func new_expanded(seed_value: int = 42, goal: String = "none", project: String = "food") -> Dictionary:
+	return YearExpansion.create(seed_value, goal, project)
 
 
 static func new_game(seed_value: int = 42, goal: String = "none") -> Dictionary:
@@ -61,7 +84,7 @@ static func workers(s: Dictionary) -> int:
 	var used: int = 0
 	for job: Dictionary in s["jobs"]:
 		if not job["paused"]:
-			used += int(config()["jobs"][job["id"]]["workers"])
+			used += int(config(s)["jobs"][job["id"]]["workers"])
 	return used
 
 
@@ -69,53 +92,63 @@ static func housing(s: Dictionary) -> int:
 	var total: int = 0
 	for index: int in range(s["structures"].size()):
 		if s["structures"][index] in ["house", "stilt_house"] and int(s["health"][index]) > 0:
-			total += 3 if "housing3" in s["research"] else 2
+			total += (3 if "housing3" in s["research"] else 2) + (1 if YearExpansion.upgrade(s, index) == "house_room" else 0)
 	return total
 
 
 static func food_need(s: Dictionary) -> int:
-	return ceili(float(s["population"]) / (4.0 if "agriculture2" in s["research"] else float(config()["food_per_people"])))
+	return ceili(float(s["population"]) / (4.0 if "agriculture2" in s["research"] else float(config(s)["food_per_people"])))
 
 
 static func storage(s: Dictionary) -> int:
-	var total: int = int(config()["base_storage"])
+	var total: int = int(config(s)["base_storage"])
 	for index: int in range(s["structures"].size()):
 		if s["structures"][index] == "granary" and int(s["health"][index]) > 0:
-			total += int(config()["granary_storage"])
+			total += int(config(s)["granary_storage"]) + (180 if YearExpansion.upgrade(s, index) == "granary_storage" else 0)
+	if expanded(s) and s["project"] == "food" and int(s["project_stage"]) >= 1:
+		total += 40
 	return total
 
 
 static func target_matches(s: Dictionary, id: String, index: int) -> bool:
-	if not config()["jobs"].has(id) or index < 0 or index >= s["structures"].size():
+	if not config(s)["jobs"].has(id) or index < 0 or index >= s["structures"].size():
 		return false
 	var tile: Dictionary = s["board"]["tiles"][index]
 	if tile["is_sea"] or tile["is_source"]:
 		return false
 	var structure: String = s["structures"][index]
-	var target: String = config()["jobs"][id]["target"]
+	var target: String = config(s)["jobs"][id]["target"]
 	match target:
 		"forest": return tile["feature"] == "forest" and (id == "forage" or int(s["stock"][index]) >= 3)
 		"river": return tile["is_river"] or float(tile["water"]) >= 0.1
-		"stone", "clay": return s["deposits"][index] == target and int(s["stock"][index]) >= int(config()["jobs"][id].get("stock", 1))
+		"stone", "clay", "fiber": return s["deposits"][index] == target and int(s["stock"][index]) >= int(config(s)["jobs"][id].get("stock", 1))
 		"land": return structure.is_empty() and tile["feature"] == "none" and s["deposits"][index] == "" and not tile["is_river"]
 		"channel": return structure.is_empty() and tile["feature"] == "none" and s["deposits"][index] == ""
 		"earth": return structure.is_empty() and tile["feature"] in ["none", "paddy"] and (int(tile["elevation"]) > -3 if id == "dig" else int(tile["elevation"]) < 4)
 		"house": return structure == "house" and int(s["health"][index]) > 0
+		"home": return structure in ["house", "stilt_house"] and int(s["health"][index]) > 0
 		"paddy": return tile["feature"] == "paddy" and int(s["crop_growth"][index]) >= 45
 		"damaged": return not structure.is_empty() and int(s["health"][index]) < 100
 		"structure": return not structure.is_empty() and structure != "hall"
 		_: return structure == target and int(s["health"][index]) > 0
 
 
-static func check_order(s: Dictionary, id: String, index: int, batches: int = 1, repeat: bool = false, direction: int = 0) -> String:
+static func check_order(s: Dictionary, id: String, index: int, batches: int = 1, repeat: bool = false, direction: int = 0, stop_at: int = 0, reserve: int = 0) -> String:
 	if s["outcome"] != "running":
 		return "year.error.finished"
-	if not config()["jobs"].has(id) or batches < 1 or batches > 100 or direction < 0 or direction > 5:
+	if not config(s)["jobs"].has(id) or batches < 1 or batches > 100 or direction < 0 or direction > 5:
 		return "year.error.order"
 	if not target_matches(s, id, index):
 		return "year.error.target"
-	var definition: Dictionary = config()["jobs"][id]
-	var reusable: bool = id in REPEATABLE
+	var definition: Dictionary = config(s)["jobs"][id]
+	if stop_at < 0 or stop_at > 100000 or reserve < 0 or reserve > 100000 or (not expanded(s) and (stop_at > 0 or reserve > 0)):
+		return "year.error.order"
+	if expanded(s):
+		if not YearExpansion.in_reach(s, id, index):
+			return "exp.error.camp"
+		if definition.has("improves") and not String(s["upgrades"][index]).is_empty():
+			return "exp.error.improved"
+	var reusable: bool = id in repeatable(s)
 	if (not reusable and (batches != 1 or repeat)) or (repeat and batches != 1):
 		return "year.error.order"
 	if definition.has("research") and definition["research"] not in s["research"]:
@@ -139,20 +172,26 @@ static func check_order(s: Dictionary, id: String, index: int, batches: int = 1,
 			return "year.error.occupied"
 	if workers(s) + int(definition["workers"]) > int(s["population"]):
 		return "year.error.workers"
-	for resource: String in definition["inputs"]:
-		if int(s["resources"][resource]) < int(definition["inputs"][resource]) * batches:
+	var inputs: Dictionary = YearExpansion.inputs(s, id, index)
+	for resource: String in inputs:
+		if int(s["resources"][resource]) < int(inputs[resource]) * batches:
 			return "year.error.materials"
+	if expanded(s) and inputs.has("wood") and int(s["resources"]["wood"]) - int(inputs["wood"]) * batches < reserve:
+		return "exp.error.reserve"
 	return ""
 
 
-static func order(s: Dictionary, id: String, index: int, batches: int = 1, repeat: bool = false, direction: int = 0) -> String:
-	var error: String = check_order(s, id, index, batches, repeat, direction)
+static func order(s: Dictionary, id: String, index: int, batches: int = 1, repeat: bool = false, direction: int = 0, stop_at: int = 0, reserve: int = 0) -> String:
+	var error: String = check_order(s, id, index, batches, repeat, direction, stop_at, reserve)
 	if not error.is_empty():
 		return error
-	var definition: Dictionary = config()["jobs"][id]
-	for resource: String in definition["inputs"]:
-		s["resources"][resource] = int(s["resources"][resource]) - int(definition["inputs"][resource]) * batches
-	s["jobs"].append({"id": id, "tile": index, "remaining": batches, "progress": 0, "paused": false, "repeat": repeat, "reserved": true, "direction": direction})
+	var inputs: Dictionary = YearExpansion.inputs(s, id, index)
+	for resource: String in inputs:
+		s["resources"][resource] = int(s["resources"][resource]) - int(inputs[resource]) * batches
+	var job: Dictionary = {"id": id, "tile": index, "remaining": batches, "progress": 0, "paused": false, "repeat": repeat, "reserved": true, "direction": direction}
+	if expanded(s):
+		job.merge({"inputs": inputs, "stop_at": stop_at, "reserve": reserve})
+	s["jobs"].append(job)
 	return ""
 
 
@@ -163,11 +202,11 @@ static func edit_job(s: Dictionary, index: int, cancel: bool) -> String:
 		var job: Dictionary = s["jobs"][position]
 		if int(job["tile"]) != index:
 			continue
-		var definition: Dictionary = config()["jobs"][job["id"]]
+		var definition: Dictionary = config(s)["jobs"][job["id"]]
 		if cancel:
 			var refund: int = maxi(0, int(job["remaining"]) - (1 if int(job["progress"]) > 0 else 0)) if job["reserved"] else 0
-			for resource: String in definition["inputs"]:
-				s["resources"][resource] = int(s["resources"][resource]) + refund * int(definition["inputs"][resource])
+			for resource: String in YearExpansion.job_inputs(s, job):
+				s["resources"][resource] = int(s["resources"][resource]) + refund * int(YearExpansion.job_inputs(s, job)[resource])
 			s["jobs"].remove_at(position)
 		else:
 			if job["paused"] and workers(s) + int(definition["workers"]) > int(s["population"]):
@@ -178,9 +217,9 @@ static func edit_job(s: Dictionary, index: int, cancel: bool) -> String:
 
 
 static func learn(s: Dictionary, id: String) -> String:
-	if s["outcome"] != "running" or not config()["research"].has(id) or id in s["research"]:
+	if s["outcome"] != "running" or not config(s)["research"].has(id) or id in s["research"]:
 		return "year.error.research"
-	var definition: Dictionary = config()["research"][id]
+	var definition: Dictionary = config(s)["research"][id]
 	if (not String(definition["requires"]).is_empty() and definition["requires"] not in s["research"]) or int(s["knowledge"]) < int(definition["cost"]):
 		return "year.error.knowledge"
 	s["knowledge"] = int(s["knowledge"]) - int(definition["cost"])
@@ -191,12 +230,29 @@ static func learn(s: Dictionary, id: String) -> String:
 static func toggle_gate(s: Dictionary, index: int) -> String:
 	if s["outcome"] != "running" or index < 0 or index >= s["structures"].size() or s["structures"][index] != "gate" or int(s["health"][index]) <= 0:
 		return "year.error.target"
-	s["board"]["tiles"][index]["gate_open"] = not s["board"]["tiles"][index]["gate_open"]
+	if expanded(s) and s["upgrades"][index] == "gate_control":
+		if not s["board"]["tiles"][index]["gate_open"]:
+			s["board"]["tiles"][index]["gate_open"] = true
+			s["gate_half"][index] = true
+		elif s["gate_half"][index]:
+			s["gate_half"][index] = false
+		else:
+			s["board"]["tiles"][index]["gate_open"] = false
+	else:
+		s["board"]["tiles"][index]["gate_open"] = not s["board"]["tiles"][index]["gate_open"]
 	return ""
 
 
-static func _job_days(s: Dictionary, id: String) -> int:
-	return 1 if id == "repair" and "housing3" in s["research"] else int(config()["jobs"][id]["days"])
+static func _job_days(s: Dictionary, id: String, index: int = -1) -> int:
+	var days: int = 1 if id == "repair" and "housing3" in s["research"] else int(config(s)["jobs"][id]["days"])
+	if expanded(s) and index >= 0:
+		if id == "repair" and YearExpansion.upgrade(s, index) == "gate_service":
+			days = 1
+		if (id == "saw_planks" and YearExpansion.upgrade(s, index) == "sawmill_fast") or (id == "assemble_kits" and s["project"] == "craft" and int(s["project_stage"]) >= 2) or (id.begins_with("improve_") and s["project"] == "craft" and int(s["project_stage"]) >= 3):
+			days = maxi(1, days - 1)
+		if YearExpansion.distance_to_work(s, index) >= 2:
+			days += 1
+	return days
 
 
 static func job_status(s: Dictionary, job: Dictionary) -> String:
@@ -205,36 +261,50 @@ static func job_status(s: Dictionary, job: Dictionary) -> String:
 	var index: int = int(job["tile"])
 	var id: String = job["id"]
 	var tile: Dictionary = s["board"]["tiles"][index]
+	if expanded(s):
+		if not YearExpansion.in_reach(s, id, index):
+			return "exp.job.camp"
+		var outputs: Dictionary = config(s)["jobs"][id]["outputs"]
+		for resource: String in outputs:
+			if int(job["progress"]) == 0 and int(job["stop_at"]) > 0 and int(s["resources"][resource]) >= int(job["stop_at"]):
+				return "exp.job.target"
+		if not job["reserved"] and job["inputs"].has("wood") and int(s["resources"]["wood"]) - int(job["inputs"]["wood"]) < int(job["reserve"]):
+			return "exp.job.reserve"
 	if id in ["forage", "gather_wood"] and tile["feature"] != "forest":
 		return "year.job.exhausted"
-	if config()["jobs"][id].has("stock") and int(s["stock"][index]) < int(config()["jobs"][id]["stock"]):
+	if config(s)["jobs"][id].has("stock") and int(s["stock"][index]) < int(config(s)["jobs"][id]["stock"]):
 		return "year.job.exhausted"
 	if id == "repair" and int(s["health"][index]) >= 100:
 		return "year.job.complete"
-	if id in ["saw_planks", "fire_bricks"] and int(s["health"][index]) <= 0:
+	if id in ["saw_planks", "fire_bricks", "assemble_kits"] and int(s["health"][index]) <= 0:
 		return "year.job.damage"
 	if id == "fish" and float(tile["water"]) < 0.05:
 		return "year.job.water"
 	if id not in ["fish", "build_gate", "build_wheel", "dig", "repair", "demolish"] and float(tile["water"]) >= 0.75:
 		return "year.job.water"
 	if not job["reserved"]:
-		for resource: String in config()["jobs"][id]["inputs"]:
-			if int(s["resources"][resource]) < int(config()["jobs"][id]["inputs"][resource]):
+		for resource: String in YearExpansion.job_inputs(s, job):
+			if int(s["resources"][resource]) < int(YearExpansion.job_inputs(s, job)[resource]):
 				return "year.job.materials"
 	return "year.job.working"
+
+
+static func outputs(s: Dictionary, id: String) -> Dictionary:
+	var result: Dictionary = config(s)["jobs"][id]["outputs"].duplicate(true)
+	if result.has("food"):
+		result["food"] = int(result["food"]) + (1 if "agriculture3" in s["research"] else 0) + (1 if expanded(s) and s["project"] == "food" and int(s["project_stage"]) >= 2 else 0)
+	return result
 
 
 static func _finish_job(s: Dictionary, job: Dictionary, events: Array) -> void:
 	var id: String = job["id"]
 	var index: int = int(job["tile"])
-	var definition: Dictionary = config()["jobs"][id]
+	var definition: Dictionary = config(s)["jobs"][id]
 	var tile: Dictionary = s["board"]["tiles"][index]
-	for resource: String in definition["outputs"]:
-		var amount: int = int(definition["outputs"][resource])
-		if resource == "food" and "agriculture3" in s["research"]:
-			amount += 1
+	for resource: String in outputs(s, id):
+		var amount: int = int(outputs(s, id)[resource])
 		s["resources"][resource] = int(s["resources"][resource]) + amount
-		if resource in ["food", "planks"]:
+		if resource in (["food", "planks", "kits"] if expanded(s) else ["food", "planks"]):
 			s["stats"][resource] = int(s["stats"][resource]) + amount
 	if definition.has("stock"):
 		s["stock"][index] = maxi(0, int(s["stock"][index]) - int(definition["stock"]))
@@ -247,11 +317,17 @@ static func _finish_job(s: Dictionary, job: Dictionary, events: Array) -> void:
 		var building: String = definition["builds"]
 		s["structures"][index] = building
 		s["health"][index] = 100
-		tile["building"] = "none" if building in ["sawmill", "kiln"] else building
+		tile["building"] = "none" if building in ["sawmill", "kiln", "workshop", "camp"] else building
 		if building == "reservoir":
 			tile["elevation"] = maxi(-3, int(tile["elevation"]) - 2)
 		if building == "waterwheel":
 			tile["wheel_dir"] = int(job["direction"])
+	if definition.has("improves"):
+		s["upgrades"][index] = definition["improves"]
+		if definition["improves"] == "reservoir_deep":
+			tile["elevation"] = maxi(-3, int(tile["elevation"]) - 1)
+	if expanded(s) and id in ["dig", "fill", "levee"]:
+		s["stats"]["earthworks"] = int(s["stats"]["earthworks"]) + 1
 	match id:
 		"plant_paddy":
 			tile["feature"] = "paddy"
@@ -268,8 +344,14 @@ static func _finish_job(s: Dictionary, job: Dictionary, events: Array) -> void:
 		"dig": tile["elevation"] = maxi(-3, int(tile["elevation"]) - 1)
 		"fill": tile["elevation"] = mini(4, int(tile["elevation"]) + 1)
 		"levee": tile["elevation"] = mini(4, int(tile["elevation"]) + 2)
-		"repair": s["health"][index] = mini(100, int(s["health"][index]) + 60)
+		"repair":
+			s["health"][index] = mini(100, int(s["health"][index]) + (80 if expanded(s) and s["project"] == "water" and int(s["project_stage"]) >= 3 else 60))
+			if expanded(s) and int(s["day"]) >= 300:
+				s["stats"]["recovery_repairs"] = int(s["stats"]["recovery_repairs"]) + 1
 		"demolish":
+			if expanded(s):
+				s["upgrades"][index] = ""
+				s["gate_half"][index] = false
 			s["structures"][index] = ""
 			s["health"][index] = 0
 			tile["building"] = "none"
@@ -279,15 +361,19 @@ static func _finish_job(s: Dictionary, job: Dictionary, events: Array) -> void:
 static func _work(s: Dictionary, events: Array) -> void:
 	var done: Array = []
 	for job: Dictionary in s["jobs"]:
-		if job_status(s, job) != "year.job.working":
+		var status: String = job_status(s, job)
+		if status != "year.job.working":
+			if status in ["exp.job.target", "exp.job.reserve"]:
+				job["paused"] = true
+				events.append("exp.event.policy_pause")
 			continue
-		var definition: Dictionary = config()["jobs"][job["id"]]
+		var definition: Dictionary = config(s)["jobs"][job["id"]]
 		if not job["reserved"]:
-			for resource: String in definition["inputs"]:
-				s["resources"][resource] = int(s["resources"][resource]) - int(definition["inputs"][resource])
+			for resource: String in YearExpansion.job_inputs(s, job):
+				s["resources"][resource] = int(s["resources"][resource]) - int(YearExpansion.job_inputs(s, job)[resource])
 			job["reserved"] = true
 		job["progress"] = int(job["progress"]) + 1
-		if int(job["progress"]) < _job_days(s, job["id"]):
+		if int(job["progress"]) < _job_days(s, job["id"], int(job["tile"])):
 			continue
 		_finish_job(s, job, events)
 		job["progress"] = 0
@@ -307,9 +393,9 @@ static func _water(s: Dictionary, events: Array) -> void:
 	var season: String = DailyProduction.season(int(s["day"]))
 	board.turn = 4 if season in ["early_rain", "flood"] else 1
 	board.year_mods = [
-		{"key": "water_iterations", "op": "set", "value": float(config()["water_iterations"])},
-		{"key": "forest_absorb", "op": "set", "value": float(config()["forest_absorb"]) + (0.015 if "agriculture3" in s["research"] else 0.0)},
-		{"key": "evaporation_dry", "op": "set", "value": float(config()["evaporation"])},
+		{"key": "water_iterations", "op": "set", "value": float(config(s)["water_iterations"])},
+		{"key": "forest_absorb", "op": "set", "value": float(config(s)["forest_absorb"]) + (0.015 if "agriculture3" in s["research"] else 0.0)},
+		{"key": "evaporation_dry", "op": "set", "value": float(config(s)["evaporation"])},
 		{"key": "wheel_amount", "op": "set", "value": 0.12},
 	]
 	board.recompute_mods()
@@ -319,7 +405,10 @@ static func _water(s: Dictionary, events: Array) -> void:
 				board.tiles[index].building = C.Building.NONE
 			elif s["structures"][index] == "gate":
 				board.tiles[index].gate_open = true
-	WaterSim.simulate(board, float(s["weather"][int(s["day"]) - 1]) / 1000.0, false)
+	if expanded(s):
+		YearExpansion.simulate(board, s, float(s["weather"][int(s["day"]) - 1]) / 1000.0)
+	else:
+		WaterSim.simulate(board, float(s["weather"][int(s["day"]) - 1]) / 1000.0, false)
 	WaterSim.absorb(board)
 	WaterSim.evaporate(board)
 	var damaged: bool = false
@@ -329,10 +418,12 @@ static func _water(s: Dictionary, events: Array) -> void:
 		if structure == "waterwheel" and int(s["health"][index]) == 0:
 			tile.building = C.Building.WATERWHEEL
 		if not structure.is_empty() and int(s["health"][index]) > 0:
-			var tolerance: float = float(config()["tolerance"][structure]) + (0.25 if "housing2" in s["research"] else 0.0)
+			var tolerance: float = float(config(s)["tolerance"][structure]) + (0.25 if "housing2" in s["research"] else 0.0)
+			if YearExpansion.upgrade(s, index) in ["house_safe", "granary_raised"]:
+				tolerance += 0.4
 			if tile.water >= tolerance:
-				s["health"][index] = maxi(0, int(s["health"][index]) - int(config()["damage_per_day"]))
-				s["stats"]["damage"] = int(s["stats"]["damage"]) + int(config()["damage_per_day"])
+				s["health"][index] = maxi(0, int(s["health"][index]) - int(config(s)["damage_per_day"]))
+				s["stats"]["damage"] = int(s["stats"]["damage"]) + int(config(s)["damage_per_day"])
 				damaged = true
 				if int(s["health"][index]) == 0 and structure == "hall":
 					s["outcome"] = "lost_hall"
@@ -355,11 +446,15 @@ static func _water(s: Dictionary, events: Array) -> void:
 		var watered: bool = season in ["early_rain", "flood"] or tile.water >= 0.1
 		if not watered:
 			var radius: int = 2 if "water2" in s["research"] else 1
+			if expanded(s) and s["project"] == "water" and int(s["project_stage"]) >= 2:
+				radius += 1
 			for other: int in range(board.tiles.size()):
 				var source: Tile = board.tiles[other]
-				if s["structures"][other] == "reservoir" and int(s["health"][other]) > 0 and source.water >= 0.04 and Hex.distance(tile.coord, source.coord) <= radius:
+				if s["structures"][other] == "reservoir" and int(s["health"][other]) > 0 and source.water >= 0.04 and Hex.distance(tile.coord, source.coord) <= radius + (1 if YearExpansion.upgrade(s, other) == "reservoir_reach" else 0):
 					source.water -= 0.01 if "water2" in s["research"] else 0.02
 					watered = true
+					if expanded(s):
+						s["stats"]["irrigated_days"] = int(s["stats"]["irrigated_days"]) + 1
 					break
 		if watered:
 			var previous: int = int(s["crop_growth"][index])
@@ -383,6 +478,8 @@ static func _population(s: Dictionary, events: Array) -> void:
 	else:
 		s["resources"]["food"] = int(s["resources"]["food"]) - need
 		s["starvation"] = 0
+		if expanded(s):
+			s["stats"]["fed_days"] = int(s["stats"]["fed_days"]) + 1
 	if int(s["resources"]["food"]) < need * 7:
 		events.append("year.event.food_low")
 	var capacity: int = housing(s)
@@ -390,7 +487,7 @@ static func _population(s: Dictionary, events: Array) -> void:
 		s["population"] = maxi(0, int(s["population"]) - 1)
 		s["stats"]["departed"] = int(s["stats"]["departed"]) + 1
 		events.append("year.event.housing_low")
-	if int(s["day"]) % 60 == 0 and int(s["population"]) < mini(capacity, int(config()["max_population"])) and int(s["resources"]["food"]) >= int(s["population"]) * 10:
+	if int(s["day"]) % 60 == 0 and int(s["population"]) < mini(capacity, int(config(s)["max_population"])) and int(s["resources"]["food"]) >= int(s["population"]) * 10:
 		s["population"] = int(s["population"]) + 1
 		s["resources"]["food"] = int(s["resources"]["food"]) - 8
 		s["stats"]["born"] = int(s["stats"]["born"]) + 1
@@ -429,7 +526,7 @@ static func _challenges(s: Dictionary, events: Array) -> void:
 	for id: String in ready:
 		if ready[id] and id not in s["claimed"]:
 			s["claimed"].append(id)
-			s["knowledge"] = int(s["knowledge"]) + int(config()["challenges"][id])
+			s["knowledge"] = int(s["knowledge"]) + int(config(s)["challenges"][id])
 			events.append("year.event.challenge_" + id)
 
 
@@ -442,7 +539,7 @@ static func goal_met(s: Dictionary) -> bool:
 
 
 static func score(s: Dictionary) -> int:
-	return int(s["population"]) * 100 + int(s["resources"]["food"]) + s["claimed"].size() * 50 + (250 if s["outcome"] == "won" and goal_met(s) else 0)
+	return int(s["population"]) * 100 + int(s["resources"]["food"]) + s["claimed"].size() * 50 + (250 if s["outcome"] == "won" and goal_met(s) else 0) + (int(s["project_stage"]) * 100 if expanded(s) else 0)
 
 
 static func resolve_day(s: Dictionary) -> Array:
@@ -462,6 +559,8 @@ static func resolve_day(s: Dictionary) -> Array:
 		events.append("year.event.storm")
 	if s["outcome"] == "running":
 		_challenges(s, events)
+		if expanded(s):
+			YearExpansion.after_day(s, events)
 		if day == 365:
 			s["outcome"] = "won"
 			events.append("year.event.won")

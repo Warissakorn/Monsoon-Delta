@@ -13,7 +13,7 @@ static func _has_job(s: Dictionary, id: String) -> bool:
 static func target(s: Dictionary, id: String) -> int:
 	var best: int = -1
 	var elevation: int = -100
-	for index: int in range(61):
+	for index: int in range(s["structures"].size()):
 		if YearGame.check_order(s, id, index).is_empty() and int(s["board"]["tiles"][index]["elevation"]) > elevation:
 			best = index
 			elevation = int(s["board"]["tiles"][index]["elevation"])
@@ -44,7 +44,7 @@ static func plan(s: Dictionary, industry: bool = true, commands: Array = []) -> 
 		if index >= 0:
 			_order(s, "forage", index, 1, true, commands)
 	# Water damage is resolved physically, not by milestone requirements.
-	for index: int in range(61):
+	for index: int in range(s["structures"].size()):
 		if s["structures"][index] not in ["hall", "house", "stilt_house"] or int(s["health"][index]) >= 90:
 			continue
 		var error: String = YearGame.check_order(s, "repair", index)
@@ -65,7 +65,7 @@ static func plan(s: Dictionary, industry: bool = true, commands: Array = []) -> 
 	if not industry or int(s["day"]) >= 160:
 		return
 	for id: String in ["build_sawmill", "build_kiln"]:
-		var structure: String = YearGame.config()["jobs"][id]["builds"]
+		var structure: String = YearGame.config(s)["jobs"][id]["builds"]
 		if structure not in s["structures"] and not _has_job(s, id):
 			var index: int = target(s, id)
 			if index >= 0:

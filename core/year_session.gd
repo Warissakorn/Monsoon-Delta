@@ -12,8 +12,8 @@ func _init() -> void:
 	save_path = YEAR_PATH
 
 
-func start_year(seed_value: int = 42, goal: String = "none") -> String:
-	var next: Dictionary = YearGame.new_game(seed_value, goal)
+func start_year(seed_value: int = 42, goal: String = "none", project: String = "") -> String:
+	var next: Dictionary = YearGame.new_game(seed_value, goal) if project.is_empty() else YearGame.new_expanded(seed_value, goal, project)
 	if next.is_empty():
 		return "msg.new_game_failed"
 	year = next
@@ -22,17 +22,18 @@ func start_year(seed_value: int = 42, goal: String = "none") -> String:
 	return checkpoint_year()
 
 
-func edit_year(action: String, id: String = "", tile: int = -1, batches: int = 1, repeat: bool = false, direction: int = 0) -> String:
+func edit_year(action: String, id: String = "", tile: int = -1, batches: int = 1, repeat: bool = false, direction: int = 0, stop_at: int = 0, reserve: int = 0) -> String:
 	if year.is_empty():
 		return "year.error.order"
 	var copy: Dictionary = year.duplicate(true)
 	var error: String = "year.error.order"
 	match action:
-		"order": error = YearGame.order(copy, id, tile, batches, repeat, direction)
+		"order": error = YearGame.order(copy, id, tile, batches, repeat, direction, stop_at, reserve)
 		"pause": error = YearGame.edit_job(copy, tile, false)
 		"cancel": error = YearGame.edit_job(copy, tile, true)
 		"learn": error = YearGame.learn(copy, id)
 		"gate": error = YearGame.toggle_gate(copy, tile)
+		"project": error = YearExpansion.choose_project(copy, id)
 	if not error.is_empty():
 		return error
 	undo_plans.append(year.duplicate(true))

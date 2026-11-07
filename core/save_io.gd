@@ -218,7 +218,7 @@ static func _can_serialize(state: GameState) -> bool:
 	return _valid_stats(state.stats, state.target_years()) and _valid_report(state.harvest_report, state.phase == C.Phase.HARVEST) and _valid_modifiers(state.year_mods)
 
 
-static func _valid_state(data: Dictionary) -> bool:
+static func _valid_state(data: Dictionary, expected_coords: Array[Vector2i] = []) -> bool:
 	if not _has_fields(data, STATE_FIELDS) or not _integer(data["version"], 1, 1):
 		return false
 	var ruleset: Variant = data.get("ruleset", "legacy")
@@ -287,7 +287,7 @@ static func _valid_state(data: Dictionary) -> bool:
 			return false
 		if data["outcome"] == "none" and (int(data["year"]) == target_years or data["population"] == 0):
 			return false
-	var coords: Array[Vector2i] = Hex.coords()
+	var coords: Array[Vector2i] = Hex.coords() if expected_coords.is_empty() else expected_coords
 	if not data["tiles"] is Array or data["tiles"].size() != coords.size():
 		return false
 	for index: int in range(coords.size()):

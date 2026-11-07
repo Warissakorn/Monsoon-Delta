@@ -8,16 +8,41 @@ var selected: int = -1
 var targets: Array[int] = []
 var predicted: Dictionary = {}
 var _radius: float = 30.0
+var zoom: float = 1.0
+var pan: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	clip_contents = true
 	resized.connect(queue_redraw)
+
+
+func zoom_by(factor: float, anchor: Vector2 = Vector2.INF) -> void:
+	var before: float = zoom
+	zoom = clampf(zoom * factor, 1.0, 3.0)
+	if anchor == Vector2.INF:
+		anchor = size * 0.5
+	pan = anchor - size * 0.5 - (anchor - size * 0.5 - pan) * zoom / before
+	queue_redraw()
+
+
+func fit_map() -> void:
+	zoom = 1.0
+	pan = Vector2.ZERO
+	queue_redraw()
+
+
+func focus_selected() -> void:
+	if selected < 0 or model.is_empty():
+		return
+	pan += size * 0.5 - center_of(selected)
+	queue_redraw()
 
 
 func center_of(index: int) -> Vector2:
 	var tile: Dictionary = model["board"]["tiles"][index]
-	return size * 0.5 + Vector2(Hex.SQRT_3 * (float(tile["q"]) + float(tile["r"]) * 0.5), float(tile["r"]) * 1.5) * _radius
+	return size * 0.5 + pan + Vector2(Hex.SQRT_3 * (float(tile["q"]) + float(tile["r"]) * 0.5), float(tile["r"]) * 1.5) * _radius
 
 
 func polygon_of(index: int) -> PackedVector2Array:
@@ -29,8 +54,17 @@ func polygon_of(index: int) -> PackedVector2Array:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		zoom_by(1.2 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / 1.2, event.position)
+		accept_event()
+		return
+	if event is InputEventMouseMotion and event.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
+		pan += event.relative
+		queue_redraw()
+		accept_event()
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and not model.is_empty():
-		for index: int in range(61):
+		for index: int in range(model["structures"].size()):
 			if Geometry2D.is_point_in_polygon(event.position, polygon_of(index)):
 				accept_event()
 				tile_selected.emit(index)
@@ -40,10 +74,11 @@ func _gui_input(event: InputEvent) -> void:
 func _draw() -> void:
 	if model.is_empty():
 		return
-	_radius = maxf(12.0, minf((size.x - 24.0) / 16.0, (size.y - 24.0) / 15.0))
+	var radius: int = 6 if YearGame.expanded(model) else 4
+	_radius = maxf(8.0, minf((size.x - 24.0) / ((2 * radius + 1) * Hex.SQRT_3), (size.y - 24.0) / (3 * radius + 2))) * zoom
 	var font: Font = get_theme_default_font()
-	var font_size: int = clampi(roundi(_radius * 0.44), 16, 24)
-	for index: int in range(61):
+	var font_size: int = clampi(roundi(_radius * 0.42), 10, 24)
+	for index: int in range(model["structures"].size()):
 		var tile: Dictionary = model["board"]["tiles"][index]
 		var water: float = float(tile["water"])
 		var polygon: PackedVector2Array = polygon_of(index)
@@ -83,7 +118,7 @@ func _draw() -> void:
 		var width: float = font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 		draw_string(font, center + Vector2(-width * 0.5, 2), label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color("#f1ead7"))
 		var detail: String = "%d · %.2f" % [int(tile["elevation"]), water]
-		var small: int = maxi(14, font_size - 3)
+		var small: int = maxi(9, font_size - 3)
 		width = font.get_string_size(detail, HORIZONTAL_ALIGNMENT_LEFT, -1, small).x
 		draw_string(font, center + Vector2(-width * 0.5, _radius * 0.43), detail, HORIZONTAL_ALIGNMENT_LEFT, -1, small, Color("#d3dfdb"))
 		if not structure.is_empty():
