@@ -71,7 +71,7 @@ func rotate_step(direction: int) -> void:
 
 func zoom_step(direction: int) -> void:
 	setup()
-	_zoom_target = clampf(_zoom_target + float(direction) * 1.5, 12.0, 27.0)
+	_zoom_target = clampf(_zoom_target + float(direction) * 1.5, 6.0, 27.0)
 	if _zoom_tween != null and _zoom_tween.is_valid():
 		_zoom_tween.kill()
 	if _reduced_motion:

@@ -1,0 +1,486 @@
+{
+  "checks": {
+    "advisor_focus_hall": true,
+    "advisor_inspector_stays_on_hall": true,
+    "committed_job_carry_visible": true,
+    "condition_single_line": true,
+    "critical_advice_without_preview": true,
+    "developed_checkpoint": true,
+    "fixture-critical-advice-preview-hidden_screenshot": true,
+    "fixture-hall-peril-focused_screenshot": true,
+    "fixture-hall-peril_screenshot": true,
+    "fixture-recorded-water-transfers_screenshot": true,
+    "fixture-reduced-motion_screenshot": true,
+    "fixture-stable-delivery_screenshot": true,
+    "fixture-stable-outbound_screenshot": true,
+    "fixture-stable-work_screenshot": true,
+    "fixture-struggling_screenshot": true,
+    "fixture-thriving-age-two_screenshot": true,
+    "fixture-village-detail_screenshot": true,
+    "fixture_checkpoint": true,
+    "fixture_exact_load": true,
+    "hall_peril_predicted": true,
+    "isolated_settings": true,
+    "legal-after-undo-redo-load_screenshot": true,
+    "legal-chop-command_screenshot": true,
+    "legal_chop_activity": true,
+    "legal_chop_committed": true,
+    "legal_chop_target_exists": true,
+    "legal_load": true,
+    "legal_load_clears_activity": true,
+    "legal_load_exact_state": true,
+    "legal_session_start": true,
+    "native_chop_shortcut": true,
+    "native_escape_cancels_tool": true,
+    "native_pause_open": true,
+    "native_pause_resume": true,
+    "native_redo_clears_activity": true,
+    "native_redo_exact_state": true,
+    "native_undo_clears_activity": true,
+    "native_undo_exact_state": true,
+    "peril_inspection_read_only": true,
+    "reduced_motion_fixed_poses": true,
+    "resource_food_single_line": true,
+    "resource_labor_single_line": true,
+    "resource_people_single_line": true,
+    "resource_wood_single_line": true,
+    "view_checkpoint_unchanged": true,
+    "view_rng_unchanged": true,
+    "view_state_unchanged": true
+  },
+  "display": "X11",
+  "engine": "4.6.3-stable (official)",
+  "fixture": true,
+  "isolated_save": "/workspace/Monsoon-Delta/work/building-detail/living-en/legal-controller-checkpoint.json",
+  "isolated_settings": "/workspace/Monsoon-Delta/work/building-detail/living-en/fixture-settings.json",
+  "language": "en",
+  "note": "Controlled visual/integration fixtures; not a legal playthrough or human playtest. Native software-renderer timings are not a hardware benchmark.",
+  "observations": [
+    {
+      "active_jobs": [
+        {
+          "carrying": false,
+          "coord": "(-2, 2)",
+          "kind": "chop",
+          "position": "(-2.96735, 0.825, 0.817384)",
+          "stage": "outbound"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 0)",
+          "kind": "farm",
+          "position": "(-2.03706, 0.825, 2.058522)",
+          "stage": "outbound"
+        },
+        {
+          "carrying": false,
+          "coord": "(2, -1)",
+          "kind": "fish",
+          "position": "(-2.138577, 0.825, -0.661109)",
+          "stage": "outbound"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 1)",
+          "kind": "harvest",
+          "position": "(-2.96735, 0.825, 0.817384)",
+          "stage": "outbound"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 259,
+      "flow_preview_nodes": 1,
+      "id": "fixture-stable-outbound",
+      "inspector": "Land · (1, 2)",
+      "process_seconds": 0.29409,
+      "queued_jobs": 0,
+      "render_objects": 1259,
+      "road_routes": 12,
+      "screenshot": "/workspace/Monsoon-Delta/work/building-detail/living-en/fixture-stable-outbound.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [
+        {
+          "carrying": false,
+          "coord": "(-2, 2)",
+          "kind": "chop",
+          "position": "(-1.732051, 0.825, 3.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 0)",
+          "kind": "farm",
+          "position": "(0.755, 0.825, 0.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(2, -1)",
+          "kind": "fish",
+          "position": "(0.113182, 0.825, -0.196038)",
+          "stage": "outbound"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 1)",
+          "kind": "harvest",
+          "position": "(0.446375, 0.825, 2.119077)",
+          "stage": "outbound"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 259,
+      "flow_preview_nodes": 1,
+      "id": "fixture-stable-work",
+      "inspector": "Land · (1, 2)",
+      "process_seconds": 0.407465,
+      "queued_jobs": 0,
+      "render_objects": 1255,
+      "road_routes": 12,
+      "screenshot": "/workspace/Monsoon-Delta/work/building-detail/living-en/fixture-stable-work.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [
+        {
+          "carrying": false,
+          "coord": "(-2, 2)",
+          "kind": "chop",
+          "position": "(-1.732051, 0.825, 3.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 0)",
+          "kind": "farm",
+          "position": "(0.755, 0.825, 0.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(2, -1)",
+          "kind": "fish",
+          "position": "(0.113182, 0.825, -0.196038)",
+          "stage": "outbound"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 1)",
+          "kind": "harvest",
+          "position": "(0.446375, 0.825, 2.119077)",
+          "stage": "outbound"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 160,
+      "flow_preview_nodes": 1,
+      "id": "fixture-village-detail",
+      "inspector": "Land · (-1, 1)",
+      "process_seconds": 0.407465,
+      "queued_jobs": 0,
+      "render_objects": 198,
+      "road_routes": 12,
+      "screenshot": "/workspace/Monsoon-Delta/work/building-detail/living-en/fixture-village-detail.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [
+        {
+          "carrying": true,
+          "coord": "(-2, 2)",
+          "kind": "chop",
+          "position": "(-1.731224, 0.825, 2.998568)",
+          "stage": "deliver"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 0)",
+          "kind": "farm",
+          "position": "(0.711087, 0.825, 0.0)",
+          "stage": "deliver"
+        },
+        {
+          "carrying": false,
+          "coord": "(2, -1)",
+          "kind": "fish",
+          "position": "(1.621025, 0.825, -1.5)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 1)",
+          "kind": "harvest",
+          "position": "(1.621025, 0.825, 1.5)",
+          "stage": "work"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 261,
+      "flow_preview_nodes": 1,
+      "id": "fixture-stable-delivery",
+      "inspector": "Land · (1, 2)",
+      "process_seconds": 0.300603,
+      "queued_jobs": 0,
+      "render_objects": 1261,
+      "road_routes": 12,
+      "screenshot": "/workspace/Monsoon-Delta/work/building-detail/living-en/fixture-stable-delivery.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [
+        {
+          "carrying": true,
+          "coord": "(-2, 2)",
+          "kind": "chop",
+          "position": "(-1.731224, 0.825, 2.998568)",
+          "stage": "deliver"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 0)",
+          "kind": "farm",
+          "position": "(0.711087, 0.825, 0.0)",
+          "stage": "deliver"
+        },
+        {
+          "carrying": false,
+          "coord": "(2, -1)",
+          "kind": "fish",
+          "position": "(1.621025, 0.825, -1.5)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 1)",
+          "kind": "harvest",
+          "position": "(1.621025, 0.825, 1.5)",
+          "stage": "work"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 221,
+      "flow_preview_nodes": 1,
+      "id": "fixture-recorded-water-transfers",
+      "inspector": "Land · (1, 2)",
+      "process_seconds": 0.300603,
+      "queued_jobs": 0,
+      "render_objects": 1230,
+      "road_routes": 12,
+      "screenshot": "/workspace/Monsoon-Delta/work/building-detail/living-en/fixture-recorded-water-transfers.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [
+        {
+          "carrying": false,
+          "coord": "(-2, 2)",
+          "kind": "chop",
+          "position": "(-1.732051, 0.825, 3.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 0)",
+          "kind": "farm",
+          "position": "(0.755, 0.825, 0.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(2, -1)",
+          "kind": "fish",
+          "position": "(1.621025, 0.825, -1.5)",
+          "stage": "work"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 257,
+      "flow_preview_nodes": 1,
+      "id": "fixture-reduced-motion",
+      "inspector": "Land · (1, 2)",
+      "process_seconds": 0.531267,
+      "queued_jobs": 0,
+      "render_objects": 1256,
+      "road_routes": 12,
+      "screenshot": "/workspace/Monsoon-Delta/work/building-detail/living-en/fixture-reduced-motion.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [
+        {
+          "carrying": false,
+          "coord": "(-2, 2)",
+          "kind": "chop",
+          "position": "(-1.732051, 0.825, 3.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 0)",
+          "kind": "farm",
+          "position": "(0.755, 0.825, 0.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(2, -1)",
+          "kind": "fish",
+          "position": "(1.621025, 0.825, -1.5)",
+          "stage": "work"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 258,
+      "flow_preview_nodes": 1,
+      "id": "fixture-thriving-age-two",
+      "inspector": "Land · (1, 2)",
+      "process_seconds": 0.435393,
+      "queued_jobs": 0,
+      "render_objects": 1262,
+      "road_routes": 12,
+      "screenshot": "/workspace/Monsoon-Delta/work/building-detail/living-en/fixture-thriving-age-two.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [
+        {
+          "carrying": false,
+          "coord": "(-2, 2)",
+          "kind": "chop",
+          "position": "(-1.732051, 0.825, 3.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(1, 0)",
+          "kind": "farm",
+          "position": "(0.755, 0.825, 0.0)",
+          "stage": "work"
+        },
+        {
+          "carrying": false,
+          "coord": "(2, -1)",
+          "kind": "fish",
+          "position": "(1.621025, 0.825, -1.5)",
+          "stage": "work"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "prepare_food",
+      "draw_calls": 260,
+      "flow_preview_nodes": 1,
+      "id": "fixture-struggling",
+      "inspector": "Land · (1, 2)",
+      "process_seconds": 0.425321,
+      "queued_jobs": 0,
+      "render_objects": 1278,
+      "road_routes": 12,
+      "screenshot": "/workspace/Monsoon-Delta/work/building-detail/living-en/fixture-struggling.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [],
+      "actor_pool": 0,
+      "advisor": "hall",
+      "draw_calls": 435,
+      "flow_preview_nodes": 1,
+      "id": "fixture-hall-peril",
+      "inspector": "Land · (1, 2)",
+      "process_seconds": 0.43502,
+      "queued_jobs": 0,
+      "render_objects": 1383,
+      "road_routes": 0,
+      "screenshot": "/workspace/Monsoon-Delta/work/building-detail/living-en/fixture-hall-peril.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [],
+      "actor_pool": 0,
+      "advisor": "hall",
+      "draw_calls": 436,
+      "flow_preview_nodes": 1,
+      "id": "fixture-hall-peril-focused",
+      "inspector": "Village hall · (-1, 0)",
+      "process_seconds": 0.397494,
+      "queued_jobs": 0,
+      "render_objects": 1415,
+      "road_routes": 0,
+      "screenshot": "/workspace/Monsoon-Delta/work/building-detail/living-en/fixture-hall-peril-focused.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [],
+      "actor_pool": 0,
+      "advisor": "hall",
+      "draw_calls": 239,
+      "flow_preview_nodes": 0,
+      "id": "fixture-critical-advice-preview-hidden",
+      "inspector": "Village hall · (-1, 0)",
+      "process_seconds": 0.387829,
+      "queued_jobs": 0,
+      "render_objects": 1220,
+      "road_routes": 0,
+      "screenshot": "/workspace/Monsoon-Delta/work/building-detail/living-en/fixture-critical-advice-preview-hidden.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [
+        {
+          "carrying": false,
+          "coord": "(-2, 3)",
+          "kind": "chop",
+          "position": "(0.232574, 0.825, -5.361009)",
+          "stage": "outbound"
+        }
+      ],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 243,
+      "flow_preview_nodes": 1,
+      "id": "legal-chop-command",
+      "inspector": "Point at a tile to inspect it.",
+      "process_seconds": 0.69182,
+      "queued_jobs": 0,
+      "render_objects": 1053,
+      "road_routes": 8,
+      "screenshot": "/workspace/Monsoon-Delta/work/building-detail/living-en/legal-chop-command.png",
+      "viewport": "(1280, 720)"
+    },
+    {
+      "active_jobs": [],
+      "actor_pool": 6,
+      "advisor": "safe",
+      "draw_calls": 233,
+      "flow_preview_nodes": 1,
+      "id": "legal-after-undo-redo-load",
+      "inspector": "Land · (-2, 3)",
+      "process_seconds": 0.367063,
+      "queued_jobs": 0,
+      "render_objects": 1134,
+      "road_routes": 8,
+      "screenshot": "/workspace/Monsoon-Delta/work/building-detail/living-en/legal-after-undo-redo-load.png",
+      "viewport": "(1280, 720)"
+    }
+  ],
+  "same_scene_software_comparison": {
+    "hidden": {
+      "draw_calls": 177,
+      "mean_rendered_frame_ms": 259.2455,
+      "render_objects": 1176
+    },
+    "visible": {
+      "draw_calls": 259,
+      "mean_rendered_frame_ms": 271.981375,
+      "render_objects": 1258
+    }
+  }
+}

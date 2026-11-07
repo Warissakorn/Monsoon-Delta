@@ -37,6 +37,17 @@ var _life_view: VillageLifeView
 var _flow_view: FlowView
 var _activity_paused: bool = false
 var _actual_flow_report: TurnReport
+var _fine_details: MeshInstance3D
+
+
+func _process(_delta: float) -> void:
+	# Orthographic zoom changes camera.size, not camera distance. Keep the
+	# structural silhouette at every zoom and show small joinery only nearby.
+	if not is_instance_valid(_fine_details):
+		return
+	var camera: Camera3D = get_viewport().get_camera_3d()
+	if camera != null:
+		_fine_details.visible = camera.projection != Camera3D.PROJECTION_ORTHOGONAL or camera.size <= 18.0
 
 
 func _ready() -> void:
@@ -68,6 +79,7 @@ func set_state(next_state: GameState) -> void:
 
 func refresh() -> void:
 	_ensure_nodes()
+	_fine_details = null
 	_clear_root(_tiles_root)
 	_clear_root(_labels_root)
 	_clear_root(_brace_status_root)
@@ -449,7 +461,8 @@ func _variation(tile: Tile, salt: int) -> float:
 func _batch_static_geometry() -> void:
 	# Tiny porch rails and leaves otherwise each submit their own draw call,
 	# including every shadow cascade. Bake opaque pieces into three board-local
-	# meshes, keeping named structure containers and transparent water intact.
+	# meshes plus one optional fine-detail mesh, keeping named structure
+	# containers and transparent water intact.
 	for key: String in _colored_surfaces.keys():
 		if (_colored_surfaces[key]["source"] as WeakRef).get_ref() == null:
 			_colored_surfaces.erase(key)
@@ -479,6 +492,10 @@ func _batch_static_geometry() -> void:
 		batch.material_override = _baked_material(category)
 		batch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if category == "Solids" else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		_tiles_root.add_child(batch)
+		if category == "FineDetails":
+			_fine_details = batch
+			if is_inside_tree():
+				_process(0.0)
 
 
 func _collect_meshes(root: Node3D, instances: Array[MeshInstance3D]) -> void:
@@ -513,6 +530,8 @@ func _board_transform(instance: MeshInstance3D) -> Transform3D:
 
 
 func _batch_category(instance: MeshInstance3D, transform: Transform3D, material: StandardMaterial3D) -> String:
+	if instance.get_meta("fine_detail", false):
+		return "FineDetails"
 	if material.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED:
 		return "Markers"
 	var size: Vector3 = instance.mesh.get_aabb().size * transform.basis.get_scale().abs()
@@ -645,10 +664,29 @@ func _build_granary(cell: Node3D) -> void:
 	for x: float in [-0.32, 0.32]:
 		for z: float in [-0.25, 0.25]:
 			_add_box(granary, Vector3(0.09, 0.29, 0.09), Vector3(x, 0.145, z), _color("earth"))
+			_add_box(granary, Vector3(0.15, 0.055, 0.15), Vector3(x, 0.028, z), _color("earth").lightened(0.18))
 	_add_box(granary, Vector3(0.83, 0.10, 0.70), Vector3(0.0, 0.29, 0.0), _color("earth").lightened(0.12))
 	_add_box(granary, Vector3(0.69, 0.46, 0.58), Vector3(0.0, 0.56, 0.0), _color("accent").darkened(0.10))
+	var timber: Color = _color("earth").lerp(_color("roof"), 0.25)
+	_add_cladding(granary, Vector3(0.0, 0.56, 0.296), 0.68, 0.44, _color("accent"), false)
+	for side: float in [-1.0, 1.0]:
+		var wall: Node3D = Node3D.new()
+		wall.position = Vector3(side * 0.35, 0.56, 0.0)
+		wall.rotation.y = side * PI * 0.5
+		granary.add_child(wall)
+		_add_cladding(wall, Vector3.ZERO, 0.57, 0.44, _color("accent"), true)
+		_add_beam(granary, Vector3(side * 0.32, 0.08, -0.25), Vector3(side * 0.32, 0.24, 0.25), 0.035, timber)
 	for height: float in [0.40, 0.56, 0.72]:
 		_add_box(granary, Vector3(0.71, 0.035, 0.60), Vector3(0.0, height, 0.0), _color("earth"))
+	_add_door(granary, Vector3(0.0, 0.52, 0.32), 0.23, 0.32, timber)
+	# A small loading stair, with its stringers meeting the raised floor.
+	for step: int in range(3):
+		_add_box(granary, Vector3(0.25, 0.045, 0.11), Vector3(0.0, 0.055 + step * 0.10, 0.64 - step * 0.11), timber.lightened(0.16))
+	for x: float in [-0.11, 0.11]:
+		_add_beam(granary, Vector3(x, 0.03, 0.68), Vector3(x, 0.29, 0.35), 0.035, timber)
+	for index: int in range(4):
+		_add_fine_box(granary, Vector3(0.065, 0.025, 0.015), Vector3(-0.135 + index * 0.09, 0.765, 0.304), timber.darkened(0.25))
+	_add_basket(granary, Vector3(0.49, 0.0, 0.05), 0.09, 0.15)
 	_add_roof(granary, Vector3(0.95, 0.34, 0.79), Vector3(0.0, 0.94, 0.0), _color("roof"))
 
 
@@ -730,38 +768,88 @@ func _build_house(cell: Node3D, tile: Tile) -> void:
 	cell.add_child(village)
 	var offset: float = 0.0
 	var timber: Color = _color("earth").lerp(_color("roof"), 0.25)
+	var variant: int = floori(_variation(tile, 11) * 4.0)
+	var age: int = SettlementProgress.building_age(state, tile)
+	var wall_color: Color = _color("house").darkened(float(variant) * 0.025 + float(mini(age, 4)) * 0.018)
+	village.set_meta("variant", variant)
 	if tile.building == C.Building.STILT_HOUSE:
 		offset = 0.41
 		for x: float in [-0.27, 0.27]:
 			for z: float in [-0.23, 0.23]:
 				_add_mesh(village, _cylinder_mesh(0.032, 0.044, offset + 0.04), Vector3(x, offset * 0.5, z), timber)
-		var brace: MeshInstance3D = _add_mesh(village, _box_mesh(Vector3(0.58, 0.035, 0.035)), Vector3(0.0, 0.21, 0.24), timber.lightened(0.18))
-		brace.rotation_degrees.z = 28.0
+				_add_box(village, Vector3(0.11, 0.045, 0.11), Vector3(x, 0.022, z), timber.lightened(0.25))
+		# Permanent knee braces stay under the floor; emergency X braces remain
+		# visually distinct on the outer walls with their amber lashings.
+		for side: float in [-1.0, 1.0]:
+			_add_beam(village, Vector3(side * 0.27, 0.18, -0.23), Vector3(side * 0.27, 0.39, -0.03), 0.032, timber)
+			_add_box(village, Vector3(0.055, 0.065, 0.69), Vector3(side * 0.27, 0.37, 0.04), timber)
+		_add_firewood(village, Vector3(-0.10, 0.04, -0.18), timber)
 	elif tile.building == C.Building.RAFT_HOUSE:
 		offset = maxf(0.0, tile.water * C.HEIGHT_UNIT) + 0.13
 		for z: float in [-0.34, -0.17, 0.0, 0.17, 0.34]:
 			var log_piece: MeshInstance3D = _add_mesh(village, _cylinder_mesh(0.072, 0.072, 0.91), Vector3(0.0, offset - 0.055, z), timber.lightened(0.17))
 			log_piece.rotation_degrees.z = 90.0
-	_add_box(village, Vector3(0.76, 0.065, 0.73), Vector3(0.0, offset + 0.03, 0.025), timber.lightened(0.17))
-	_add_box(village, Vector3(0.62, 0.43, 0.52), Vector3(0.0, 0.27 + offset, -0.035), _color("house"))
-	for y: float in [0.16, 0.29, 0.42]:
-		_add_box(village, Vector3(0.63, 0.012, 0.018), Vector3(0.0, offset + y, 0.234), _color("house").darkened(0.15))
-	_add_box(village, Vector3(0.15, 0.28, 0.025), Vector3(0.03, 0.21 + offset, 0.24), timber.darkened(0.17))
-	_add_box(village, Vector3(0.017, 0.027, 0.024), Vector3(0.076, 0.22 + offset, 0.258), _color("accent"))
+			for side: float in [-1.0, 1.0]:
+				var end: MeshInstance3D = _add_mesh(village, _cylinder_mesh(0.051, 0.051, 0.008), Vector3(side * 0.459, offset - 0.055, z), timber.lightened(0.37))
+				end.rotation_degrees.z = 90.0
+		for x: float in [-0.31, 0.31]:
+			_add_box(village, Vector3(0.05, 0.05, 0.82), Vector3(x, offset - 0.025, 0.01), timber.darkened(0.15))
+			for z: float in [-0.28, 0.28]:
+				_add_fine_box(village, Vector3(0.073, 0.10, 0.027), Vector3(x, offset - 0.04, z), _color("accent"))
+	_add_box(village, Vector3(0.76, 0.065, 0.91), Vector3(0.0, offset + 0.03, 0.105), timber.lightened(0.17))
+	_add_box(village, Vector3(0.62, 0.43, 0.52), Vector3(0.0, 0.27 + offset, -0.035), wall_color.darkened(0.12))
+	_add_cladding(village, Vector3(0.0, offset + 0.27, 0.234), 0.61, 0.42, wall_color, false)
+	_add_cladding(village, Vector3(0.0, offset + 0.27, -0.304), 0.61, 0.42, wall_color, false)
+	for side: float in [-1.0, 1.0]:
+		var wall: Node3D = Node3D.new()
+		wall.position = Vector3(side * 0.318, offset + 0.27, -0.035)
+		wall.rotation.y = side * PI * 0.5
+		village.add_child(wall)
+		_add_cladding(wall, Vector3.ZERO, 0.51, 0.42, wall_color, variant % 2 == 0)
+		for z: float in [-0.29, 0.23]:
+			_add_box(village, Vector3(0.035, 0.44, 0.035), Vector3(side * 0.30, offset + 0.27, z), timber.lightened(0.13))
+		_add_box(village, Vector3(0.048, 0.045, 0.87), Vector3(side * 0.29, offset - 0.005, 0.10), timber)
+	_add_door(village, Vector3(0.03, offset + 0.215, 0.253), 0.15, 0.28, timber)
 	_add_window(village, Vector3(-0.19, offset + 0.32, 0.245), 0.14, 0.16)
 	_add_window(village, Vector3(0.318, offset + 0.32, -0.045), 0.18, 0.16, true)
 	_add_roof(village, Vector3(0.82, 0.34, 0.74), Vector3(0.0, 0.61 + offset, -0.035), _color("roof").lightened(_variation(tile, 5) * 0.055))
-	for x: float in [-0.32, 0.32]:
-		_add_box(village, Vector3(0.035, 0.32, 0.035), Vector3(x, offset + 0.22, 0.35), timber)
-	_add_box(village, Vector3(0.68, 0.035, 0.04), Vector3(0.0, offset + 0.38, 0.35), timber)
+	# The porch has a real entrance gap aligned with the door and stairs.
+	for x: float in [-0.33, 0.33]:
+		_add_box(village, Vector3(0.035, 0.23, 0.035), Vector3(x, offset + 0.18, 0.52), timber)
+		_add_box(village, Vector3(0.055, 0.025, 0.055), Vector3(x, offset + 0.305, 0.52), timber.lightened(0.25))
+	for segment: Vector2 in [Vector2(-0.33, -0.115), Vector2(0.175, 0.33)]:
+		_add_box(village, Vector3(segment.y - segment.x, 0.025, 0.035), Vector3((segment.x + segment.y) * 0.5, offset + 0.265, 0.52), timber)
+		_add_box(village, Vector3(0.017, 0.16, 0.022), Vector3((segment.x + segment.y) * 0.5, offset + 0.17, 0.52), timber)
+	for index: int in range(7):
+		_add_fine_box(village, Vector3(0.71, 0.006, 0.008), Vector3(0.0, offset + 0.066, 0.27 + index * 0.043), timber.darkened(0.18))
+	var porch: Node3D = Node3D.new()
+	porch.name = "PorchDetails"
+	porch.position.y = offset
+	village.add_child(porch)
+	if SettlementProgress.building_stage(state, tile) < 1:
+		_add_pot(porch, Vector3(-0.27, 0.067, 0.43), 0.065, 0.12, false)
+	if variant % 2 == 0:
+		_add_basket(porch, Vector3(0.27, 0.067, 0.43), 0.06, 0.10)
+	else:
+		_add_box(porch, Vector3(0.12, 0.04, 0.12), Vector3(0.27, 0.087, 0.43), _color("accent").darkened(0.15))
+		_add_fine_box(porch, Vector3(0.125, 0.008, 0.015), Vector3(0.27, 0.111, 0.43), timber)
 	if tile.building == C.Building.RAFT_HOUSE:
 		_add_box(village, Vector3(0.035, 0.41, 0.035), Vector3(0.42, offset + 0.14, -0.32), timber)
+		_add_rope(village, Vector3(0.42, offset + 0.22, -0.32), 0.035)
+		_add_beam(village, Vector3(0.42, offset + 0.15, -0.32), Vector3(0.34, offset + 0.02, -0.18), 0.013, _color("accent"))
 	elif tile.building == C.Building.STILT_HOUSE:
-		for step: int in range(3):
-			_add_box(village, Vector3(0.25, 0.075, 0.14), Vector3(0.03, 0.07 + float(step) * 0.115, 0.71 - float(step) * 0.13), timber.lightened(0.12))
+		for step: int in range(4):
+			_add_box(village, Vector3(0.25, 0.045, 0.12), Vector3(0.03, 0.07 + float(step) * 0.11, 0.80 - float(step) * 0.10), timber.lightened(0.16))
+		for x: float in [-0.09, 0.15]:
+			_add_beam(village, Vector3(x, 0.025, 0.85), Vector3(x, 0.435, 0.47), 0.035, timber)
+			_add_beam(village, Vector3(x, 0.25, 0.80), Vector3(x, 0.64, 0.50), 0.025, timber.lightened(0.15))
+			_add_box(village, Vector3(0.025, 0.21, 0.025), Vector3(x, 0.15, 0.80), timber)
 	else:
-		_add_box(village, Vector3(0.28, 0.045, 0.14), Vector3(0.03, 0.025, 0.46), timber.lightened(0.22))
-		_build_path(village, 0.0, 0.61, 2)
+		for x: float in [-0.27, 0.27]:
+			_add_box(village, Vector3(0.13, 0.055, 0.13), Vector3(x, 0.025, -0.23), _color("earth").lightened(0.2))
+		_add_box(village, Vector3(0.28, 0.045, 0.14), Vector3(0.03, 0.025, 0.59), timber.lightened(0.22))
+		_build_path(village, 0.03, 0.73, 1)
+		_add_firewood(village, Vector3(-0.47, 0.035, -0.15), timber)
 	if state.has_bracing() and tile.brace_turns == 1 and tile.building in [C.Building.HOUSE, C.Building.STILT_HOUSE]:
 		_build_emergency_bracing(village, tile, offset)
 		_build_brace_status(tile, offset)
@@ -849,18 +937,21 @@ func _build_settlement_details(cell: Node3D, tile: Tile) -> void:
 				var patch: MeshInstance3D = _add_mesh(details, _box_mesh(Vector3(0.13, 0.018, 0.14)), Vector3(side * 0.22, offset + 0.59, 0.13), timber.lightened(0.2))
 				patch.rotation_degrees.z = -side * 22.0
 		if stage >= 1:
-			_add_mesh(details, _cylinder_mesh(0.070, 0.053, 0.10), Vector3(-0.27, offset + 0.10, 0.38), _color("roof").lightened(0.15))
-			_add_mesh(details, _sphere_mesh(0.085, 0.11), Vector3(-0.27, offset + 0.19, 0.38), _color("forest").lightened(0.18))
-			_add_box(details, Vector3(0.12, 0.095, 0.13), Vector3(0.25, offset + 0.11, 0.39), _color("accent").darkened(0.2))
+			_add_pot(details, Vector3(-0.27, offset + 0.067, 0.43), 0.065, 0.12, true)
+			_add_fine_box(details, Vector3(0.016, 0.13, 0.14), Vector3(-0.335, offset + 0.21, -0.11), _color("accent").lightened(0.13))
 		if stage >= 2:
-			_add_roof(details, Vector3(0.50, 0.12, 0.23), Vector3(0.0, offset + 0.50, 0.36), _color("roof").lightened(0.10))
-			var lamp: MeshInstance3D = _add_mesh(details, _sphere_mesh(0.045, 0.095), Vector3(0.26, offset + 0.36, 0.31), _color("highlight"), true)
-			lamp.name = "PorchLantern"
+			_add_roof(details, Vector3(0.75, 0.12, 0.34), Vector3(0.0, offset + 0.53, 0.42), _color("roof").lightened(0.10))
+			for x: float in [-0.33, 0.33]:
+				_add_box(details, Vector3(0.025, 0.22, 0.025), Vector3(x, offset + 0.40, 0.52), timber)
+			_add_lantern(details, Vector3(0.24, offset + 0.41, 0.43))
 	elif tile.building == C.Building.GRANARY:
 		# Sack count follows actual communal reserves, not fabricated income.
 		var sacks: int = mini(5, state.food / maxi(1, state.population))
 		for index: int in range(sacks):
-			_add_mesh(details, _sphere_mesh(0.10, 0.16), Vector3(-0.36 + float(index % 3) * 0.15, 0.09 + float(index / 3) * 0.11, 0.43), _color("accent").lightened(0.10))
+			# Keep the loading stairs clear. Bags sit on a low side pallet.
+			_add_sack(details, Vector3(-0.48 + float(index % 2) * 0.15, 0.04 + float(index / 2) * 0.13, 0.42))
+		if sacks > 0:
+			_add_box(details, Vector3(0.32, 0.035, 0.23), Vector3(-0.40, 0.022, 0.42), timber)
 	elif tile.building == C.Building.HALL and stage >= 1:
 		for side: float in [-1.0, 1.0]:
 			_add_mesh(details, _cylinder_mesh(0.075, 0.055, 0.13), Vector3(side * 0.47, 0.10, 0.34), _color("roof"))
@@ -878,11 +969,29 @@ func _build_hall(cell: Node3D) -> void:
 	_add_box(hall, Vector3(1.03, 0.12, 0.90), Vector3(0.0, 0.06, 0.0), _color("house").darkened(0.17))
 	_add_box(hall, Vector3(0.93, 0.035, 0.81), Vector3(0.0, 0.135, 0.0), _color("house").lightened(0.08))
 	_add_box(hall, Vector3(0.73, 0.46, 0.63), Vector3(0.0, 0.38, -0.025), _color("house"))
-	_add_box(hall, Vector3(0.23, 0.35, 0.025), Vector3(0.0, 0.33, 0.302), timber.darkened(0.12))
-	_add_box(hall, Vector3(0.012, 0.32, 0.03), Vector3(0.0, 0.33, 0.32), _color("accent"))
+	_add_cladding(hall, Vector3(0.0, 0.38, 0.298), 0.72, 0.45, _color("house"), false)
+	for side: float in [-1.0, 1.0]:
+		var wall: Node3D = Node3D.new()
+		wall.position = Vector3(side * 0.372, 0.38, -0.025)
+		wall.rotation.y = side * PI * 0.5
+		hall.add_child(wall)
+		_add_cladding(wall, Vector3.ZERO, 0.62, 0.45, _color("house"), true)
+	_add_door(hall, Vector3(0.0, 0.33, 0.319), 0.23, 0.35, timber)
+	_add_box(hall, Vector3(0.34, 0.085, 0.025), Vector3(0.0, 0.59, 0.324), timber.darkened(0.17))
+	for index: int in range(3):
+		_add_fine_box(hall, Vector3(0.06, 0.014, 0.009), Vector3(-0.09 + index * 0.09, 0.59, 0.343), _color("accent"))
+	# Side benches and a framed notice board suggest a communal meeting place.
+	for side: float in [-1.0, 1.0]:
+		_add_box(hall, Vector3(0.13, 0.035, 0.35), Vector3(side * 0.43, 0.235, -0.04), timber.lightened(0.14))
+		for z: float in [-0.15, 0.08]:
+			_add_box(hall, Vector3(0.035, 0.08, 0.035), Vector3(side * 0.43, 0.18, z), timber)
+	_add_box(hall, Vector3(0.024, 0.22, 0.25), Vector3(-0.388, 0.42, -0.08), timber.darkened(0.1))
+	for z: float in [-0.15, -0.035]:
+		_add_fine_box(hall, Vector3(0.008, 0.11, 0.075), Vector3(-0.405, 0.42, z), _color("paper").darkened(0.09))
 	for x: float in [-0.39, 0.39]:
 		_add_box(hall, Vector3(0.06, 0.52, 0.06), Vector3(x, 0.39, 0.35), timber)
 		_add_box(hall, Vector3(0.085, 0.05, 0.085), Vector3(x, 0.18, 0.35), _color("accent"))
+		_add_beam(hall, Vector3(x, 0.51, 0.35), Vector3(x * 0.60, 0.61, 0.35), 0.033, timber)
 	_add_window(hall, Vector3(-0.24, 0.42, 0.302), 0.14, 0.18)
 	_add_window(hall, Vector3(0.24, 0.42, 0.302), 0.14, 0.18)
 	_add_window(hall, Vector3(0.373, 0.43, -0.06), 0.22, 0.18, true)
@@ -895,6 +1004,8 @@ func _build_hall(cell: Node3D) -> void:
 		_add_box(hall, Vector3(0.40 + float(step) * 0.13, 0.055, 0.16), Vector3(0.0, 0.075 - float(step) * 0.035, 0.50 + float(step) * 0.14), _color("house").darkened(0.1))
 	_add_box(hall, Vector3(0.027, 0.84, 0.027), Vector3(-0.65, 0.42, 0.11), timber)
 	_add_box(hall, Vector3(0.19, 0.24, 0.015), Vector3(-0.55, 0.68, 0.11), _color("accent"))
+	_add_fine_box(hall, Vector3(0.13, 0.026, 0.018), Vector3(-0.55, 0.69, 0.121), _color("roof"))
+	_add_lantern(hall, Vector3(0.28, 0.56, 0.37))
 
 
 func _build_source(cell: Node3D, tile: Tile) -> void:
@@ -928,14 +1039,29 @@ func _add_roof(parent: Node3D, size: Vector3, at: Vector3, color: Color) -> void
 		_meshes[key] = roof
 	var prism: PrismMesh = _meshes[key] as PrismMesh
 	_add_mesh(parent, prism, at, color)
-	# Raised terracotta courses and a timber fascia catch the low sun.
-	for course: int in range(-2, 3):
-		var x: float = float(course) * size.x * 0.16
-		var y: float = at.y + size.y * (0.5 - absf(x) / size.x * 2.0) + 0.008
-		_add_box(parent, Vector3(0.020, 0.015, size.z + 0.016), Vector3(at.x + x, y, at.z), color.lightened(0.14))
+	# Raised overlapping courses follow the actual roof slope. Fine tiles bake
+	# into one extra board mesh and disappear at overview zoom.
+	var half_width: float = size.x * 0.5
+	var slope: float = atan2(size.y, half_width)
+	var course_length: float = Vector2(half_width, size.y).length() / 3.0
+	for side: float in [-1.0, 1.0]:
+		for course: int in range(3):
+			var x: float = side * half_width * (float(course) + 0.5) / 3.0
+			var y: float = at.y + size.y * 0.5 - absf(x) * size.y / half_width + 0.009
+			for column: int in range(5):
+				var z: float = at.z + (float(column) - 2.0) * size.z / 5.0
+				var tint: Color = color.lightened(0.025 * float((course + column) % 3))
+				var tile: MeshInstance3D = _add_mesh(parent, _box_mesh(Vector3(course_length + 0.009, 0.014, size.z / 5.0 - 0.006)), Vector3(at.x + x, y, z), tint)
+				tile.rotation.z = -side * slope
+				tile.set_meta("fine_detail", true)
 	_add_box(parent, Vector3(0.045, 0.035, size.z + 0.065), at + Vector3.UP * (size.y * 0.5 + 0.015), _color("accent").lerp(color, 0.68))
 	for z: float in [-size.z * 0.5, size.z * 0.5]:
-		_add_box(parent, Vector3(size.x + 0.02, 0.035, 0.035), at + Vector3(0.0, -size.y * 0.5, z), _color("earth").darkened(0.08))
+		var wood: Color = _color("earth").lerp(color, 0.22)
+		_add_box(parent, Vector3(size.x + 0.02, 0.035, 0.035), at + Vector3(0.0, -size.y * 0.5, z), wood)
+		for side: float in [-1.0, 1.0]:
+			_add_beam(parent, at + Vector3(side * half_width, -size.y * 0.5, z), at + Vector3(0.0, size.y * 0.5, z), 0.027, wood.lightened(0.13))
+		if size.y > 0.20:
+			_add_beam(parent, at + Vector3(0.0, -size.y * 0.5, z), at + Vector3(0.0, size.y * 0.40, z), 0.026, wood)
 
 
 func _add_window(parent: Node3D, at: Vector3, width: float, height: float, side: bool = false) -> void:
@@ -943,10 +1069,127 @@ func _add_window(parent: Node3D, at: Vector3, width: float, height: float, side:
 	window.position = at
 	window.rotation.y = PI * 0.5 if side else 0.0
 	parent.add_child(window)
-	_add_box(window, Vector3(width + 0.035, height + 0.035, 0.023), Vector3.ZERO, _color("earth").lightened(0.18))
-	_add_box(window, Vector3(width, height, 0.026), Vector3(0.0, 0.0, 0.009), _color("sea").darkened(0.35))
-	_add_box(window, Vector3(0.016, height, 0.031), Vector3(0.0, 0.0, 0.015), _color("house"))
-	_add_box(window, Vector3(width, 0.018, 0.031), Vector3(0.0, -height * 0.10, 0.015), _color("house"))
+	var wood: Color = _color("earth").lightened(0.18)
+	_add_box(window, Vector3(width, height, 0.016), Vector3(0.0, 0.0, 0.014), _color("sea").darkened(0.35))
+	for x: float in [-width * 0.5, width * 0.5]:
+		_add_box(window, Vector3(0.018, height + 0.035, 0.038), Vector3(x, 0.0, 0.022), wood)
+		var shutter: MeshInstance3D = _add_mesh(window, _box_mesh(Vector3(width * 0.28, height * 0.94, 0.018)), Vector3(x * 1.36, 0.0, 0.04), _color("house").darkened(0.12))
+		shutter.rotation.y = -signf(x) * 0.34
+	for y: float in [-height * 0.5, height * 0.5]:
+		_add_box(window, Vector3(width + 0.045, 0.018, 0.046), Vector3(0.0, y, 0.023), wood)
+	_add_box(window, Vector3(width + 0.06, 0.015, 0.075), Vector3(0.0, -height * 0.5 - 0.012, 0.033), wood.lightened(0.1))
+	_add_fine_box(window, Vector3(0.012, height, 0.015), Vector3(0.0, 0.0, 0.031), _color("house"))
+	_add_fine_box(window, Vector3(width, 0.012, 0.015), Vector3(0.0, -height * 0.10, 0.031), _color("house"))
+
+
+func _add_beam(parent: Node3D, from: Vector3, to: Vector3, width: float, color: Color) -> void:
+	var direction: Vector3 = to - from
+	if direction.length_squared() < 0.000001:
+		return
+	var beam: MeshInstance3D = _add_mesh(parent, _box_mesh(Vector3(width, direction.length(), width)), (from + to) * 0.5, color)
+	beam.quaternion = Quaternion(Vector3.UP, direction.normalized())
+
+
+func _add_fine_box(parent: Node3D, size: Vector3, at: Vector3, color: Color) -> void:
+	var piece: MeshInstance3D = _add_mesh(parent, _box_mesh(size), at, color)
+	piece.set_meta("fine_detail", true)
+
+
+func _add_cladding(parent: Node3D, at: Vector3, width: float, height: float, color: Color, vertical: bool) -> void:
+	var count: int = 7 if vertical else 5
+	var damp: float = 0.05 if state != null and state.is_rain() else 0.0
+	for index: int in range(count):
+		var tint: Color = color.darkened(0.018 * float(index % 3) + (damp if index < 2 or vertical else 0.0))
+		if vertical:
+			var x: float = (float(index) - float(count - 1) * 0.5) * width / float(count)
+			_add_box(parent, Vector3(width / float(count) - 0.005, height, 0.012), at + Vector3(x, 0.0, 0.0), tint)
+			_add_fine_box(parent, Vector3(0.003, height * 0.32, 0.003), at + Vector3(x + 0.012, height * (0.12 if index % 2 == 0 else -0.16), 0.008), tint.darkened(0.09))
+		else:
+			var y: float = (float(index) - float(count - 1) * 0.5) * height / float(count)
+			_add_box(parent, Vector3(width, height / float(count) - 0.005, 0.012), at + Vector3(0.0, y, 0.0), tint)
+			_add_fine_box(parent, Vector3(width * 0.22, 0.003, 0.003), at + Vector3(width * (0.22 if index % 2 == 0 else -0.21), y + 0.014, 0.008), tint.darkened(0.09))
+
+
+func _add_door(parent: Node3D, at: Vector3, width: float, height: float, wood: Color) -> void:
+	_add_box(parent, Vector3(width, height, 0.018), at, wood.darkened(0.20))
+	for index: int in range(3):
+		_add_fine_box(parent, Vector3(width / 3.0 - 0.006, height - 0.01, 0.012), at + Vector3((index - 1) * width / 3.0, 0.0, 0.014), wood.lightened(0.045 * index))
+	for side: float in [-1.0, 1.0]:
+		_add_box(parent, Vector3(0.018, height + 0.025, 0.035), at + Vector3(side * (width * 0.5 + 0.006), 0.0, 0.0), wood.lightened(0.18))
+	_add_box(parent, Vector3(width + 0.055, 0.025, 0.035), at + Vector3(0.0, height * 0.5 + 0.012, 0.0), wood.lightened(0.18))
+	_add_box(parent, Vector3(width + 0.04, 0.018, 0.075), at + Vector3(0.0, -height * 0.5, 0.019), wood.lightened(0.12))
+	_add_fine_box(parent, Vector3(0.015, 0.025, 0.024), at + Vector3(width * 0.30, 0.0, 0.028), _color("accent"))
+	for y: float in [-height * 0.28, height * 0.28]:
+		_add_fine_box(parent, Vector3(0.024, 0.013, 0.014), at + Vector3(-width * 0.43, y, 0.027), _color("earth").darkened(0.25))
+
+
+func _torus_mesh(radius: float, thickness: float) -> TorusMesh:
+	var key: String = "torus:%.3f:%.3f" % [radius, thickness]
+	if not _meshes.has(key):
+		var ring: TorusMesh = TorusMesh.new()
+		ring.inner_radius = radius - thickness
+		ring.outer_radius = radius + thickness
+		ring.rings = 12
+		ring.ring_segments = 4
+		_meshes[key] = ring
+	return _meshes[key] as TorusMesh
+
+
+func _add_rope(parent: Node3D, at: Vector3, radius: float) -> void:
+	for index: int in range(3):
+		var ring: MeshInstance3D = _add_mesh(parent, _torus_mesh(radius, 0.005), at + Vector3.UP * (index * 0.012), _color("accent"))
+		ring.set_meta("fine_detail", true)
+
+
+func _add_pot(parent: Node3D, at: Vector3, radius: float, height: float, planted: bool) -> void:
+	var clay: Color = _color("roof").lightened(0.10)
+	_add_mesh(parent, _sphere_mesh(radius, height), at + Vector3.UP * (height * 0.5), clay)
+	_add_mesh(parent, _cylinder_mesh(radius * 0.66, radius * 0.66, 0.009), at + Vector3.UP * (height * 0.89), _color("earth").darkened(0.38))
+	_add_mesh(parent, _torus_mesh(radius * 0.72, 0.009), at + Vector3.UP * (height * 0.90), clay.lightened(0.08))
+	if planted:
+		for index: int in range(3):
+			var angle: float = index * TAU / 3.0
+			_add_mesh(parent, _sphere_mesh(radius * 0.72, height * 0.60), at + Vector3(cos(angle) * radius * 0.4, height * 1.3, sin(angle) * radius * 0.4), _color("forest").lightened(index * 0.065))
+
+
+func _add_basket(parent: Node3D, at: Vector3, radius: float, height: float) -> void:
+	var reed: Color = _color("accent").darkened(0.13)
+	_add_mesh(parent, _cylinder_mesh(radius, radius * 0.72, height), at + Vector3.UP * height * 0.5, reed)
+	_add_mesh(parent, _cylinder_mesh(radius * 0.82, radius * 0.82, 0.006), at + Vector3.UP * (height + 0.002), reed.darkened(0.30))
+	_add_mesh(parent, _torus_mesh(radius * 0.95, 0.009), at + Vector3.UP * height, reed.lightened(0.15))
+	for index: int in range(2):
+		var hoop: MeshInstance3D = _add_mesh(parent, _torus_mesh(radius * (0.8 + index * 0.09), 0.004), at + Vector3.UP * height * (0.3 + index * 0.3), reed.lightened(0.1))
+		hoop.set_meta("fine_detail", true)
+
+
+func _add_firewood(parent: Node3D, at: Vector3, wood: Color) -> void:
+	for index: int in range(4):
+		var center: Vector3 = at + Vector3(float(index % 3) * 0.048, 0.025 + (0.042 if index == 3 else 0.0), 0.0)
+		if index == 3:
+			center.x += 0.048
+		var log_piece: MeshInstance3D = _add_mesh(parent, _cylinder_mesh(0.022, 0.025, 0.19), center, wood.lightened(float(index % 2) * 0.13))
+		log_piece.rotation_degrees.x = 90.0
+		var end: MeshInstance3D = _add_mesh(parent, _cylinder_mesh(0.018, 0.018, 0.005), center + Vector3(0.0, 0.0, 0.097), wood.lightened(0.32))
+		end.rotation_degrees.x = 90.0
+		end.set_meta("fine_detail", true)
+
+
+func _add_sack(parent: Node3D, at: Vector3) -> void:
+	var burlap: Color = _color("accent").lightened(0.10)
+	_add_mesh(parent, _sphere_mesh(0.074, 0.14), at + Vector3.UP * 0.07, burlap)
+	_add_mesh(parent, _cylinder_mesh(0.026, 0.018, 0.035), at + Vector3.UP * 0.145, burlap.lightened(0.12))
+	_add_rope(parent, at + Vector3.UP * 0.13, 0.020)
+
+
+func _add_lantern(parent: Node3D, at: Vector3) -> void:
+	var wood: Color = _color("earth").darkened(0.1)
+	var glow: MeshInstance3D = _add_mesh(parent, _sphere_mesh(0.031, 0.062), at, _color("highlight"), true)
+	glow.name = "PorchLantern"
+	for y: float in [-0.044, 0.044]:
+		_add_box(parent, Vector3(0.075, 0.013, 0.075), at + Vector3.UP * y, wood)
+	for x: float in [-0.027, 0.027]:
+		_add_fine_box(parent, Vector3(0.009, 0.08, 0.009), at + Vector3(x, 0.0, 0.027), wood)
+	_add_box(parent, Vector3(0.012, 0.055, 0.012), at + Vector3.UP * 0.073, wood)
 
 
 func _build_path(parent: Node3D, x: float, z: float, count: int) -> void:
