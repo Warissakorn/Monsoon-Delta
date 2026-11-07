@@ -115,6 +115,19 @@ func _run() -> void:
 		await process_frame
 		await process_frame
 		_check("zoom_restores_fine_details", fine_details.visible)
+	var rig: CameraRig = CameraRig.new()
+	root.add_child(rig)
+	rig.set_reduced_motion(true)
+	for step: int in range(20):
+		rig.zoom_step(-1)
+	_check("inspection_zoom_reaches_six", is_equal_approx(rig.get_camera().size, 6.0))
+	await process_frame
+	await process_frame
+	if is_instance_valid(fine_details):
+		_check("inspection_zoom_shows_fine_details", fine_details.visible)
+	for step: int in range(20):
+		rig.zoom_step(1)
+	_check("overview_zoom_remains_bounded", is_equal_approx(rig.get_camera().size, 27.0))
 	var evidence: Dictionary = {"fixture": true, "engine": Engine.get_version_info()["string"], "display": DisplayServer.get_name(), "checks": _checks, "captures": _captures, "note": "Authored architecture fixtures; not human playtesting or a hardware performance benchmark."}
 	var file: FileAccess = FileAccess.open(_out_dir.path_join("observations.json"), FileAccess.WRITE)
 	if file == null:
