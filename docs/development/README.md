@@ -64,6 +64,10 @@ git diff --check
 
 [บัญชีทรัพยากร](../features/RESOURCE_FEEDBACK.md#ดูบัญชีทรัพยากรของแต่ละเทิร์น) อยู่ใน `GameSession.turn_history()` แยกจาก GameState/เซฟ ใช้ `scripts/test.sh --filter=resource_ledger` ตรวจ `ก่อน + ผลรวมสาเหตุ = หลัง` ทั้งห้าทรัพยากร และอ่านข้อมูลเดิมหลังวางแผนต่อ/ขึ้นปี/โหลด/Retry ตรวจ [native probe](../../tools/resource_ledger_probe.gd) ทั้งสองภาษาตามคำสั่ง XDG ในคู่มือฟีเจอร์ รวมใช้คำสั่งสร้างบ้านจริงก่อนอ่านยอดประวัติ ห้ามประกอบสาเหตุจากกระดานปัจจุบันหรือใช้ harvest report ปีก่อนกับเทิร์นธรรมดา
 
+### ตรวจแผนเสบียง
+
+ดู [คู่มือแผนเสบียง](../features/FOOD_PLAN.md) ใช้ `scripts/test.sh --filter=food_plan` และชุดรวมเมื่อแก้ตัวคำนวณ/หน้าจอ ตรวจ native ไทย–อังกฤษด้วย `tools/food_plan_probe.gd` ตามคำสั่ง XDG แยกในคู่มือ รวมคลิกสั่งปลูกจริง Undo/Redo เปิดจาก Pause ปิดรัว เทียบเก็บเกี่ยวจริง และรักษาเซฟปกติเมื่อดูจากโรงเรียน ไม่เปลี่ยน balance หรือ schema เซฟ
+
 ### ตรวจสรุปหมู่บ้านก่อนเล่นต่อ
 
 ใช้ `scripts/test.sh --filter=continue_summary` ตรวจเซฟทุก envelope ที่รองรับ การไม่แก้ไฟล์/RNG สรุปเก็บเกี่ยว และข้อมูลเก่าที่ต้องล้าง แล้วใช้ `scripts/test.sh --filter=menu` ตรวจ flow สลับภาษา/Continue/เกมใหม่ร่วมกับเมนูเดิม ข้อความใช้ `translations/strings.csv` และทรัพยากรแปลที่ import แล้วตามเดิม
