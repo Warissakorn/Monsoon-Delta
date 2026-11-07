@@ -1,0 +1,90 @@
+{
+  "date": "2026-11-07",
+  "engine": "4.6.3",
+  "ruleset": "year365_v2",
+  "policy": "tools/year_project_strategy.gd",
+  "input": "public model commands; no gameplay state injection during replay",
+  "cases": [
+    {
+      "seed": 1,
+      "project": "food",
+      "day": 365,
+      "outcome": "won",
+      "stage": 3,
+      "kits_produced": 6,
+      "damage": 0
+    },
+    {
+      "seed": 1,
+      "project": "water",
+      "day": 365,
+      "outcome": "won",
+      "stage": 3,
+      "kits_produced": 6,
+      "damage": 0
+    },
+    {
+      "seed": 1,
+      "project": "craft",
+      "day": 365,
+      "outcome": "won",
+      "stage": 3,
+      "kits_produced": 6,
+      "damage": 0
+    },
+    {
+      "seed": 42,
+      "project": "food",
+      "day": 365,
+      "outcome": "won",
+      "stage": 3,
+      "kits_produced": 6,
+      "damage": 260
+    },
+    {
+      "seed": 42,
+      "project": "water",
+      "day": 365,
+      "outcome": "won",
+      "stage": 3,
+      "kits_produced": 6,
+      "damage": 230
+    },
+    {
+      "seed": 42,
+      "project": "craft",
+      "day": 365,
+      "outcome": "won",
+      "stage": 3,
+      "kits_produced": 6,
+      "damage": 230
+    },
+    {
+      "seed": 73,
+      "project": "food",
+      "day": 365,
+      "outcome": "won",
+      "stage": 3,
+      "kits_produced": 6,
+      "damage": 70
+    },
+    {
+      "seed": 73,
+      "project": "water",
+      "day": 365,
+      "outcome": "won",
+      "stage": 3,
+      "kits_produced": 6,
+      "damage": 60
+    },
+    {
+      "seed": 73,
+      "project": "craft",
+      "day": 365,
+      "outcome": "won",
+      "stage": 3,
+      "kits_produced": 6,
+      "damage": 60
+    }
+  ]
+}
