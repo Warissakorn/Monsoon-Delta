@@ -128,3 +128,7 @@ XDG_DATA_HOME="$PWD/work/menu-draft-qa/en/data" XDG_CONFIG_HOME="$PWD/work/menu-
 เปิด `--scene=year` ดู [คู่มือ](../features/YEAR365.md) สำหรับกฎปัจจุบันและเซฟ แก้ `YearGame`/`YearWeather`/`YearCheckpoint` แล้วตรวจ `scripts/test.sh --filter=year` และชุดเต็ม รวม boot CLI เมื่อแก้ทางเข้า Native ใช้ `tools/year_probe.gd` ผ่าน GUI จนจบปี โดย `tools/year_strategy.gd` วางแผนบนสำเนา ใช้ XDG แยกตามคู่มือ เปลี่ยน format/ruleset อย่างชัดเจนหากแก้กฎที่ทำให้เซฟเก่าเข้ากันไม่ได้
 
 รอบใหม่ 127 ช่องใช้ `YearMap`/`YearExpansion` และ `year_expansion` ใน balance ส่วนรอบเดิมคง `year_game` ตรวจ `test_year_expansion.gd` รวมสามโครงการ × สาม seed และโหลดกลางน้ำหลาก [คู่มือระบบขยาย](../features/YEAR_PROJECTS.md) อธิบายสัญญารัศมี/โบนัส/เซฟ `tools/year_project_strategy.gd` ใช้คำสั่งสาธารณะสำหรับรอบใหม่; `tools/year_probe.gd -- --legacy` ตรวจรอบเดิม โดยยังต้องส่ง out-dir และภาษา ห้าม widen การโหลดเซฟปกติเป็น 127 ช่องตามไปด้วย
+
+## ทดลองขนส่งไม้
+
+เปิด `--scene=transport` ดู [กฎและการตรวจ](../features/TRANSPORT.md) ใช้ `TransportGame`/`TransportCheckpoint`/`TransportSession` รวมสถานะปีและขนส่งโดยไม่เปลี่ยน YearGame หรือเซฟปีเดิม ตรวจ `scripts/test.sh --filter=transport` และชุดเต็ม รวม boot/school CLI เมื่อแก้ทางเข้า Native ใช้ `tools/transport_probe.gd` ทั้งไทย/อังกฤษด้วย XDG แยก ภาพเป็นการเล่นวงจรนำร่อง seed 42 ผ่านปุ่มจริง ไม่ใช่ทดสอบขนส่งครบปี
