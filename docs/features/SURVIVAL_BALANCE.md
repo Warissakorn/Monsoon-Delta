@@ -40,3 +40,26 @@ python3 scripts/check_balance.py FARMER_MANIFEST GREEDY_D0_MANIFEST GREEDY_D10_M
 ตัวตรวจเดิมใช้เกณฑ์ farmer d0 ชนะ ≤5%/ปีเฉลี่ย ≥3, greedy d0 ชนะ 20–60%, greedy d10 ชนะ ≤10% และเวลาต่อ 200 เกม ≤300 วินาที รายงานบันทึก ruleset ใน bot configuration และ hash ของ balance พร้อม effective mods แยกจากรายงาน legacy ผลตัวเลขไม่แทน human playtest; M3 ส่วนผู้เล่นจริงและแผนที่อื่นยังเปิดอยู่
 
 Native ใช้ [menu draft probe](../../tools/menu_draft_probe.gd) ตามคำสั่งใน [คู่มือพัฒนา](../development/README.md#ตรวจภาพและการควบคุม) เพิ่ม `--balanced` หลัง `--lang=th` หรือ `--lang=en` แยก XDG/เซฟใน out-dir ตรวจคลิกเลือกกติกา สลับภาษา ยกเลิกยืนยัน และเริ่มรอบจริง พร้อมภาพและรายงานสองภาษา
+
+
+## ผลยืนยัน 2026-11-07
+
+ผ่านเกณฑ์ตัวเลข plains TS-06 ทั้งสามกรณีบน Godot 4.6.3 จาก commit สะอาด `5f7427d17b620ca04444dc5f3d42e4aede9364f6` ใช้ผู้นำ farmer, seed 1–200 และ greedy candidates 8 เหมือนกันทุกกรณี ไม่รวมรายงานสั้นเป็น 200 เกม:
+
+| บอท / ระดับ | เกม | ชนะ | ปีเฉลี่ย | วินาทีต่อ 200 เกม | ผล |
+|---|---:|---:|---:|---:|---|
+| farmer / 0 | 200 | 0.5% | 3.215 | 19.65 | ผ่าน |
+| greedy / 0 | 200 | 28% | 3.280 | 214.42 | ผ่าน |
+| greedy / 10 | 200 | 4% | 2.100 | 137.48 | ผ่าน |
+
+[รายงาน farmer d0](../reports/balanced_20261107/farmer_d0/manifest.json), [greedy d0](../reports/balanced_20261107/greedy_d0/manifest.json), [greedy d10](../reports/balanced_20261107/greedy_d10/manifest.json) เก็บ manifest, summary และ CSV รายเกมไว้ครบ ตรวจไฟล์ที่ archive แล้วด้วย `scripts/check_balance.py` ได้ exit 0 ตาม [ผลตัวตรวจ](../reports/balanced_20261107/checker.txt) เวลาขึ้นกับเครื่อง ไม่รับประกันเครื่องอื่น
+
+ค่าชุดนี้ผ่านเกณฑ์ตัวเลขในโหมด classic ของ balanced_v1 เท่านั้น ไม่รับรอง legacy, รอบ 10 ปี ทุกผู้นำ ทุกระดับ หรือความสนุกโดยคน Seed 1–30 ที่ใช้คัดกรองอยู่ในชุด 1–200 จึงไม่ใช่ holdout อิสระ ยังต้อง human playtest ก่อนปิด M3 ทั้ง milestone
+
+Godot suite ล่าสุดผ่าน **660/660** รวมกรณีขนส่ง 64 seed, ข้าวเสียหาย, เซฟ v7/v1–v6, และการเทียบพรีวิวบอทกับคำสั่งจริง Boot CLI **28/28**, school CLI **5/5**, Python balance checker **21/21** และ balance CLI ผ่าน
+
+Native X11/Mesa llvmpipe ที่ 1280×720 ตรวจเมนูกฎใหม่ **63/63 ทั้งไทยและอังกฤษ** และเมนูกฎเดิม **61/61 ทั้งไทยและอังกฤษ** ดู [กฎใหม่ไทย](../reports/balanced_20261107/menu-balanced-th.json), [อังกฤษ](../reports/balanced_20261107/menu-balanced-en.json), [กฎเดิมไทย](../reports/balanced_20261107/menu-legacy-th.json), [อังกฤษ](../reports/balanced_20261107/menu-legacy-en.json) ตรวจคลิกเลือกกติกา การปิดตัวเลือกที่ใช้ร่วมไม่ได้ รักษาฟอร์มเมื่อสลับภาษา การยกเลิกยืนยัน และเริ่มรอบจริง ไม่มีการฉีด gameplay state เพื่อให้ผ่านผลเกม
+
+![ตัวเลือกสมดุลเอาตัวรอดในหน้าเกมใหม่ภาษาไทย](../images/survival-balance-setup-th.png)
+
+![ตัวเลือกสมดุลเอาตัวรอดในหน้าเกมใหม่ภาษาอังกฤษ](../images/survival-balance-setup-en.png)

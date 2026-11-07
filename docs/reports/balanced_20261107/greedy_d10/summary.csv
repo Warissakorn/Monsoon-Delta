@@ -1,0 +1,2 @@
+scenario,bot,map,difficulty,runs,completed,wins,win_percent,mean_year,hall_losses,population_losses,mean_population,mean_score,seconds,error
+baseline,greedy,plains,10,200,200,8,4.0,2.1,183,9,5.48,301.65,137.48149,
