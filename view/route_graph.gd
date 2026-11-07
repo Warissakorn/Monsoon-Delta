@@ -206,7 +206,8 @@ func _add_anchor(tile: Tile) -> void:
 		var center: Vector3 = Hex.to_world(tile.coord, tile.elevation) + Vector3.UP * SURFACE_LIFT
 		var offset: Vector3 = Vector3.ZERO
 		if kind in ["house", "hall", "granary"]:
-			offset = Vector3(0.0, 0.0, 0.73 if kind == "hall" else (0.79 if tile.building == C.Building.STILT_HOUSE else 0.59)).rotated(Vector3.UP, BODY_ROTATION)
+			var entrance: float = 0.73 if kind in ["hall", "granary"] else (0.79 if tile.building == C.Building.STILT_HOUSE else 0.68)
+			offset = Vector3(0.0, 0.0, entrance).rotated(Vector3.UP, BODY_ROTATION)
 		elif kind in ["forest", "sapling", "waterwheel", "fish"]:
 			offset = Vector3(EDGE_RADIUS, 0.0, 0.0)
 		var at: Vector3 = center + offset
@@ -296,9 +297,9 @@ func _link_in_tile(a: int, b: int, tile: Tile) -> void:
 	var first: Vector3 = _nodes[a]["point"] - Hex.to_world(tile.coord, tile.elevation)
 	var second: Vector3 = _nodes[b]["point"] - Hex.to_world(tile.coord, tile.elevation)
 	if tile.building in [C.Building.HALL, C.Building.HOUSE, C.Building.STILT_HOUSE, C.Building.GRANARY]:
-		first = first.rotated(Vector3.UP, -BODY_ROTATION)
-		second = second.rotated(Vector3.UP, -BODY_ROTATION)
-		var half: Vector2 = Vector2(0.515, 0.45) if tile.building == C.Building.HALL else Vector2(0.415, 0.40)
+		first = first.rotated(Vector3.UP, -BODY_ROTATION) - _body_offset(tile)
+		second = second.rotated(Vector3.UP, -BODY_ROTATION) - _body_offset(tile)
+		var half: Vector2 = _body_half_size(tile)
 		half += Vector2.ONE * 0.005
 		if not _segment_rect_clear(Vector2(first.x, first.z), Vector2(second.x, second.z), half, HALF_WIDTH):
 			return
@@ -316,8 +317,8 @@ func _link_in_tile(a: int, b: int, tile: Tile) -> void:
 func _point_body_clear(point: Vector3, tile: Tile) -> bool:
 	var local: Vector3 = point - Hex.to_world(tile.coord, tile.elevation)
 	if tile.building in [C.Building.HALL, C.Building.HOUSE, C.Building.STILT_HOUSE, C.Building.GRANARY]:
-		local = local.rotated(Vector3.UP, -BODY_ROTATION)
-		var half: Vector2 = Vector2(0.515, 0.45) if tile.building == C.Building.HALL else Vector2(0.415, 0.40)
+		local = local.rotated(Vector3.UP, -BODY_ROTATION) - _body_offset(tile)
+		var half: Vector2 = _body_half_size(tile)
 		half += Vector2.ONE * 0.005
 		return _point_rect_distance(Vector2(local.x, local.z), half) >= HALF_WIDTH
 	if tile.feature in [C.Feature.FOREST, C.Feature.SAPLING] or tile.building in [C.Building.WATERWHEEL, C.Building.FISH_TRAP]:
@@ -327,6 +328,20 @@ func _point_body_clear(point: Vector3, tile: Tile) -> bool:
 
 func _point_rect_distance(point: Vector2, half: Vector2) -> float:
 	return Vector2(maxf(absf(point.x) - half.x, 0.0), maxf(absf(point.y) - half.y, 0.0)).length()
+
+
+func _body_offset(tile: Tile) -> Vector3:
+	# The detailed house porch projects forwards, rather than enlarging the
+	# rear footprint too. All line, disk and curve checks share this envelope.
+	return Vector3(0.0, 0.0, 0.08) if tile.building in [C.Building.HOUSE, C.Building.STILT_HOUSE] else Vector3.ZERO
+
+
+func _body_half_size(tile: Tile) -> Vector2:
+	if tile.building == C.Building.HALL:
+		return Vector2(0.515, 0.45)
+	if tile.building in [C.Building.HOUSE, C.Building.STILT_HOUSE]:
+		return Vector2(0.415, 0.48)
+	return Vector2(0.415, 0.40)
 
 
 func _segment_rect_clear(a: Vector2, b: Vector2, half: Vector2, radius: float) -> bool:
@@ -374,8 +389,8 @@ func point_clear(point: Vector3, radius: float = HALF_WIDTH) -> bool:
 			return false
 		var local: Vector3 = sample - Hex.to_world(coord, tile.elevation)
 		if tile.building in [C.Building.HALL, C.Building.HOUSE, C.Building.STILT_HOUSE, C.Building.GRANARY]:
-			local = local.rotated(Vector3.UP, -BODY_ROTATION)
-			var half: Vector2 = Vector2(0.515, 0.45) if tile.building == C.Building.HALL else Vector2(0.415, 0.40)
+			local = local.rotated(Vector3.UP, -BODY_ROTATION) - _body_offset(tile)
+			var half: Vector2 = _body_half_size(tile)
 			if absf(local.x) < half.x + 0.005 and absf(local.z) < half.y + 0.005:
 				return false
 		elif tile.feature in [C.Feature.FOREST, C.Feature.SAPLING] or tile.building in [C.Building.WATERWHEEL, C.Building.FISH_TRAP]:

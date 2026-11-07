@@ -1,0 +1,86 @@
+{
+  "captures": [
+    {
+      "draw_calls": 236,
+      "id": "village-ui",
+      "primitives": 85480,
+      "props": 57
+    },
+    {
+      "draw_calls": 135,
+      "id": "village-before",
+      "primitives": 49760,
+      "props": 57
+    },
+    {
+      "draw_calls": 146,
+      "id": "village-dry",
+      "primitives": 75931,
+      "props": 57
+    },
+    {
+      "draw_calls": 98,
+      "id": "riverbank-detail",
+      "primitives": 74098,
+      "props": 57
+    },
+    {
+      "draw_calls": 149,
+      "id": "harvest-activity",
+      "primitives": 71218,
+      "props": 57
+    },
+    {
+      "draw_calls": 148,
+      "id": "village-rain",
+      "primitives": 77359,
+      "props": 57
+    },
+    {
+      "draw_calls": 163,
+      "id": "village-flood",
+      "primitives": 79798,
+      "props": 41
+    },
+    {
+      "draw_calls": 146,
+      "id": "village-restored",
+      "primitives": 75961,
+      "props": 57
+    }
+  ],
+  "checks": {
+    "ambience_moves": true,
+    "committed_harvest_only": true,
+    "courtyards_visible": true,
+    "feedback_expires_in_reduced_motion": true,
+    "flooded_bank_removes_moorings": true,
+    "forecast_never_adds_cargo": true,
+    "harvest-activity_image": true,
+    "isolated_checkpoint": true,
+    "isolated_settings": true,
+    "load_clears_activity": true,
+    "load_fixture": true,
+    "load_keeps_checkpoint": true,
+    "load_restores_exact_state": true,
+    "pause_freezes_scenery": true,
+    "rain_uses_current_season": true,
+    "reduce_motion_static": true,
+    "render_checkpoint_unchanged": true,
+    "render_state_unchanged": true,
+    "river_docks_visible": true,
+    "riverbank-detail_image": true,
+    "village-before_image": true,
+    "village-dry_image": true,
+    "village-flood_image": true,
+    "village-rain_image": true,
+    "village-restored_image": true,
+    "village-ui_image": true,
+    "water_gauges_visible": true,
+    "worksites_visible": true
+  },
+  "engine": "4.6.3-stable (official)",
+  "fixture": true,
+  "language": "th",
+  "note": "Authored settlement fixtures; flood is prepared state and restoration is checkpoint loading. Not a legal seasonal playthrough, human playtest, or hardware benchmark."
+}

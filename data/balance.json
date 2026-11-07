@@ -1007,5 +1007,21 @@
         ]
       }
     }
+  },
+  "transport_pilot_v1": {
+    "source_stock": 30,
+    "initial_water": 1.8,
+    "cut_days": 2,
+    "saw_days": 2,
+    "modes": {
+      "land": {
+        "capacity": 3,
+        "speed": 1
+      },
+      "boat": {
+        "capacity": 6,
+        "speed": 2
+      }
+    }
   }
 }
