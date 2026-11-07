@@ -21,7 +21,7 @@ godot --headless --path . --script res://tools/bot_sim.gd -- \
 
 คำสั่งเดิมที่ไม่มี --scenarios ยังใช้ได้ โดยรัน scenario ชื่อ baseline หนึ่งชุด --map=all หมายถึง plains เท่านั้นตามขอบเขต M3 บอททุกตัวใช้ผู้นำ farmer และ greedy คงวิธีเลือกคำสั่งเดิม
 
-แต่ละครั้งสร้างโฟลเดอร์ใหม่ bot_reports/run_<เวลา UTC>_<รหัส process timer>/ และพิมพ์ตำแหน่งเต็ม ไม่เขียนทับรายงานเดิม ภายในมี:
+แต่ละครั้งสร้างโฟลเดอร์ใหม่ bot_reports/run_<เวลา UTC>_<รหัส process timer>/ พร้อม `.gdignore` เพื่อไม่ให้ Godot import CSV ที่กำลังเขียนเป็นคำแปล และพิมพ์ตำแหน่งเต็ม ไม่เขียนทับรายงานเดิม ภายในมี:
 
 - manifest.json: สถานะ running/complete/failed, seed ต้น–ท้ายเป็นข้อความเพื่อเก็บ int64 ครบ, Godot, Git revision/dirty ถ้ามี, label จาก --revision, SHA-256 ของ balance/scenario, ค่าตั้งบอททั้งหมด, overrides และ effective modifiers หลัง map → leader → difficulty
 - summary.csv: อัตราชนะ ปีเฉลี่ย สาเหตุแพ้ ประชากร คะแนน เวลา จำนวนเกมที่ทำเสร็จ และ error ต่อ scenario/บอท

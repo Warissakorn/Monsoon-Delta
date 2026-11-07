@@ -96,6 +96,13 @@ func _experiment(settings: Dictionary, scenarios: Array, base_defaults: Dictiona
 	if DirAccess.make_dir_recursive_absolute(output) != OK:
 		printerr("Could not create run directory: " + output)
 		return false
+	# CSV reports are not translation resources. Keep editor import from reading
+	# an unfinished report when output lives under res://bot_reports.
+	var ignore: FileAccess = FileAccess.open(output.path_join(".gdignore"), FileAccess.WRITE)
+	if ignore == null:
+		printerr("Could not mark report directory as non-resource: " + output)
+		return false
+	ignore.close()
 	var policies: Array[String] = [String(settings["bot"])]
 	if settings["bot"] == "all":
 		policies = ["farmer", "greedy", "random"]

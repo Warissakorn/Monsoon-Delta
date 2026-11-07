@@ -97,3 +97,19 @@ func test_bot_preview_without_animation_matches_state_and_policy_score() -> void
 		assert_eq(BotGreedy.score_preview(animated, BotGreedy.configuration()["weights"]), BotGreedy.score_preview(fast, BotGreedy.configuration()["weights"]))
 		assert_true(fast["report"].snapshots.is_empty())
 		assert_eq(s.to_dict(), original)
+
+
+func test_disposable_candidate_matches_normal_command_then_preview() -> void:
+	for ruleset: String in ["legacy", "balanced_v1", "moisture_irrigation_v1"]:
+		var state: GameState = GameFlow.new_game({"seed":42,"ruleset":ruleset})
+		var original: Dictionary = state.to_dict()
+		var weights: Dictionary = BotGreedy.configuration()["weights"]
+		for command: Command in BotGreedy.legal_commands(state):
+			var reference: GameState = state.duplicate_state()
+			assert_eq(GameFlow.apply_command(reference, command), "")
+			var expected: Dictionary = GameFlow.preview(reference)
+			var actual: Dictionary = BotGreedy.preview_command(state, command)
+			assert_eq(actual["state"].to_dict(), expected["state"].to_dict())
+			assert_eq(BotGreedy.score_preview(actual, weights), BotGreedy.score_preview(expected, weights))
+		assert_eq(state.to_dict(), original)
+		assert_true(BotGreedy.preview_command(state, Command.new("unknown", Vector2i.ZERO)).is_empty())
