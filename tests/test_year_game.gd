@@ -37,6 +37,32 @@ func test_seeded_weather_and_preview_do_not_change_state() -> void:
 	assert_eq(s, preview["state"])
 
 
+func test_pending_harvest_waits_after_flood_destroys_crop_without_awarding_bonus() -> void:
+	var s: Dictionary = YearGame.new_game(42)
+	var field: int = _find(s, "plant_paddy")
+	s["board"]["tiles"][field]["feature"] = "paddy"
+	s["crop_growth"][field] = 45
+	s["research"].append("agriculture1")
+	assert_eq(YearGame.order(s, "harvest", field), "")
+	# A queued harvest may survive five flood days and resume after the water
+	# recedes. The destroyed crop must regrow before this job awards any food.
+	s["crop_growth"][field] = 0
+	s["board"]["tiles"][field]["water"] = 0.0
+	var before: Dictionary = s.duplicate(true)
+	var events: Array = []
+	for day: int in range(4):
+		YearGame._work(s, events)
+	assert_eq(YearGame.job_status(s, s["jobs"][0]), "year.job.crop")
+	assert_eq(s, before)
+	assert_true(YearCheckpoint.valid(s))
+	s["crop_growth"][field] = 45
+	for day: int in range(3):
+		YearGame._work(s, events)
+	assert_eq(s["resources"]["food"], int(before["resources"]["food"]) + 65)
+	assert_eq(s["stats"]["harvest"], 65)
+	assert_true(s["jobs"].is_empty())
+
+
 func test_full_year_save_float64_round_trip() -> void:
 	var s: Dictionary = YearGame.new_game(42)
 	YearGame.advance(s, 7)

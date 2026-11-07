@@ -28,7 +28,7 @@ static func new_game(cfg: Dictionary) -> GameState:
 	for flag: String in ["is_daily", "is_tutorial", "living_village"]:
 		if cfg.has(flag) and typeof(cfg[flag]) != TYPE_BOOL:
 			return null
-	var state: GameState = MapGen.generate(seed_value)
+	var state: GameState = MapGen.generate(seed_value, ruleset)
 	if state == null:
 		return null
 	state.map_type = map_type
@@ -137,11 +137,11 @@ static func redo(s: GameState) -> GameState:
 	return restored
 
 
-static func preview(s: GameState) -> Dictionary:
+static func preview(s: GameState, record_snapshots: bool = true) -> Dictionary:
 	if s == null:
 		return {}
 	var copy: GameState = s.duplicate_state()
-	var report: TurnReport = TurnResolver.resolve_turn(copy, true)
+	var report: TurnReport = TurnResolver.resolve_turn(copy, record_snapshots)
 	return {"state": copy, "report": report}
 
 

@@ -252,7 +252,7 @@ func _change_language(language: String) -> void:
 	var draft: Dictionary = {}
 	if _screen is MainMenu:
 		draft = _screen.setup_draft()
-		_initial_ruleset = GameState.ruleset_for(_screen._bracing_toggle.button_pressed, _screen._moisture_toggle.button_pressed)
+		_initial_ruleset = "balanced_v1" if _screen._balanced_toggle.button_pressed else GameState.ruleset_for(_screen._bracing_toggle.button_pressed, _screen._moisture_toggle.button_pressed, _screen._irrigation_toggle.button_pressed)
 	_language = language
 	Localization.change_language(language)
 	var error: String = GamePreferences.write({"language": language})

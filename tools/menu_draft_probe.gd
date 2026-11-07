@@ -18,6 +18,7 @@ var _normal_bytes: PackedByteArray
 var _checks: Dictionary = {}
 var _captures: Array[Dictionary] = []
 var _failed: bool = false
+var _balanced: bool = false
 
 
 func _initialize() -> void:
@@ -30,6 +31,8 @@ func _run() -> void:
 			_out_dir = argument.trim_prefix("--out-dir=")
 		elif argument.begins_with("--lang="):
 			_language = argument.trim_prefix("--lang=")
+		elif argument == "--balanced":
+			_balanced = true
 	if DisplayServer.get_name() == "headless" or _language not in ["th", "en"] or not _out_dir.is_absolute_path():
 		printerr("Menu draft probe needs a native display, --lang=th|en and an absolute --out-dir.")
 		quit(2)
@@ -75,6 +78,9 @@ func _run() -> void:
 	_menu._bracing_toggle.set_pressed_no_signal(true)
 	_menu._moisture_toggle.set_pressed_no_signal(true)
 	_menu._seed_input.text = SEED_TEXT
+	if _balanced:
+		await _click_control(_menu._balanced_toggle)
+		_check("balanced_disables_other_rules", _menu._bracing_toggle.disabled and _menu._moisture_toggle.disabled and _menu._irrigation_toggle.disabled)
 	_check_draft("prepared_setup")
 	var destinations: Array[String] = ["th" if _language == "en" else "en", _language]
 	for language: String in destinations:
@@ -88,7 +94,7 @@ func _run() -> void:
 		_check("leader_description_" + language, _menu._leader_description.text == _tr("leader.fisher.desc"))
 		_check("mode_description_" + language, _menu._run_mode_description.text == _tr("run_mode.long.desc"))
 		_check("goal_description_" + language, _menu._goal_description.text == _tr("goal.forest.desc"))
-		_check("difficulty_description_" + language, _menu._difficulty_description.text == DifficultyInfo.description(7, "fisher", "long"))
+		_check("difficulty_description_" + language, _menu._difficulty_description.text == DifficultyInfo.description(7, "fisher", "long", "balanced_v1" if _balanced else "legacy"))
 		_check("menu_panel_fits_" + language, root.get_visible_rect().encloses(_menu._menu_panel.get_global_rect()))
 		await _reveal(_menu._leader_option)
 		await _capture("menu-draft-options", language)
@@ -118,7 +124,7 @@ func _run() -> void:
 	if _boot._session != null:
 		var expected: GameState = GameFlow.new_game({
 			"seed": SeedUtil.parse_seed_text(SEED_TEXT), "leader": "fisher", "difficulty": 7,
-			"run_mode": "long", "village_goal": "forest", "ruleset": "bracing_moisture_v1", "living_village": true,
+			"run_mode": "long", "village_goal": "forest", "ruleset": "balanced_v1" if _balanced else "bracing_moisture_v1", "living_village": true,
 		})
 		_check("started_config_exact", _boot._session.state.to_dict() == expected.to_dict())
 		_check("activation_preserves_turn_one", _boot._session.state.turn == 1 and _boot._session.state.phase == C.Phase.PLANNING)
@@ -132,7 +138,8 @@ func _check_draft(context: String) -> void:
 	_check(context + "_mode", _menu._run_mode_option.selected == 1)
 	_check(context + "_goal", _menu._goal_option.selected == 2)
 	_check(context + "_difficulty", _menu._difficulty_option.get_selected_id() == 7)
-	_check(context + "_ruleset", _menu._bracing_toggle.button_pressed and _menu._moisture_toggle.button_pressed)
+	_check(context + "_ruleset", (not _menu._bracing_toggle.button_pressed and not _menu._moisture_toggle.button_pressed) if _balanced else (_menu._bracing_toggle.button_pressed and _menu._moisture_toggle.button_pressed))
+	_check(context + "_balanced", _menu._balanced_toggle.button_pressed == _balanced)
 
 
 func _find_button(node: Node, text: String, prefix: bool = false) -> Button:

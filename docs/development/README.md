@@ -79,7 +79,7 @@ XDG_DATA_HOME="$PWD/work/continue-summary-qa/th/data" XDG_CONFIG_HOME="$PWD/work
 
 [Build desktop games](../../.github/workflows/build.yml) ใช้ Godot 4.6.3 Standard พร้อม export templates และ [presets](../../export_presets.cfg) สำหรับ Windows/Linux x86_64 รันเมื่อ push เข้า `main`, push tag `v*`, เปิด/อัปเดต PR หรือกด **Actions → Build desktop games → Run workflow** บน branch ที่มี workflow นี้
 
-Workflow ตรวจเอกสารและรัน `scripts/test.sh` ก่อน export แบบ release จากนั้น smoke เปิดเมนู เกม และ sandbox ของ Linux build ทั้งไทยและอังกฤษ เมื่อผ่าน ดาวน์โหลด `MonsoonDelta-windows-x86_64` หรือ `MonsoonDelta-linux-x86_64` จากส่วน **Artifacts** ของ run แล้วแตก archive ภายในอีกครั้ง เก็บ artifacts และ build logs 14 วัน; Linux ใช้ tar.gz เพื่อรักษาสิทธิ์ executable ไม่เผยแพร่ Release อัตโนมัติ และ Windows build ยังไม่ได้ smoke บน Windows จริง
+Workflow ตรวจเอกสารและรัน `scripts/test.sh` ก่อน export แบบ release จากนั้น smoke Linux build ทั้งไทยและอังกฤษในโหมด `menu`, `game`, `sandbox`, `daily` และ `year`; ลูป exported-build นี้ยังไม่รวม `transport` (boot CLI ตรวจทางเข้าโหมดขนส่งจากโปรเจกต์แยกต่างหาก) เมื่อผ่าน ดาวน์โหลด `MonsoonDelta-windows-x86_64` หรือ `MonsoonDelta-linux-x86_64` จากส่วน **Artifacts** ของ run แล้วแตก archive ภายในอีกครั้ง เก็บ artifacts และ build logs 14 วัน; Linux ใช้ tar.gz เพื่อรักษาสิทธิ์ executable ไม่เผยแพร่ Release อัตโนมัติ และ Windows build ยังไม่ได้ smoke บน Windows จริง
 
 Build ในเครื่องหลังติดตั้ง export templates รุ่นเดียวกัน:
 
@@ -118,6 +118,10 @@ XDG_DATA_HOME="$PWD/work/menu-draft-qa/en/data" XDG_CONFIG_HOME="$PWD/work/menu-
 5. รันการตรวจตามตาราง สรุปไฟล์หลัก ผลตรวจ และงานค้างใน PR ให้ผู้อื่นเริ่มต่อได้ โดยไม่ต้องอ่านบทสนทนาก่อนหน้า
 
 การส่งต่องานควรระบุ commit/branch, ขอบเขตที่เสร็จ, คำสั่งตรวจและผล, และประเด็นที่ยังไม่ยืนยัน ไม่ใส่ token, credentials หรือข้อมูลจากเซฟจริงลงเอกสาร
+
+## สมดุลเอาตัวรอดแบบแยกรุ่น
+
+ใช้ [คู่มือ `balanced_v1`](../features/SURVIVAL_BALANCE.md) สำหรับกฎอาหาร/ความยากและเซฟ v7 ตรวจ `scripts/test.sh --filter=balanced` และ boot CLI เพิ่ม `--balanced` ให้ `tools/menu_draft_probe.gd` เพื่อตรวจ UI ใหม่ทั้งไทย/อังกฤษ ส่วน legacy ยังใช้คำสั่งเดิม การรับรองตัวเลขใช้ benchmark 200 เกมสามกรณีจาก commit สะอาดผ่าน `check_balance.py` ไม่แทน human playtest
 
 ## ต้นแบบรายวัน
 

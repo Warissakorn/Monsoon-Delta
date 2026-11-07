@@ -37,6 +37,10 @@
 "setup.difficulty_homes","Wood: house %d · Stilt house %d","ใช้ไม้: บ้าน %d · บ้านยกพื้น %d"
 "setup.difficulty_survival","Spoilage without a granary %.0f%% · Forest absorbs %.2f water/turn","อาหารเน่าเมื่อไม่มียุ้ง %.0f%% · ป่าซับน้ำ %.2f ต่อเทิร์น"
 "setup.difficulty_six","Level 6 uses the same gameplay rules as 5 with a higher score multiplier.","ระดับ 6 ใช้กฎการเล่นเหมือนระดับ 5 แต่มีตัวคูณคะแนนสูงขึ้น"
+"setup.balanced","Survival balance · new rules","สมดุลเอาตัวรอด · กฎใหม่"
+"setup.balanced_hint","More food planning, real extra rain at level 6, and extra rain at levels 7–9 without a population discount. Uses the v7 save format; cannot combine with experimental field or house rules. Existing runs keep their rules.","เน้นวางแผนอาหาร ระดับ 6 ฝนเพิ่มจริง ระดับ 7–9 ฝนเพิ่ม และไม่ลดภาระด้วยการลดคน ใช้เซฟ v7 ไม่ใช้ร่วมกฎทดลองบ้าน/นา รอบค้างคงกฎเดิม"
+"setup.difficulty_six_balanced","Level 6 adds another ×1.1 rain multiplier; level 7 reduces starting food by 2 instead of population; levels 7–9 each add ×1.5 rain.","ระดับ 6 เพิ่มฝนอีก ×1.1; ระดับ 7 ลดอาหารเริ่ม 2 แทนการลดประชากร และระดับ 7–9 เพิ่มฝนขั้นละ ×1.5"
+"ruleset.balanced_v1.name","Survival balance v1","สมดุลเอาตัวรอด v1"
 "difficulty.run","Difficulty %d · Score ×%.1f","ความยาก %d · คะแนน ×%.1f"
 "credits.title","Credits","เครดิต"
 "credits.body","Monsoon Delta
@@ -665,6 +669,7 @@ Output: %s","คน %d · ชุดละ %d วัน
 "year.job.paused","Paused","พักงาน"
 "year.job.exhausted","Resource exhausted","วัตถุดิบหมด"
 "year.job.complete","Fully repaired","ซ่อมเต็มแล้ว"
+"year.job.crop","Waiting for mature rice","รอข้าวพร้อมเก็บเกี่ยว"
 "year.job.damage","Building needs repair","อาคารต้องซ่อม"
 "year.job.water","Waiting for suitable water","รอน้ำที่เหมาะสม"
 "year.job.materials","Waiting for materials","รอวัสดุ"

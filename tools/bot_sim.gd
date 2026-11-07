@@ -12,7 +12,7 @@ func _initialize() -> void:
 		return
 	if parsed.get("help", false):
 		print("Usage: --bot=farmer|greedy|random|all --runs=200 --map=plains|all --difficulty=0..10 --seed-start=1 --candidates=N --output=directory")
-		print("Experiments: --scenarios=path/to/scenarios.json --revision=optional-label")
+		print("Experiments: --scenarios=path/to/scenarios.json --revision=optional-label --ruleset=legacy|balanced_v1")
 		print("Schema: {\"version\":1,\"scenarios\":[{\"id\":\"baseline\",\"mods\":{}}]}")
 		print("Every invocation creates a fresh run directory. M3 supports plains only, without cards/events.")
 		quit(0)
@@ -39,6 +39,7 @@ func _settings(arguments: PackedStringArray) -> Dictionary:
 		"bot": "all", "runs": 200, "map": "plains", "difficulty": 0,
 		"seed-start": 1, "output": "res://bot_reports", "scenarios": "", "revision": "",
 		"candidates": int(DataDB.balance()["bots"]["candidate_count"]),
+		"ruleset": "legacy",
 	}
 	for argument: String in arguments:
 		if argument in ["--help", "-h"]:
@@ -55,6 +56,8 @@ func _settings(arguments: PackedStringArray) -> Dictionary:
 			settings[key] = parts[1]
 	if String(settings["bot"]) not in ["farmer", "greedy", "random", "all"]:
 		return {"error": "--bot must be farmer, greedy, random, or all"}
+	if settings["ruleset"] not in ["legacy", "balanced_v1"]:
+		return {"error": "--ruleset must be legacy or balanced_v1"}
 	if String(settings["map"]) not in ["plains", "all"]:
 		return {"error": "M3 currently implements plains only"}
 	if int(settings["runs"]) < 1 or int(settings["candidates"]) < 1:
@@ -79,6 +82,8 @@ func _fits_int64(value: String) -> bool:
 
 
 func _experiment(settings: Dictionary, scenarios: Array, base_defaults: Dictionary) -> bool:
+	var profile: Dictionary = DataDB.balance()["balanced_v1"]["mods"] if settings["ruleset"] == "balanced_v1" else {}
+	var profile_defaults: Dictionary = profile.duplicate(true)
 	var parent: String = ProjectSettings.globalize_path(String(settings["output"]))
 	if FileAccess.file_exists(parent):
 		printerr("Output directory path is a file: " + parent)
@@ -103,7 +108,7 @@ func _experiment(settings: Dictionary, scenarios: Array, base_defaults: Dictiona
 		"difficulty": settings["difficulty"], "policies": policies,
 		"runs_per_policy": settings["runs"], "seed_start": str(settings["seed-start"]),
 		"seed_end": str(seed_end),
-		"bot_configuration": BotGreedy.configuration({"candidate_count": int(settings["candidates"])}),
+		"bot_configuration": BotGreedy.configuration(_bot_options(settings)),
 		"scenario_file": settings["scenarios"], "scenarios": scenarios.duplicate(true),
 		"generation_note": "Overrides also affect map-generation safety rejection. Matching seeds can produce different boards across scenarios.",
 		"results": [], "error": "",
@@ -121,10 +126,15 @@ func _experiment(settings: Dictionary, scenarios: Array, base_defaults: Dictiona
 		var defaults: Dictionary = DataDB.balance()["mods_default"]
 		defaults.assign(base_defaults)
 		defaults.merge(scenario["mods"], true)
+		profile.assign(profile_defaults)
+		for key: String in profile_defaults:
+			if scenario["mods"].has(key):
+				profile[key] = scenario["mods"][key]
 		var model: GameState = GameState.new()
 		model.map_type = "plains"
 		model.leader = "farmer"
 		model.difficulty = int(settings["difficulty"])
+		model.ruleset = settings["ruleset"]
 		model.recompute_mods()
 		var scenario_output: String = output.path_join(String(scenario["id"]))
 		if DirAccess.make_dir_recursive_absolute(scenario_output) != OK:
@@ -151,6 +161,7 @@ func _experiment(settings: Dictionary, scenarios: Array, base_defaults: Dictiona
 		if not succeeded:
 			break
 	Dictionary(DataDB.balance()["mods_default"]).assign(base_defaults)
+	profile.assign(profile_defaults)
 	manifest["status"] = "complete" if succeeded else "failed"
 	manifest["finished_utc"] = Time.get_datetime_string_from_system(true)
 	if not _write_summary(output.path_join("summary.csv"), manifest["results"]):
@@ -188,7 +199,7 @@ func _run_policy(policy: String, settings: Dictionary, output: String) -> Dictio
 	for run: int in int(settings["runs"]):
 		var seed_value: int = int(settings["seed-start"]) + run
 		var game_started: int = Time.get_ticks_usec()
-		var played: Dictionary = BotGreedy.play_game(seed_value, policy, difficulty, {"candidate_count": int(settings["candidates"])})
+		var played: Dictionary = BotGreedy.play_game(seed_value, policy, difficulty, _bot_options(settings))
 		if not String(played["error"]).is_empty():
 			result["error"] = "%s seed %d failed: %s" % [policy, seed_value, played["error"]]
 			break
@@ -273,3 +284,10 @@ func _write_summary(path: String, results: Array) -> bool:
 	var succeeded: bool = file.get_error() == OK
 	file.close()
 	return succeeded
+
+
+func _bot_options(settings: Dictionary) -> Dictionary:
+	var options: Dictionary = {"candidate_count": int(settings["candidates"])}
+	if settings["ruleset"] != "legacy":
+		options["ruleset"] = settings["ruleset"]
+	return options

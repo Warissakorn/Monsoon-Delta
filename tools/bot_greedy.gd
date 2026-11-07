@@ -71,7 +71,7 @@ static func play_turn(state: GameState, random: RandomNumberGenerator, overrides
 		var options: Array[Command] = legal_commands(state)
 		if options.is_empty():
 			break
-		var best_score: float = score_preview(GameFlow.preview(state), weights)
+		var best_score: float = score_preview(GameFlow.preview(state, false), weights)
 		var best: Command = null
 		# Draw without replacement. Each of the prescribed candidates is legal.
 		for _candidate: int in mini(candidates, options.size()):
@@ -84,7 +84,7 @@ static func play_turn(state: GameState, random: RandomNumberGenerator, overrides
 			if not error.is_empty():
 				push_error("Greedy could not apply a legal candidate: " + error)
 				return -1
-			var value: float = score_preview(GameFlow.preview(trial), weights)
+			var value: float = score_preview(GameFlow.preview(trial, false), weights)
 			if value > best_score + C.EPS:
 				best_score = value
 				best = command
@@ -120,6 +120,7 @@ static func play_game(seed_value: int, policy: String, difficulty: int = 0, over
 		return {"state": null, "turns": 0, "actions": 0, "error": "unknown_bot"}
 	var state: GameState = GameFlow.new_game({
 		"seed": seed_value, "map_type": "plains", "leader": "farmer", "difficulty": difficulty,
+		"ruleset": overrides.get("ruleset", "legacy"),
 	})
 	if state == null:
 		return {"state": null, "turns": 0, "actions": 0, "error": "new_game_failed"}

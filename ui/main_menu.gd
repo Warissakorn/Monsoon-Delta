@@ -51,6 +51,7 @@ var _difficulty_description: Label
 var _bracing_toggle: CheckBox
 var _moisture_toggle: CheckBox
 var _irrigation_toggle: CheckBox
+var _balanced_toggle: CheckBox
 var _error_panel: PanelContainer
 var _error_label: Label
 var _error_key: String = ""
@@ -501,6 +502,16 @@ func _build_setup(parent: Node) -> void:
 	var irrigation_hint: Label = _label("setup.irrigation_hint", "", true)
 	irrigation_hint.add_theme_font_size_override("font_size", 16)
 	_setup.add_child(irrigation_hint)
+	_balanced_toggle = CheckBox.new()
+	_balanced_toggle.name = "EnableBalanced"
+	_balanced_toggle.text = tr("setup.balanced")
+	_balanced_toggle.tooltip_text = tr("setup.balanced_hint")
+	_balanced_toggle.custom_minimum_size.y = 44
+	_balanced_toggle.set_pressed_no_signal(initial_ruleset == "balanced_v1")
+	_balanced_toggle.toggled.connect(func(_enabled: bool): _update_balanced_options())
+	_setup.add_child(_balanced_toggle)
+	_setup.add_child(_label("setup.balanced_hint", "", true))
+	_update_balanced_options()
 	_setup.add_child(_label("setup.seed", "Kicker"))
 	_seed_input = LineEdit.new()
 	_seed_input.text = str(initial_seed)
@@ -556,10 +567,19 @@ func _select_difficulty(_index: int) -> void:
 	_update_difficulty_description()
 
 
+func _update_balanced_options() -> void:
+	for toggle: CheckBox in [_bracing_toggle, _moisture_toggle, _irrigation_toggle]:
+		toggle.disabled = _balanced_toggle.button_pressed
+		if _balanced_toggle.button_pressed:
+			toggle.set_pressed_no_signal(false)
+	_update_difficulty_description()
+
+
 func _update_difficulty_description() -> void:
 	if _difficulty_description == null:
 		return
-	_difficulty_description.text = DifficultyInfo.description(_difficulty_option.get_selected_id(), LEADERS[_leader_option.selected], RUN_MODES[_run_mode_option.selected])
+	var ruleset: String = "balanced_v1" if _balanced_toggle != null and _balanced_toggle.button_pressed else "legacy"
+	_difficulty_description.text = DifficultyInfo.description(_difficulty_option.get_selected_id(), LEADERS[_leader_option.selected], RUN_MODES[_run_mode_option.selected], ruleset)
 	_difficulty_option.tooltip_text = _difficulty_description.text
 
 
@@ -583,6 +603,7 @@ func setup_draft() -> Dictionary:
 		"bracing": _bracing_toggle.button_pressed,
 		"moisture": _moisture_toggle.button_pressed,
 		"irrigation": _irrigation_toggle.button_pressed,
+		"balanced": _balanced_toggle.button_pressed,
 	}
 
 
@@ -595,6 +616,8 @@ func restore_setup_draft(draft: Dictionary) -> void:
 	_bracing_toggle.set_pressed_no_signal(draft["bracing"])
 	_moisture_toggle.set_pressed_no_signal(draft["moisture"])
 	_irrigation_toggle.set_pressed_no_signal(bool(draft.get("irrigation", false)))
+	_balanced_toggle.set_pressed_no_signal(bool(draft.get("balanced", false)))
+	_update_balanced_options()
 	_select_leader(_leader_option.selected)
 	_select_run_mode(_run_mode_option.selected)
 	_select_goal(_goal_option.selected)
@@ -612,6 +635,8 @@ func _request_start() -> void:
 		"village_goal": GOALS[_goal_option.selected],
 	}
 	var ruleset: String = GameState.ruleset_for(_bracing_toggle.button_pressed, _moisture_toggle.button_pressed, _irrigation_toggle.button_pressed)
+	if _balanced_toggle.button_pressed:
+		ruleset = "balanced_v1"
 	if ruleset != "legacy":
 		_pending_config["ruleset"] = ruleset
 	# Existing files are protected even if a temporary read failure disabled
