@@ -103,6 +103,17 @@ class BootDifficultyTests(unittest.TestCase):
         self.invoke("--ruleset=bracing_v1", scene="menu")
         self.assertEqual(self.checkpoint.read_bytes(), saved)
 
+    def test_balanced_ruleset_uses_v7_and_menu_does_not_replace_it(self):
+        self.invoke("--ruleset=balanced_v1", "--difficulty=6")
+        envelope = self.read_checkpoint()
+        self.assertEqual(envelope["version"], 7)
+        self.assertEqual(envelope["state"]["ruleset"], "balanced_v1")
+        self.assertEqual(envelope["state"]["population"], 6)
+        self.assertEqual(envelope["state"]["food"], 70)
+        before = self.checkpoint.read_bytes()
+        self.invoke("--ruleset=balanced_v1", scene="menu")
+        self.assertEqual(self.checkpoint.read_bytes(), before)
+
     def test_irrigation_rulesets_start_v6_with_only_selected_mechanics(self):
         for bracing in (False, True):
             for moisture in (False, True):

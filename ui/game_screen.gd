@@ -57,6 +57,10 @@ var _time_label: Label
 var _resources_label: Label
 var _water_label: Label
 var _run_label: Label
+var _food_budget: Dictionary = {}
+var _food_plan_button: Button
+var _food_plan_summary: Label
+var _food_plan_return: String = ""
 var _goal_label: Label
 var _goal_panel: Control
 var _survival_help: Label
@@ -242,6 +246,10 @@ func _build_hud() -> void:
 	_run_label.custom_minimum_size.x = 250
 	_run_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	time_row.add_child(_run_label)
+	_food_plan_button = _button(tr("foodplan.open"), open_food_plan, "OpenFoodPlan")
+	_food_plan_button.theme_type_variation = "QuietButton"
+	_food_plan_button.focus_mode = Control.FOCUS_ALL
+	time_row.add_child(_food_plan_button)
 	for button: Button in [_button(tr("action.history"), open_turn_history, "TurnHistory"), _button(tr("action.pause"), open_pause, "Pause")]:
 		button.theme_type_variation = "QuietButton"
 		time_row.add_child(button)
@@ -257,6 +265,9 @@ func _build_hud() -> void:
 	_water_label = _label("", 18, true)
 	_water_label.custom_minimum_size.x = 340
 	resources_row.add_child(_water_label)
+	_food_plan_summary = _label("", 18)
+	_food_plan_summary.name = "FoodPlanSummary"
+	header.add_child(_food_plan_summary)
 	var survival_row := HBoxContainer.new()
 	header.add_child(survival_row)
 	survival_row.add_child(_icon("hall", 22))
@@ -439,6 +450,7 @@ func refresh_state() -> void:
 	board.set_state(state)
 	board.set_labels_visible(show_levels)
 	prediction = GameFlow.preview(state) if state.phase == C.Phase.PLANNING else {}
+	_food_budget = FoodBudget.describe(state, prediction)
 	harvest_projection = {}
 	_goal_preview_achieved = false
 	_predicted_outcome = C.Outcome.NONE
@@ -447,17 +459,19 @@ func refresh_state() -> void:
 		var predicted: GameState = prediction["state"]
 		_predicted_outcome = predicted.outcome
 		if state.turn == C.TURNS_PER_YEAR and _predicted_outcome == C.Outcome.NONE:
-			var harvested: GameState = predicted.duplicate_state()
-			var available_food: int = harvested.food
-			var food_needed: int = harvested.population * maxi(0, roundi(float(harvested.mod("food_per_person"))))
-			Harvest.do_harvest(harvested)
-			_goal_preview_achieved = state.goal_achieved_year == 0 and harvested.goal_achieved_year > 0
-			harvest_prediction = harvested.harvest_report.duplicate(true)
+			var budget_next: Dictionary = _food_budget["next"]
+			_goal_preview_achieved = budget_next["new_goal"]
+			harvest_prediction = budget_next["harvest"].duplicate(true)
 			harvest_projection = harvest_prediction.duplicate(true)
-			harvest_projection["available_food"] = available_food + int(harvest_projection["paddy_food"])
-			harvest_projection["food_needed"] = food_needed
-			harvest_projection["capacity"] = harvested.capacity()
-			_predicted_outcome = harvested.outcome
+			harvest_projection["available_food"] = budget_next["available"]
+			harvest_projection["food_needed"] = budget_next["needed"]
+			harvest_projection["capacity"] = budget_next["capacity"]
+			_predicted_outcome = budget_next["outcome"]
+	_food_plan_button.disabled = not _food_budget["planning"]
+	_food_plan_summary.visible = _food_budget["planning"]
+	_food_plan_summary.text = tr("foodplan.summary") % [int(_food_budget["stored"]), int(_food_budget["needed"]), int(_food_budget["rice"])]
+	_food_plan_summary.tooltip_text = tr("foodplan.rice_help")
+	_food_plan_button.tooltip_text = tr("foodplan.button_help")
 	board.set_preview(prediction, preview_enabled)
 	board.hover(hovered_coord)
 	if state.get_tile(_pinned_coord) != null:
@@ -623,6 +637,63 @@ func _refresh_advisor() -> void:
 				_advisor_button.text = tr("advisor.review")
 	_advisor_button.visible = not _advisor_command.is_empty() or _advisor_coord != BoardView.NO_COORD or _advisor_review
 	_advisor_button.tooltip_text = tr("advisor.action_help")
+
+
+func open_food_plan() -> void:
+	if session == null or session.state == null or session.state.phase != C.Phase.PLANNING or modal_kind not in ["", "pause"]:
+		return
+	_food_plan_return = modal_kind
+	_open_modal("food_plan", tr("foodplan.title"))
+	var scroll: ScrollContainer = ScrollContainer.new()
+	scroll.name = "FoodPlanScroll"
+	scroll.custom_minimum_size = Vector2(704, 360)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	_modal_content.add_child(scroll)
+	var panel: FoodPlanPanel = FoodPlanPanel.new()
+	panel.name = "FoodPlanDetails"
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(panel)
+	panel.configure(_food_budget)
+	var choices: GridContainer = GridContainer.new()
+	choices.name = "FoodPlanChoices"
+	choices.columns = 2
+	_modal_content.add_child(choices)
+	for id: String in ["fish_trap", "paddy", "reservoir", "granary"]:
+		var button: Button = _button(tr("foodplan.choose") % tr("cmd." + id + ".name"), _choose_food_command.bind(id), "FoodPlanCommand_" + id)
+		button.focus_mode = Control.FOCUS_ALL
+		button.custom_minimum_size = Vector2(340, 44)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.theme_type_variation = "QuietButton"
+		button.disabled = _targets.get(id, []).is_empty()
+		var cost: Vector2i = CommandRules.cost(session.state, Command.new(id))
+		button.tooltip_text = tr("cmd." + id + ".desc") + "\n" + tr("hud.command_cost") % [cost.x, cost.y]
+		if button.disabled:
+			button.tooltip_text += "\n" + tr(_unavailable_reason(id))
+		choices.add_child(button)
+	_add_modal_button(tr("foodplan.back_pause" if _food_plan_return == "pause" else "turn.back_to_plan"), close_food_plan, "CloseFoodPlan", true)
+
+
+func close_food_plan() -> void:
+	if modal_kind != "food_plan":
+		return
+	var return_to_pause: bool = _food_plan_return == "pause"
+	_food_plan_return = ""
+	close_modal()
+	_arm_end_turn_input_guard()
+	if return_to_pause:
+		open_pause()
+	else:
+		_food_plan_button.grab_focus()
+
+
+func _choose_food_command(id: String) -> void:
+	if modal_kind != "food_plan" or valid_targets(id).is_empty():
+		return
+	_food_plan_return = ""
+	close_modal()
+	select_command(id)
+	_arm_end_turn_input_guard()
 
 
 func _act_on_advice() -> void:
@@ -1849,6 +1920,7 @@ func open_pause() -> void:
 	_motion_error.visible = false
 	_modal_content.add_child(_motion_error)
 	_add_modal_button(tr("action.resume"), close_modal, "Resume", true)
+	_add_modal_button(tr("foodplan.open"), open_food_plan, "PauseFoodPlan")
 	_add_modal_button(tr("action.history"), open_turn_history, "PauseHistory")
 	if not session.last_save_error.is_empty():
 		_modal_content.add_child(_label(tr(session.last_save_error)))
@@ -1956,7 +2028,8 @@ func _input(event: InputEvent) -> void:
 	# This sees motion over the HUD too, before GUI controls consume the event.
 	if event is InputEventMouseMotion and event.relative != Vector2.ZERO:
 		_inspection_focus = BoardView.NO_COORD
-	if not modal_kind.is_empty() and Time.get_ticks_msec() < _end_input_locked_until and event is InputEventKey and event.pressed and event.is_action("ui_accept"):
+	var protected_accept: bool = not modal_kind.is_empty() or get_viewport().gui_get_focus_owner() == _food_plan_button
+	if protected_accept and Time.get_ticks_msec() < _end_input_locked_until and event is InputEventKey and event.pressed and event.is_action("ui_accept"):
 		get_viewport().set_input_as_handled()
 	# Holding the key that opens a summary must not accept its next action.
 	if not modal_kind.is_empty() and event is InputEventKey and event.pressed and event.echo and event.is_action("ui_accept"):
@@ -1968,13 +2041,20 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if not modal_kind.is_empty():
 		if event is InputEventKey and event.pressed and not event.echo:
-			if event.physical_keycode == KEY_H and modal_kind in ["pause", "harvest", "game_over"]:
+			if event.physical_keycode == KEY_F2 and modal_kind in ["pause", "food_plan"]:
+				if modal_kind == "food_plan":
+					close_food_plan()
+				else:
+					open_food_plan()
+			elif event.physical_keycode == KEY_H and modal_kind in ["pause", "harvest", "game_over"]:
 				open_turn_history()
 			elif event.physical_keycode == KEY_ESCAPE:
 				if modal_kind == "history_map":
 					_return_from_history_map()
 				elif modal_kind == "turn_history":
 					close_turn_history()
+				elif modal_kind == "food_plan":
+					close_food_plan()
 				elif modal_kind in ["pause", "area_development"] or modal_kind in END_TURN_CONFIRMATIONS:
 					close_modal()
 		get_viewport().set_input_as_handled()
@@ -1998,6 +2078,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				KEY_SPACE, KEY_ENTER: request_end_turn_from_input()
 				KEY_TAB: toggle_preview()
 				KEY_H: open_turn_history()
+				KEY_F2: open_food_plan()
 				KEY_V:
 					show_levels = not show_levels
 					board.set_labels_visible(show_levels)

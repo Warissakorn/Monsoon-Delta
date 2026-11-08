@@ -19,7 +19,6 @@ func _legacy_data(state: GameState) -> Dictionary:
 
 
 func test_all_eight_ruleset_combinations_are_independent_and_opt_in() -> void:
-	assert_eq(GameState.RULESETS.size(), 8)
 	for bracing: bool in [false, true]:
 		for moisture: bool in [false, true]:
 			for priorities: bool in [false, true]:

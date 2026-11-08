@@ -8,6 +8,18 @@ func _model() -> Dictionary:
 	return result
 
 
+func test_authored_corridor_preserves_seeded_hall_and_housing() -> void:
+	for seed_value: int in range(1, 65):
+		var initial: Dictionary = YearGame.new_expanded(seed_value)
+		var model: Dictionary = TransportGame.create(seed_value)
+		assert_eq(model["year"]["structures"].count("hall"), 1, "seed %d keeps its hall" % seed_value)
+		assert_eq(YearGame.housing(model["year"]), YearGame.housing(initial), "seed %d keeps its homes" % seed_value)
+		assert_true(TransportCheckpoint.valid(model), "seed %d starts a checkpointable pilot" % seed_value)
+		var loaded: Dictionary = TransportCheckpoint.decode(TransportCheckpoint.envelope(model))
+		assert_eq(loaded["error"], "")
+		assert_eq(loaded["state"], model)
+
+
 func _days(model: Dictionary, count: int) -> void:
 	for day: int in range(count):
 		TransportGame.advance(model, 1)

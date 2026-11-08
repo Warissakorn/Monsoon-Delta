@@ -302,6 +302,7 @@ func open_pause() -> void:
 	_modal_content.add_child(_motion_error)
 	_add_modal_button(tr("action.resume"), close_modal, "Resume", true)
 	_add_modal_button(tr("school.hint"), open_hint, "SchoolPauseHint")
+	_add_modal_button(tr("foodplan.open"), open_food_plan, "PauseFoodPlan")
 	_add_modal_button(tr("action.history"), open_turn_history, "PauseHistory")
 	_add_modal_button(tr("school.retry"), retry_lesson, "SchoolPauseRetry")
 	_add_modal_button(tr("school.choose"), _choose_school, "SchoolPauseChoose")

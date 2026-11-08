@@ -276,6 +276,8 @@ static func job_status(s: Dictionary, job: Dictionary) -> String:
 		return "year.job.exhausted"
 	if id == "repair" and int(s["health"][index]) >= 100:
 		return "year.job.complete"
+	if id == "harvest" and int(s["crop_growth"][index]) < 45:
+		return "year.job.crop"
 	if id in ["saw_planks", "fire_bricks", "assemble_kits"] and int(s["health"][index]) <= 0:
 		return "year.job.damage"
 	if id == "fish" and float(tile["water"]) < 0.05:

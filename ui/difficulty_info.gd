@@ -7,12 +7,13 @@ static func label(level: int) -> String:
 	return String(TranslationServer.translate("setup.difficulty_zero")) if level == 0 else String(TranslationServer.translate("setup.difficulty_level")) % level
 
 
-static func description(level: int, leader: String = "farmer", run_mode: String = "classic") -> String:
+static func description(level: int, leader: String = "farmer", run_mode: String = "classic", ruleset: String = "legacy") -> String:
 	# Recompute derived values without generating a map, forecast or checkpoint.
 	var state: GameState = GameState.new()
 	state.difficulty = level
 	state.leader = leader
 	state.run_mode = run_mode
+	state.ruleset = ruleset
 	state.recompute_mods()
 	var scoring: Dictionary = DataDB.balance()["scoring"]
 	var lines: PackedStringArray = PackedStringArray([
@@ -24,5 +25,5 @@ static func description(level: int, leader: String = "farmer", run_mode: String 
 		String(TranslationServer.translate("setup.difficulty_survival")) % [float(state.mod("rot_fraction")) * 100.0, float(state.mod("forest_absorb"))],
 	])
 	if level == 6:
-		lines.append(String(TranslationServer.translate("setup.difficulty_six")))
+		lines.append(String(TranslationServer.translate("setup.difficulty_six_balanced" if ruleset == "balanced_v1" else "setup.difficulty_six")))
 	return "\n".join(lines)

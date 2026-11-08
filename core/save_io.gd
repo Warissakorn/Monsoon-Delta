@@ -50,7 +50,9 @@ static func save(state: GameState, path: String = DEFAULT_PATH) -> String:
 	# Keep legacy runs on their original schema. Visual history needs version 3
 	# so an older client cannot silently discard building ages or development.
 	var envelope_version: int = 2
-	if state.has_irrigation():
+	if state.ruleset == "balanced_v1":
+		envelope_version = 7
+	elif state.has_irrigation():
 		envelope_version = 6
 	elif state.has_moisture():
 		envelope_version = 5
@@ -123,7 +125,7 @@ static func load_game(path: String = DEFAULT_PATH) -> Dictionary:
 		return _corrupt(path)
 	# A future build's save is unsupported, not corrupt. Preserve it for that
 	# build instead of deleting progress we cannot interpret.
-	if int(envelope["version"]) > 6:
+	if int(envelope["version"]) > 7:
 		return _result(null, "msg.save_unsupported")
 	if not envelope.get("state") is Dictionary:
 		return _corrupt(path)
@@ -133,7 +135,12 @@ static func load_game(path: String = DEFAULT_PATH) -> Dictionary:
 	if not _valid_state(data):
 		return _corrupt(path)
 	var envelope_version: int = int(envelope["version"])
-	if envelope_version == 6:
+	if envelope_version == 7:
+		if data.get("ruleset") != "balanced_v1" or not _has_fields(data, RUN_FIELDS):
+			return _corrupt(path)
+	elif data.get("ruleset") == "balanced_v1":
+		return _corrupt(path)
+	elif envelope_version == 6:
 		if not "irrigation" in String(data.get("ruleset", "")) or not _has_fields(data, RUN_FIELDS):
 			return _corrupt(path)
 	elif envelope_version == 5:
@@ -147,7 +154,7 @@ static func load_game(path: String = DEFAULT_PATH) -> Dictionary:
 	if envelope_version == 3:
 		if not _has_fields(data, RUN_FIELDS) or not data.has("settlement_progress"):
 			return _corrupt(path)
-	elif envelope_version not in [4, 5, 6] and data.has("settlement_progress"):
+	elif envelope_version not in [4, 5, 6, 7] and data.has("settlement_progress"):
 		return _corrupt(path)
 	if envelope_version == 2:
 		if not _has_fields(data, RUN_FIELDS):

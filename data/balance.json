@@ -1023,5 +1023,58 @@
         "speed": 2
       }
     }
+  },
+  "balanced_v1": {
+    "mods": {
+      "food_per_person": 8,
+      "paddy_labor": 4,
+      "start_food": 72,
+      "fish_trap_yield": 3
+    },
+    "difficulty_overrides": {
+      "6": [
+        {
+          "key": "rain_inflow_multiplier",
+          "op": "mul",
+          "value": 1.1
+        }
+      ],
+      "7": [
+        {
+          "key": "start_food",
+          "op": "add",
+          "value": -2
+        },
+        {
+          "key": "rain_inflow_multiplier",
+          "op": "mul",
+          "value": 1.5
+        }
+      ],
+      "8": [
+        {
+          "key": "rot_fraction",
+          "op": "add",
+          "value": 0.25
+        },
+        {
+          "key": "rain_inflow_multiplier",
+          "op": "mul",
+          "value": 1.5
+        }
+      ],
+      "9": [
+        {
+          "key": "forest_absorb",
+          "op": "mul",
+          "value": 0.5
+        },
+        {
+          "key": "rain_inflow_multiplier",
+          "op": "mul",
+          "value": 1.5
+        }
+      ]
+    }
   }
 }

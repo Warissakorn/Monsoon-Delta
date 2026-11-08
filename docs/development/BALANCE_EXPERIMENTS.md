@@ -1,6 +1,10 @@
 # ทดลองสมดุลแบบทำซ้ำได้
 
-เครื่องมือ M3 ใช้ทดลองค่าในหน่วยความจำของ process เท่านั้น ไม่เขียน balance.json หรือเซฟเกม และไม่เปลี่ยน policy ของบอท ค่าเริ่มต้นของเกมยังเหมือนเดิม งานนี้ช่วยทำการทดลองต่อจาก [การคัดกรองสมดุล](../history/BALANCE_SCREEN.md); ยังไม่ถือว่าผ่าน TS-06
+เครื่องมือ M3 ใช้ทดลองค่าในหน่วยความจำของ process เท่านั้น ไม่เขียน balance.json หรือเซฟเกม และไม่เปลี่ยน policy ของบอท ค่าเริ่มต้นของเกมยังเหมือนเดิม งานนี้ช่วยทำการทดลองต่อจาก [การคัดกรองสมดุล](../history/BALANCE_SCREEN.md); legacy ยังไม่ผ่าน TS-06 ส่วน [balanced_v1](../features/SURVIVAL_BALANCE.md#ผลยืนยัน-2026-11-07) ผ่านเกณฑ์ตัวเลข plains แล้ว ยังไม่ปิดเกณฑ์ผู้เล่นจริง
+
+## กติกาสมดุลที่แยกรุ่น
+
+เพิ่ม `--ruleset=balanced_v1` เพื่อวัด [สมดุลเอาตัวรอด](../features/SURVIVAL_BALANCE.md); ไม่ระบุยังใช้ legacy รายงานบันทึกชื่อกติกาใน `bot_configuration.ruleset` จึงไม่ใช้ปนรายงานคนละกฎ ตรวจสามกรณีจาก source/engine/hash เดียวกันตามเดิม บอทไม่สร้าง snapshots ภาพน้ำ แต่ผล state/policy/RNG ตรงกับพรีวิวเดิม
 
 ## เริ่มทดลอง
 
@@ -17,7 +21,7 @@ godot --headless --path . --script res://tools/bot_sim.gd -- \
 
 คำสั่งเดิมที่ไม่มี --scenarios ยังใช้ได้ โดยรัน scenario ชื่อ baseline หนึ่งชุด --map=all หมายถึง plains เท่านั้นตามขอบเขต M3 บอททุกตัวใช้ผู้นำ farmer และ greedy คงวิธีเลือกคำสั่งเดิม
 
-แต่ละครั้งสร้างโฟลเดอร์ใหม่ bot_reports/run_<เวลา UTC>_<รหัส process timer>/ และพิมพ์ตำแหน่งเต็ม ไม่เขียนทับรายงานเดิม ภายในมี:
+แต่ละครั้งสร้างโฟลเดอร์ใหม่ bot_reports/run_<เวลา UTC>_<รหัส process timer>/ พร้อม `.gdignore` เพื่อไม่ให้ Godot import CSV ที่กำลังเขียนเป็นคำแปล และพิมพ์ตำแหน่งเต็ม ไม่เขียนทับรายงานเดิม ภายในมี:
 
 - manifest.json: สถานะ running/complete/failed, seed ต้น–ท้ายเป็นข้อความเพื่อเก็บ int64 ครบ, Godot, Git revision/dirty ถ้ามี, label จาก --revision, SHA-256 ของ balance/scenario, ค่าตั้งบอททั้งหมด, overrides และ effective modifiers หลัง map → leader → difficulty
 - summary.csv: อัตราชนะ ปีเฉลี่ย สาเหตุแพ้ ประชากร คะแนน เวลา จำนวนเกมที่ทำเสร็จ และ error ต่อ scenario/บอท

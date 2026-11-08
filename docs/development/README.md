@@ -64,6 +64,10 @@ git diff --check
 
 [บัญชีทรัพยากร](../features/RESOURCE_FEEDBACK.md#ดูบัญชีทรัพยากรของแต่ละเทิร์น) อยู่ใน `GameSession.turn_history()` แยกจาก GameState/เซฟ ใช้ `scripts/test.sh --filter=resource_ledger` ตรวจ `ก่อน + ผลรวมสาเหตุ = หลัง` ทั้งห้าทรัพยากร และอ่านข้อมูลเดิมหลังวางแผนต่อ/ขึ้นปี/โหลด/Retry ตรวจ [native probe](../../tools/resource_ledger_probe.gd) ทั้งสองภาษาตามคำสั่ง XDG ในคู่มือฟีเจอร์ รวมใช้คำสั่งสร้างบ้านจริงก่อนอ่านยอดประวัติ ห้ามประกอบสาเหตุจากกระดานปัจจุบันหรือใช้ harvest report ปีก่อนกับเทิร์นธรรมดา
 
+### ตรวจแผนเสบียง
+
+ดู [คู่มือแผนเสบียง](../features/FOOD_PLAN.md) ใช้ `scripts/test.sh --filter=food_plan` และชุดรวมเมื่อแก้ตัวคำนวณ/หน้าจอ ตรวจ native ไทย–อังกฤษด้วย `tools/food_plan_probe.gd` ตามคำสั่ง XDG แยกในคู่มือ รวมคลิกสั่งปลูกจริง Undo/Redo เปิดจาก Pause ปิดรัว เทียบเก็บเกี่ยวจริง และรักษาเซฟปกติเมื่อดูจากโรงเรียน ไม่เปลี่ยน balance หรือ schema เซฟ
+
 ### ตรวจสรุปหมู่บ้านก่อนเล่นต่อ
 
 ใช้ `scripts/test.sh --filter=continue_summary` ตรวจเซฟทุก envelope ที่รองรับ การไม่แก้ไฟล์/RNG สรุปเก็บเกี่ยว และข้อมูลเก่าที่ต้องล้าง แล้วใช้ `scripts/test.sh --filter=menu` ตรวจ flow สลับภาษา/Continue/เกมใหม่ร่วมกับเมนูเดิม ข้อความใช้ `translations/strings.csv` และทรัพยากรแปลที่ import แล้วตามเดิม
@@ -79,7 +83,7 @@ XDG_DATA_HOME="$PWD/work/continue-summary-qa/th/data" XDG_CONFIG_HOME="$PWD/work
 
 [Build desktop games](../../.github/workflows/build.yml) ใช้ Godot 4.6.3 Standard พร้อม export templates และ [presets](../../export_presets.cfg) สำหรับ Windows/Linux x86_64 รันเมื่อ push เข้า `main`, push tag `v*`, เปิด/อัปเดต PR หรือกด **Actions → Build desktop games → Run workflow** บน branch ที่มี workflow นี้
 
-Workflow ตรวจเอกสารและรัน `scripts/test.sh` ก่อน export แบบ release จากนั้น smoke เปิดเมนู เกม และ sandbox ของ Linux build ทั้งไทยและอังกฤษ เมื่อผ่าน ดาวน์โหลด `MonsoonDelta-windows-x86_64` หรือ `MonsoonDelta-linux-x86_64` จากส่วน **Artifacts** ของ run แล้วแตก archive ภายในอีกครั้ง เก็บ artifacts และ build logs 14 วัน; Linux ใช้ tar.gz เพื่อรักษาสิทธิ์ executable ไม่เผยแพร่ Release อัตโนมัติ และ Windows build ยังไม่ได้ smoke บน Windows จริง
+Workflow ตรวจเอกสารและรัน `scripts/test.sh` ก่อน export แบบ release จากนั้น smoke Linux build ทั้งไทยและอังกฤษในโหมด `menu`, `game`, `sandbox`, `daily` และ `year`; ลูป exported-build นี้ยังไม่รวม `transport` (boot CLI ตรวจทางเข้าโหมดขนส่งจากโปรเจกต์แยกต่างหาก) เมื่อผ่าน ดาวน์โหลด `MonsoonDelta-windows-x86_64` หรือ `MonsoonDelta-linux-x86_64` จากส่วน **Artifacts** ของ run แล้วแตก archive ภายในอีกครั้ง เก็บ artifacts และ build logs 14 วัน; Linux ใช้ tar.gz เพื่อรักษาสิทธิ์ executable ไม่เผยแพร่ Release อัตโนมัติ และ Windows build ยังไม่ได้ smoke บน Windows จริง
 
 Build ในเครื่องหลังติดตั้ง export templates รุ่นเดียวกัน:
 
@@ -118,6 +122,10 @@ XDG_DATA_HOME="$PWD/work/menu-draft-qa/en/data" XDG_CONFIG_HOME="$PWD/work/menu-
 5. รันการตรวจตามตาราง สรุปไฟล์หลัก ผลตรวจ และงานค้างใน PR ให้ผู้อื่นเริ่มต่อได้ โดยไม่ต้องอ่านบทสนทนาก่อนหน้า
 
 การส่งต่องานควรระบุ commit/branch, ขอบเขตที่เสร็จ, คำสั่งตรวจและผล, และประเด็นที่ยังไม่ยืนยัน ไม่ใส่ token, credentials หรือข้อมูลจากเซฟจริงลงเอกสาร
+
+## สมดุลเอาตัวรอดแบบแยกรุ่น
+
+ใช้ [คู่มือ `balanced_v1`](../features/SURVIVAL_BALANCE.md) สำหรับกฎอาหาร/ความยากและเซฟ v7 ตรวจ `scripts/test.sh --filter=balanced` และ boot CLI เพิ่ม `--balanced` ให้ `tools/menu_draft_probe.gd` เพื่อตรวจ UI ใหม่ทั้งไทย/อังกฤษ ส่วน legacy ยังใช้คำสั่งเดิม การรับรองตัวเลขใช้ benchmark 200 เกมสามกรณีจาก commit สะอาดผ่าน `check_balance.py` ไม่แทน human playtest
 
 ## ต้นแบบรายวัน
 

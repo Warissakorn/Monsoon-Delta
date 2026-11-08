@@ -9,6 +9,7 @@ const UndoHistory = preload("res://core/undo_stack.gd")
 const RULESETS: Array[String] = [
 	"legacy", "bracing_v1", "moisture_v1", "bracing_moisture_v1",
 	"irrigation_v1", "bracing_irrigation_v1", "moisture_irrigation_v1", "bracing_moisture_irrigation_v1",
+	"balanced_v1",
 ]
 const DIRECTIONS: Array[Vector2i] = [
 	Vector2i(1, 0), Vector2i(1, -1), Vector2i(0, -1),
@@ -140,6 +141,8 @@ func mod(key: String) -> Variant:
 func recompute_mods() -> void:
 	var balance: Dictionary = Database.balance()
 	mods = Dictionary(balance.get("mods_default", {})).duplicate(true)
+	if ruleset == "balanced_v1":
+		mods.merge(balance["balanced_v1"]["mods"], true)
 	var map_data: Dictionary = Dictionary(balance.get("maps", {})).get(map_type, {})
 	_apply_modifiers(map_data.get("mods", []))
 	var run_data: Dictionary = Dictionary(balance.get("run_modes", {})).get(run_mode, {})
@@ -147,7 +150,8 @@ func recompute_mods() -> void:
 	_apply_modifiers(Dictionary(balance.get("leaders", {})).get(leader, []))
 	var levels: Array = balance.get("difficulty_levels", [])
 	for level: int in range(mini(maxi(difficulty, 0), levels.size())):
-		_apply_modifiers(levels[level])
+		var replacement: Dictionary = balance.get("balanced_v1", {}).get("difficulty_overrides", {}) if ruleset == "balanced_v1" else {}
+		_apply_modifiers(replacement.get(str(level + 1), levels[level]))
 	# The M2 sandbox does not offer cards; card modifiers arrive with that milestone.
 	_apply_modifiers(year_mods)
 

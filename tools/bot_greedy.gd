@@ -71,7 +71,7 @@ static func play_turn(state: GameState, random: RandomNumberGenerator, overrides
 		var options: Array[Command] = legal_commands(state)
 		if options.is_empty():
 			break
-		var best_score: float = score_preview(GameFlow.preview(state), weights)
+		var best_score: float = score_preview(GameFlow.preview(state, false), weights)
 		var best: Command = null
 		# Draw without replacement. Each of the prescribed candidates is legal.
 		for _candidate: int in mini(candidates, options.size()):
@@ -79,12 +79,11 @@ static func play_turn(state: GameState, random: RandomNumberGenerator, overrides
 			var command: Command = options[index]
 			options[index] = options.back()
 			options.pop_back()
-			var trial: GameState = state.duplicate_state()
-			var error: String = GameFlow.apply_command(trial, command)
-			if not error.is_empty():
-				push_error("Greedy could not apply a legal candidate: " + error)
+			var prediction: Dictionary = preview_command(state, command)
+			if prediction.is_empty():
+				push_error("Greedy could not apply a legal candidate")
 				return -1
-			var value: float = score_preview(GameFlow.preview(trial), weights)
+			var value: float = score_preview(prediction, weights)
 			if value > best_score + C.EPS:
 				best_score = value
 				best = command
@@ -96,6 +95,17 @@ static func play_turn(state: GameState, random: RandomNumberGenerator, overrides
 			return -1
 		actions += 1
 	return actions
+
+
+static func preview_command(state: GameState, command: Command) -> Dictionary:
+	# The candidate is disposable: one isolated copy needs neither a planning
+	# Undo snapshot nor a second preview copy. Committing a chosen command still
+	# uses GameFlow, and candidate order, scoring and RNG stay unchanged.
+	if not CommandRules.check(state, command).is_empty():
+		return {}
+	var trial: GameState = state.duplicate_state()
+	CommandRules.apply(trial, command)
+	return {"state": trial, "report": TurnResolver.resolve_turn(trial, false)}
 
 
 static func play_random_turn(state: GameState, random: RandomNumberGenerator, overrides: Dictionary = {}) -> int:
@@ -120,6 +130,7 @@ static func play_game(seed_value: int, policy: String, difficulty: int = 0, over
 		return {"state": null, "turns": 0, "actions": 0, "error": "unknown_bot"}
 	var state: GameState = GameFlow.new_game({
 		"seed": seed_value, "map_type": "plains", "leader": "farmer", "difficulty": difficulty,
+		"ruleset": overrides.get("ruleset", "legacy"),
 	})
 	if state == null:
 		return {"state": null, "turns": 0, "actions": 0, "error": "new_game_failed"}

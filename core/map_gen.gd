@@ -5,13 +5,15 @@ extends RefCounted
 ## conventions and validation remain provisional; see docs/PROGRESS.md.
 
 
-static func generate(seed_value: int) -> GameState:
+static func generate(seed_value: int, ruleset: String = "legacy") -> GameState:
 	var config: Dictionary = DataDB.balance()["map_generation"]
 	var attempt_count: int = int(config["max_attempts"])
 	for attempt: int in range(attempt_count):
 		var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 		rng.seed = SeedUtil.derive_seed(seed_value, attempt)
 		var state: GameState = _make_terrain(seed_value, rng, config)
+		state.ruleset = ruleset
+		state.recompute_mods()
 		_carve_river(state, rng, config)
 		if not _place_village(state, rng, config):
 			continue

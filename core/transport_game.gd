@@ -37,6 +37,7 @@ static func create(seed_value: int = 42, goal: String = "none", project: String 
 	if year.is_empty():
 		return {}
 	var sites: Dictionary = {"source": tile_index(year, SOURCE), "mill": tile_index(year, MILL), "store": tile_index(year, STORE)}
+	_relocate_village(year)
 	# The pilot has authored corridors on the seeded 127-hex year map. Ordinary
 	# year games do not call this setup and retain their generated terrain.
 	for coord: Vector2i in LAND + WATER:
@@ -84,6 +85,42 @@ static func create(seed_value: int = 42, goal: String = "none", project: String 
 		"initial_stock": int(config()["source_stock"]), "gathered": 0, "produced": 0, "claimed": 0,
 	}
 	return {"year": year, "transport": transport}
+
+
+static func _relocate_village(year: Dictionary) -> void:
+	# The authored pilot must not erase a seeded hall or home. Only new runs
+	# relocate conflicting buildings; existing checkpoints retain their board.
+	var corridor: Array[int] = indices(year, LAND + WATER)
+	var hall: int = year["structures"].find("hall")
+	var center: Dictionary = year["board"]["tiles"][hall]
+	var origin: Vector2i = Vector2i(int(center["q"]), int(center["r"]))
+	var occupied: Array[int] = []
+	for index: int in corridor:
+		if year["structures"][index] != "":
+			occupied.append(index)
+	for index: int in occupied:
+		var chosen: int = -1
+		var nearest: int = 100
+		for other: int in range(year["structures"].size()):
+			var tile: Dictionary = year["board"]["tiles"][other]
+			if other in corridor or not YearGame.target_matches(year, "build_house", other):
+				continue
+			var distance: int = Hex.distance(origin, Vector2i(int(tile["q"]), int(tile["r"])))
+			if distance < nearest:
+				chosen = other
+				nearest = distance
+		assert(chosen >= 0, "The 127-hex pilot needs room for its seeded village")
+		var source: Dictionary = year["board"]["tiles"][index]
+		var target: Dictionary = year["board"]["tiles"][chosen]
+		year["structures"][chosen] = year["structures"][index]
+		year["health"][chosen] = year["health"][index]
+		target["building"] = source["building"]
+		target["start_house"] = source["start_house"]
+		target["elevation"] = maxi(3, int(target["elevation"]))
+		source["building"] = "none"
+		source["start_house"] = false
+		year["structures"][index] = ""
+		year["health"][index] = 0
 
 
 static func workers(model: Dictionary) -> int:

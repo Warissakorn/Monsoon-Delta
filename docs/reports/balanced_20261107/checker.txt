@@ -1,0 +1,5 @@
+scenario | bot/difficulty | runs (>=200) | win% (target) | mean year (target) | batch seconds | seconds/200 games (<=300) | status
+baseline | farmer/d0 | 200 | 0.500 (<=5) | 3.215 (>=3) | 19.645852 | 19.645852 | PASS
+baseline | greedy/d0 | 200 | 28.000 (20..60) | 3.280 (-) | 214.422869 | 214.422869 | PASS
+baseline | greedy/d10 | 200 | 4.000 (<=10) | 2.100 (-) | 137.481490 | 137.481490 | PASS
+PASS: all implemented plains TS-06 targets met

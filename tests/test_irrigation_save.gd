@@ -122,7 +122,8 @@ func test_v1_through_v5_schemas_and_roundtrips_do_not_gain_policy_fields() -> vo
 
 
 func test_future_versions_unknown_rulesets_and_in_memory_errors_preserve_the_save() -> void:
-	_reject(_envelope(F.create(), 7), true)
+	_reject(_envelope(F.create(), 8), true)
+	_reject(_envelope(F.create(), 7))
 	var unknown: Dictionary = _envelope(F.create())
 	unknown["state"]["ruleset"] = "irrigation_v99"
 	_reject(unknown, true)
