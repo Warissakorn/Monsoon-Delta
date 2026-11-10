@@ -1053,7 +1053,7 @@ Output: %s","คน %d · ชุดละ %d วัน
 "yearplan.filter.blocked","Blocked","ติดขัด"
 "yearplan.filter.paused","Paused","พักงาน"
 "yearplus.enable","Enable extra village systems for this new year","เปิดระบบหมู่บ้านเพิ่มเติมสำหรับปีใหม่นี้"
-"yearplus.enable_help","Adds raft homes, passive fish traps, bracing, stored soil moisture, irrigation priorities and clearing fields/saplings. Existing years retain their rules.","เพิ่มเรือนแพ ไซจับปลาอัตโนมัติ ค้ำบ้าน ความชื้นสะสม ลำดับจัดสรรน้ำ และรื้อนา/กล้าไม้ รอบที่เล่นอยู่ยังใช้กติกาเดิม"
+"yearplus.enable_help","Adds raft homes, passive traps, bracing, moisture, irrigation, clearing, persistent building age and ambition medals. Existing years retain their rules.","เพิ่มเรือนแพ ไซ ค้ำบ้าน ความชื้น จัดสรรน้ำ รื้อนา/กล้าไม้ อายุอาคารสะสม และเหรียญเป้าหมาย รอบที่เล่นอยู่ยังใช้กติกาเดิม"
 "yearplus.try_order","Try this order · 7 days","ทดลองคำสั่งนี้ · 7 วัน"
 "yearplus.return_history","Return to the daily record","กลับไปยังบันทึกรายวัน"
 "yearplus.policy.first","Reservoir water: first","น้ำจากอ่าง: รับก่อน"
@@ -1091,3 +1091,23 @@ Output: %s","คน %d · ชุดละ %d วัน
 "yearplus.crop_growth","Crop growth","ข้าวเติบโต"
 "yearplus.source","From reservoir (%d,%d)","จากอ่าง (%d,%d)"
 "yearplus.tool_cancelled","Tool cancelled. Select another action to assign work.","ยกเลิกเครื่องมือแล้ว เลือกคำสั่งเพื่อมอบหมายงาน"
+"yearheritage.open","Village & medals","พัฒนาการ / เหรียญ"
+"yearheritage.explanation","Appearance is reviewed every 30 days and changes after two matching reviews. Age and decoration do not increase production, housing or flood resistance.","ประเมินภาพหมู่บ้านทุก 30 วัน เปลี่ยนสภาพเมื่อผลตรงกันสองครั้ง อายุและการตกแต่งไม่เพิ่มผลผลิต ที่พัก หรือความทนน้ำ"
+"yearheritage.building","Built day %d · age %d days · %s","สร้างวันที่ %d · อายุ %d วัน · %s"
+"yearheritage.condition","Village: %s · reviewed day %d","หมู่บ้าน: %s · ประเมินวันที่ %d"
+"yearheritage.earned","Medal earned day %d · permanent base bonus +%d","ได้รับเหรียญวันที่ %d · โบนัสพื้นฐานถาวร +%d"
+"yearheritage.pending","Medal pending · base bonus +%d when earned","ยังไม่ได้เหรียญ · โบนัสพื้นฐาน +%d เมื่อสำเร็จ"
+"yearheritage.requirements","Current: people %d/%d · forests %d/%d · rice harvested %d/%d","ปัจจุบัน: คน %d/%d · ป่า %d/%d · ข้าวเก็บเกี่ยวสะสม %d/%d"
+"yearheritage.receipt","At award: people %d · forests %d · rice harvested %d","วันที่ได้รับ: คน %d · ป่า %d · ข้าวเก็บเกี่ยวสะสม %d"
+"yearheritage.result","Year result & score","ผลรอบปีและคะแนน"
+"yearheritage.score_parts","People %d · Food %d
+Challenges %d · Village project %d
+Permanent goal medal %d
+Base %d × %.1f = %d points","คน %d · อาหาร %d
+ภารกิจ %d · โครงการหมู่บ้าน %d
+เหรียญเป้าหมายถาวร %d
+คะแนนฐาน %d × %.1f = %d คะแนน"
+"yearheritage.event.medal","Village ambition achieved. Your medal and base bonus are now permanent.","บรรลุเป้าหมายหมู่บ้านแล้ว เหรียญและโบนัสพื้นฐานจะคงอยู่ตลอดรอบนี้"
+"yearheritage.event.condition","The village appearance changed after repeated reviews.","ภาพความเป็นอยู่ของหมู่บ้านเปลี่ยนตามผลประเมินสะสม"
+"yearheritage.next_review","Next review: day %d","ประเมินครั้งถัดไปวันที่ %d"
+"yearheritage.no_review","No further reviews this year.","ไม่มีการประเมินเพิ่มเติมในปีนี้"

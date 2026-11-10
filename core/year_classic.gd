@@ -1,11 +1,11 @@
 class_name YearClassic
 extends RefCounted
-## Opt-in year365_v4 mechanics; old campaigns keep the original daily rules.
+## Opt-in year365_v4/v5 mechanics; old campaigns keep the original daily rules.
 const FIELDS: Array[String] = ["soil_moisture", "brace_days", "irrigation_policy"]
 const STRUCTURES: Array[String] = ["", "hall", "house", "stilt_house", "sawmill", "kiln", "granary", "gate", "reservoir", "waterwheel", "workshop", "camp", "raft_house", "fish_trap"]
 
 static func enabled(s: Dictionary) -> bool:
-	return s.get("ruleset") == "year365_v4"
+	return s.get("ruleset") in ["year365_v4", "year365_v5"]
 
 
 static func config() -> Dictionary:

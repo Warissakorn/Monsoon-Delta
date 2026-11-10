@@ -75,7 +75,7 @@ func test_v4_strict_arrays_and_rule_version_pairing_reject_corruption() -> void:
 	var envelope: Dictionary = YearCheckpoint.envelope(good)
 	envelope["version"] = 3
 	assert_eq(YearCheckpoint.decode(envelope)["error"], "msg.save_corrupt")
-	envelope["version"] = 5
+	envelope["version"] = 6
 	assert_eq(YearCheckpoint.decode(envelope)["error"], "msg.save_unsupported")
 
 

@@ -293,7 +293,7 @@ func test_malformed_expansion_and_future_files_are_rejected_and_preserved() -> v
 	bad["upgrades"][0] = "gate_control"
 	assert_true(not YearCheckpoint.valid(bad))
 	var envelope: Dictionary = YearCheckpoint.envelope(s)
-	envelope["version"] = 5
+	envelope["version"] = 6
 	var text: String = JSON.stringify(envelope)
 	var file: FileAccess = FileAccess.open(PATH, FileAccess.WRITE)
 	file.store_string(text)

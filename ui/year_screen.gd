@@ -27,6 +27,13 @@ var _impact_tile: int = -1
 var _review_impacts: Array[Dictionary] = []
 var _leader: OptionButton
 var _difficulty: SpinBox
+var _heritage_button: Button
+var _heritage_panel: VBoxContainer
+var _heritage_state: Label
+var _heritage_goal: Label
+var _heritage_buildings: VBoxContainer
+var _result_button: Button
+var _result_dialog: AcceptDialog
 var _food_plan: Label
 var session: YearSession
 var initial_seed: int = 42
@@ -122,6 +129,9 @@ func _ready() -> void:
 	nav.add_child(_button("menu.settings", func(): _settings.popup_centered(Vector2i(600, 260))))
 	_new_button = _button("year.new", func(): _restart.popup_centered(Vector2i(650, 650)))
 	nav.add_child(_new_button)
+	_heritage_button = _button("yearheritage.open", func(): _tabs.current_tab = 7)
+	_heritage_button.hide()
+	nav.add_child(_heritage_button)
 	nav.add_child(_button("daily.retry_save", func(): session.checkpoint_year(); _refresh()))
 	var title: Label = _label(tr(_title_key()), "Heading")
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -335,6 +345,18 @@ func _ready() -> void:
 	reports.add_child(_messages)
 	var village: VBoxContainer = _tab(tabs, "exp.village")
 	village.add_child(_label(tr("exp.prologue"), "Caption"))
+	_heritage_panel = VBoxContainer.new()
+	_heritage_panel.hide()
+	village.add_child(_heritage_panel)
+	_heritage_state = _label("")
+	_heritage_panel.add_child(_heritage_state)
+	_heritage_panel.add_child(_label(tr("yearheritage.explanation"), "Caption"))
+	_heritage_goal = _label("")
+	_heritage_panel.add_child(_heritage_goal)
+	_result_button = _button("yearheritage.result", _show_year_result)
+	_heritage_panel.add_child(_result_button)
+	_heritage_buildings = VBoxContainer.new()
+	_heritage_panel.add_child(_heritage_buildings)
 	_village_project = OptionButton.new()
 	for project: String in ["food", "water", "craft"]:
 		_village_project.add_item(tr("exp.project." + project))
@@ -428,6 +450,10 @@ func _ready() -> void:
 	_order_confirmation.cancel_button_text = tr("action.cancel")
 	_order_confirmation.confirmed.connect(_commit_tried_order)
 	add_child(_order_confirmation)
+	_result_dialog = AcceptDialog.new()
+	_result_dialog.title = tr("yearheritage.result")
+	_result_dialog.ok_button_text = tr("action.close")
+	add_child(_result_dialog)
 	add_child(_advance_confirmation)
 	_refresh()
 	_apply_reduced_motion()
@@ -523,6 +549,10 @@ func _refresh_selection() -> void:
 	if structure.is_empty() and not String(s["deposits"][selected]).is_empty():
 		site = s["deposits"][selected]
 	_inspection.text = tr("year.tile") % [int(tile["q"]), int(tile["r"]), tr("year.site." + site), int(tile["elevation"]), float(tile["water"]), int(s["health"][selected]), int(s["crop_growth"][selected]), int(s["stock"][selected])]
+	if YearHeritage.enabled(s):
+		var record: Dictionary = YearHeritage.building(s, selected)
+		if not record.is_empty():
+			_inspection.text += "\n" + tr("yearheritage.building") % [int(record["built_day"]), YearHeritage.age(s, selected), tr("settlement.stage." + str(record["stage"]))]
 	if YearGame.expanded(s):
 		_inspection.text += "\n" + tr("exp.distance") % YearExpansion.distance_to_work(s, selected)
 		var improvement: String = YearExpansion.upgrade(s, selected)
@@ -593,7 +623,7 @@ func _refresh() -> void:
 	var need: int = YearGame.food_need(s)
 	_status.text = tr("year.status") % [int(s["day"]), tr("year.season." + DailyProduction.season(maxi(1, int(s["day"])))), int(s["population"]), YearGame.housing(s), _worker_count(), int(s["population"]), int(s["resources"]["food"]) / maxi(1, need), int(s["knowledge"])]
 	_resources.text = _materials(s["resources"])
-	if s.get("ruleset") in ["year365_v3", "year365_v4"]:
+	if s.get("ruleset") in ["year365_v3", "year365_v4", "year365_v5"]:
 		_status.text += " · " + tr("leader." + String(s["leader"]) + ".name") + " · " + tr("year.difficulty") % int(s["difficulty"])
 	var forecast: PackedStringArray = PackedStringArray()
 	for entry: Dictionary in YearWeather.forecast(s):
@@ -609,7 +639,8 @@ func _refresh() -> void:
 	for button: Button in _time_buttons:
 		button.disabled = s["outcome"] != "running"
 	_summary.text = tr("year.summary") % [tr("year.outcome." + String(s["outcome"])), int(s["score"]), int(s["stats"]["harvest"]), int(s["stats"]["born"]), int(s["stats"]["departed"])]
-	_summary.text += "\n" + tr("year.goal." + String(s["goal"]))
+	_summary.text += "\n" + (_medal_summary() if YearHeritage.enabled(s) else tr("year.goal." + String(s["goal"])))
+	_refresh_heritage()
 	if not session.last_save_error.is_empty():
 		_summary.text += "\n" + tr(session.last_save_error)
 	_messages.text = "\n".join(_log)
@@ -725,6 +756,8 @@ func _advance(days: int) -> void:
 	board.show_day_changes(before_year)
 	board.show_actual_flow(session.visual_reports)
 	_last_advance = Time.get_ticks_msec()
+	if YearHeritage.enabled(session.year) and before_year["outcome"] == "running" and session.year["outcome"] != "running":
+		_show_year_result()
 
 
 func _new_year() -> void:
@@ -735,7 +768,7 @@ func _new_year() -> void:
 	if session is TransportSession:
 		error = session.start_year(initial_seed, initial_goal, initial_project)
 	else:
-		error = session.start_campaign(initial_seed, initial_goal, initial_project, MainMenu.LEADERS[_leader.selected], int(_difficulty.value), _classic.button_pressed)
+		error = session.start_campaign(initial_seed, initial_goal, initial_project, MainMenu.LEADERS[_leader.selected], int(_difficulty.value), _classic.button_pressed, _classic.button_pressed)
 	if not error.is_empty():
 		_latest_notice = tr(error)
 		_refresh()
@@ -937,7 +970,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	var focused: Control = get_viewport().gui_get_focus_owner()
 	if focused is LineEdit or focused is TextEdit:
 		return
-	if _restart.visible or _settings.visible or _advance_confirmation.visible or _leave_confirmation.visible or _order_confirmation.visible:
+	if _restart.visible or _settings.visible or _advance_confirmation.visible or _leave_confirmation.visible or _order_confirmation.visible or _result_dialog.visible:
 		return
 	var code: Key = event.physical_keycode if event.physical_keycode != 0 else event.keycode
 	if code == KEY_ESCAPE:
@@ -1058,7 +1091,7 @@ func _apply_reduced_motion() -> void:
 
 func _process(_delta: float) -> void:
 	if board != null and _leave_confirmation != null:
-		board.set_suspended(_settings.visible or _restart.visible or _advance_confirmation.visible or _leave_confirmation.visible or _order_confirmation.visible)
+		board.set_suspended(_settings.visible or _restart.visible or _advance_confirmation.visible or _leave_confirmation.visible or _order_confirmation.visible or _result_dialog.visible)
 
 
 func _resource_snapshot() -> Dictionary:
@@ -1231,3 +1264,55 @@ func _ledger_value(value: Variant) -> String:
 	if value is String and value in ["sapling", "forest"]:
 		return tr("year.site." + value)
 	return str(value)
+
+
+func _medal_summary() -> String:
+	var s: Dictionary = session.year
+	var progress: Dictionary = YearHeritage.progress(s)
+	if s["goal"] == "none":
+		return tr("goal.none.name")
+	var name: String = tr("goal." + String(s["goal"]) + ".name")
+	return name + " · " + (tr("yearheritage.earned") % [int(progress["achieved_day"]), int(progress["bonus"])] if progress["achieved"] else tr("yearheritage.pending") % int(progress["bonus"]))
+
+
+func _refresh_heritage() -> void:
+	var s: Dictionary = session.year
+	var enabled: bool = YearHeritage.enabled(s)
+	_heritage_button.visible = enabled
+	_heritage_panel.visible = enabled
+	if not enabled:
+		return
+	var history: Dictionary = s["settlement_progress"]
+	_heritage_state.text = tr("yearheritage.condition") % [tr("settlement." + String(history["condition"])), int(history["evaluated_day"])]
+	var next_review: int = int(history["evaluated_day"]) + int(YearHeritage.config()["period_days"])
+	_heritage_state.text += "\n" + (tr("yearheritage.next_review") % next_review if next_review <= 365 and s["outcome"] == "running" else tr("yearheritage.no_review"))
+	var progress: Dictionary = YearHeritage.progress(s)
+	_heritage_goal.text = _medal_summary()
+	if s["goal"] != "none":
+		_heritage_goal.text += "\n" + tr("yearheritage.requirements") % [int(progress["population"]), int(progress["required_population"]), int(progress["forests"]), int(progress["required_forests"]), int(progress["harvest"]), int(progress["required_harvest"])]
+		if progress["achieved"]:
+			var receipt: Dictionary = s["goal_medal"]
+			_heritage_goal.text += "\n" + tr("yearheritage.receipt") % [int(receipt["population"]), int(receipt["forests"]), int(receipt["harvest"])]
+	_result_button.visible = s["outcome"] != "running"
+	for child: Node in _heritage_buildings.get_children():
+		_heritage_buildings.remove_child(child)
+		child.queue_free()
+	for index: int in range(s["structures"].size()):
+		var record: Dictionary = YearHeritage.building(s, index)
+		if record.is_empty():
+			continue
+		var tile: Dictionary = s["board"]["tiles"][index]
+		var button: Button = Button.new()
+		button.name = "BuildingAge_" + str(index)
+		button.text = tr("year.site." + String(record["building"])) + " (%d,%d)\n" % [int(tile["q"]), int(tile["r"])] + tr("yearheritage.building") % [int(record["built_day"]), YearHeritage.age(s, index), tr("settlement.stage." + str(record["stage"]))]
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		button.pressed.connect(_focus_tile.bind(index))
+		_heritage_buildings.add_child(button)
+
+
+func _show_year_result() -> void:
+	if not YearHeritage.enabled(session.year) or session.year["outcome"] == "running":
+		return
+	var parts: Dictionary = YearHeritage.score_parts(session.year)
+	_result_dialog.dialog_text = tr("year.outcome." + String(session.year["outcome"])) + "\n\n" + _medal_summary() + "\n\n" + tr("yearheritage.score_parts") % [int(parts["people"]), int(parts["food"]), int(parts["challenges"]), int(parts["project"]), int(parts["goal"]), int(parts["base"]), float(parts["multiplier"]), int(parts["total"])]
+	_result_dialog.popup_centered(Vector2i(650, 0))

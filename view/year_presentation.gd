@@ -26,12 +26,24 @@ static func board(year: Dictionary) -> GameState:
 			tile.paddy_yield = int(year["crop_growth"][index]) / 15
 	# Actual upgrade flags, not invented construction ages, select richer meshes.
 	SettlementProgress.initialize(state)
+	if YearHeritage.enabled(year):
+		var period: int = int(YearHeritage.config()["maturity_days"])
+		state.year = int(year["day"]) / period + 1
+		state.settlement_progress["condition"] = year["settlement_progress"]["condition"]
+		for index: int in range(state.tiles.size()):
+			var record: Dictionary = YearHeritage.building(year, index)
+			var id: String = YearHeritage.key(year, index)
+			if record.is_empty() or not state.settlement_progress["buildings"].has(id):
+				continue
+			var visual: Dictionary = state.settlement_progress["buildings"][id]
+			visual["built_year"] = state.year - YearHeritage.age(year, index) / period
+			visual["stage"] = int(record["stage"])
 	if YearGame.expanded(year):
 		for index: int in range(state.tiles.size()):
 			var tile: Tile = state.tiles[index]
 			var key: String = "%d,%d" % [tile.q, tile.r]
 			if state.settlement_progress["buildings"].has(key) and not String(year["upgrades"][index]).is_empty():
-				state.settlement_progress["buildings"][key]["stage"] = 1
+				state.settlement_progress["buildings"][key]["stage"] = maxi(1, int(state.settlement_progress["buildings"][key]["stage"]))
 	return state
 
 

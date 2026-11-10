@@ -18,6 +18,17 @@ func _build_tile(tile: Tile) -> void:
 	var cell: Node3D = _tiles_root.get_child(_tiles_root.get_child_count() - 1)
 	if workplace and int(year["health"][index]) > 0:
 		_workplace(cell, kind)
+		if YearHeritage.enabled(year):
+			var record: Dictionary = YearHeritage.building(year, index)
+			var details: Node3D = Node3D.new()
+			details.name = "YearWorkplaceProgress"
+			details.set_meta("age_days", YearHeritage.age(year, index))
+			details.set_meta("stage", int(record.get("stage", 0)))
+			cell.add_child(details)
+			if int(record.get("stage", 0)) >= 1:
+				_add_pot(details, Vector3(-0.55, 0.05, 0.48), 0.065, 0.12, true)
+			if int(record.get("stage", 0)) >= 2:
+				_add_lantern(details, Vector3(0.45, 0.8, 0.42))
 	elif not kind.is_empty() and int(year["health"][index]) == 0:
 		for offset: float in [-0.4, 0.0, 0.4]:
 			_add_mesh(cell, _box_mesh(Vector3(0.2, 0.12, 0.45)), Vector3(offset, 0.06, 0.0), _color("house").darkened(0.3))

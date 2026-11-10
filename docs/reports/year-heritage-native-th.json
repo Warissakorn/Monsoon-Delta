@@ -1,0 +1,114 @@
+{
+  "checks": [
+    {
+      "check": "explicit new year starts v5",
+      "passed": true
+    },
+    {
+      "check": "real food work assigned",
+      "passed": true
+    },
+    {
+      "check": "real food work assigned",
+      "passed": true
+    },
+    {
+      "check": "workplace starts through a public order",
+      "passed": true
+    },
+    {
+      "check": "actual ninety-day replay produces a valid checkpoint",
+      "passed": true
+    },
+    {
+      "check": "repeated daily observations create a thriving village",
+      "passed": true
+    },
+    {
+      "check": "initial house keeps ninety days of age and two development stages",
+      "passed": true
+    },
+    {
+      "check": "ambition earned its medal during actual play",
+      "passed": true
+    },
+    {
+      "check": "village panel shows the permanent medal bonus",
+      "passed": true
+    },
+    {
+      "check": "shared house renderer uses saved stages and month-scaled real age",
+      "passed": true
+    },
+    {
+      "check": "custom workplace renderer uses its true completion date",
+      "passed": true
+    },
+    {
+      "check": "native building row focuses the inspector with its actual age",
+      "passed": true
+    },
+    {
+      "check": "age and medal inspection never changes state, RNG, save or Undo",
+      "passed": true
+    },
+    {
+      "check": "reload preserves all daily history fields and original medal receipt",
+      "passed": true
+    },
+    {
+      "check": "loading remains read-only",
+      "passed": true
+    },
+    {
+      "check": "isolated full-year replay starts",
+      "passed": true
+    },
+    {
+      "check": "public reference policy reaches day 364 with a valid checkpoint",
+      "passed": true
+    },
+    {
+      "check": "native final-day input wins the full year",
+      "passed": true
+    },
+    {
+      "check": "committed end opens the score breakdown",
+      "passed": true
+    },
+    {
+      "check": "result shows the real permanent bonus and final score",
+      "passed": true
+    },
+    {
+      "check": "modal keyboard input cannot advance or rewrite the completed year",
+      "passed": true
+    },
+    {
+      "check": "score can be reopened without recomputing or saving the run",
+      "passed": true
+    },
+    {
+      "check": "completed year retains its medal, ages and exact final score after load",
+      "passed": true
+    },
+    {
+      "check": "existing v4 fixture starts",
+      "passed": true
+    },
+    {
+      "check": "continuing v4 keeps its original fields and rules",
+      "passed": true
+    },
+    {
+      "check": "cancelling the new-year form preserves the old envelope",
+      "passed": true
+    },
+    {
+      "check": "explicit native restart opts into v5 while preserving the chosen profile",
+      "passed": true
+    }
+  ],
+  "language": "th",
+  "passed": true
+}

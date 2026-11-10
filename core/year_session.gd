@@ -31,13 +31,13 @@ func start_year(seed_value: int = 42, goal: String = "none", project: String = "
 	return checkpoint_year()
 
 
-func start_campaign(seed_value: int, goal: String, project: String, leader: String = "farmer", difficulty: int = 0, classic: bool = false) -> String:
+func start_campaign(seed_value: int, goal: String, project: String, leader: String = "farmer", difficulty: int = 0, classic: bool = false, heritage: bool = false) -> String:
 	if FileAccess.file_exists(save_path):
 		var previous: Dictionary = _read_year()
 		if not String(previous["error"]).is_empty():
 			last_save_error = previous["error"]
 			return last_save_error
-	var next: Dictionary = YearGame.new_campaign(seed_value, goal, project, leader, difficulty, classic)
+	var next: Dictionary = YearGame.new_campaign(seed_value, goal, project, leader, difficulty, classic, heritage)
 	if next.is_empty():
 		return "msg.new_game_failed"
 	year = next

@@ -12,7 +12,7 @@ static var _campaign_configs: Dictionary = {}
 
 static func config(s: Dictionary = {}) -> Dictionary:
 	var base: Dictionary = YearExpansion.config() if expanded(s) else DataDB.balance()["year_game"]
-	if s.get("ruleset") not in ["year365_v3", "year365_v4"]:
+	if s.get("ruleset") not in ["year365_v3", "year365_v4", "year365_v5"]:
 		return base
 	var leader: String = s.get("leader", "farmer")
 	var cache_key: String = leader + String(s["ruleset"])
@@ -39,7 +39,7 @@ static func config(s: Dictionary = {}) -> Dictionary:
 
 
 static func expanded(s: Dictionary) -> bool:
-	return s.get("ruleset", "year365_v1") in ["year365_v2", "year365_v3", "year365_v4"]
+	return s.get("ruleset", "year365_v1") in ["year365_v2", "year365_v3", "year365_v4", "year365_v5"]
 
 
 static func resources(s: Dictionary) -> Array[String]:
@@ -63,8 +63,8 @@ static func new_expanded(seed_value: int = 42, goal: String = "none", project: S
 	return YearExpansion.create(seed_value, goal, project)
 
 
-static func new_campaign(seed_value: int, goal: String, project: String, leader: String = "farmer", difficulty: int = 0, classic: bool = false) -> Dictionary:
-	if leader not in ["farmer", "carpenter", "fisher", "soil_doctor"] or difficulty < 0 or difficulty > 10:
+static func new_campaign(seed_value: int, goal: String, project: String, leader: String = "farmer", difficulty: int = 0, classic: bool = false, heritage: bool = false) -> Dictionary:
+	if leader not in ["farmer", "carpenter", "fisher", "soil_doctor"] or difficulty < 0 or difficulty > 10 or (heritage and not classic):
 		return {}
 	var result: Dictionary = new_expanded(seed_value, goal, project)
 	if result.is_empty():
@@ -74,6 +74,8 @@ static func new_campaign(seed_value: int, goal: String, project: String, leader:
 	result["difficulty"] = difficulty
 	if classic:
 		YearClassic.initialize(result)
+	if heritage:
+		YearHeritage.initialize(result)
 	return result
 
 
@@ -422,6 +424,7 @@ static func _finish_job(s: Dictionary, job: Dictionary, events: Array, visual: T
 			tile["building"] = "none"
 			s["resources"]["wood"] = int(s["resources"]["wood"]) + 2
 
+	YearHeritage.reconcile(s, index if definition.has("builds") else -1)
 	YearLedger.record(visual, s, before, "year.action." + id, index)
 	YearLedger.fact(visual, s, index, "year.action." + id, "", "")
 
@@ -640,6 +643,8 @@ static func _challenges(s: Dictionary, events: Array) -> void:
 
 
 static func goal_met(s: Dictionary) -> bool:
+	if YearHeritage.enabled(s):
+		return YearHeritage.progress(s)["met_now"]
 	match String(s["goal"]):
 		"growth": return int(s["population"]) >= 10
 		"forest": return int(s["population"]) >= 6 and forests(s) >= 12
@@ -648,6 +653,8 @@ static func goal_met(s: Dictionary) -> bool:
 
 
 static func score(s: Dictionary) -> int:
+	if YearHeritage.enabled(s):
+		return int(YearHeritage.score_parts(s)["total"])
 	var base: int = int(s["population"]) * 100 + int(s["resources"]["food"]) + s["claimed"].size() * 50 + (250 if s["outcome"] == "won" and goal_met(s) else 0) + (int(s["project_stage"]) * 100 if expanded(s) else 0)
 	return roundi(float(base) * (1.0 + float(s.get("difficulty", 0)) * float(DataDB.balance()["year_campaign"]["score_per_difficulty"])))
 
@@ -673,6 +680,8 @@ static func resolve_day(s: Dictionary, visual: TurnReport = null) -> Array:
 		_challenges(s, events)
 		if expanded(s):
 			YearExpansion.after_day(s, events)
+	YearHeritage.after_day(s, events)
+	if s["outcome"] == "running":
 		if day == 365:
 			s["outcome"] = "won"
 			events.append("year.event.won")

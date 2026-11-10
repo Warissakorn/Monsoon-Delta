@@ -1145,5 +1145,31 @@
     "trap_max_water": 1.0,
     "trap_food_per_day": 1,
     "build_min_water": 0.1
+  },
+  "year_heritage": {
+    "period_days": 30,
+    "confirmation_periods": 2,
+    "maturity_days": 30,
+    "max_stage": 2,
+    "comfortable_food_days": 7,
+    "house_cost_reserve": 2,
+    "goal_bonus": 250,
+    "goals": {
+      "growth": {
+        "population": 10,
+        "forests": 0,
+        "harvest": 0
+      },
+      "forest": {
+        "population": 6,
+        "forests": 12,
+        "harvest": 0
+      },
+      "rice": {
+        "population": 6,
+        "forests": 0,
+        "harvest": 180
+      }
+    }
   }
 }
