@@ -87,6 +87,11 @@ func update_view() -> void:
 		var report: TurnReport = prediction["report"]
 		report.flow_edges = forecast_flow.flow_edges
 		report.wheel_transfers = forecast_flow.wheel_transfers
+		report.fish_food_by_tile = forecast_flow.fish_food_by_tile
+		report.fish_food = forecast_flow.fish_food
+		report.paddy_gains = forecast_flow.paddy_gains
+		report.moisture_changes = forecast_flow.moisture_changes
+		report.irrigation_results = forecast_flow.irrigation_results
 	village.set_preview(prediction, not predicted.is_empty())
 	village.set_labels_visible(labels_visible)
 
@@ -150,7 +155,10 @@ func _gui_input(event: InputEvent) -> void:
 			var index: int = pick_index(event.position)
 			village.hover(village.state.tiles[index].coord if index >= 0 else BoardView.NO_COORD)
 	elif event is InputEventMouseButton and event.pressed:
-		if event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		if event.button_index == MOUSE_BUTTON_RIGHT:
+			cancel_requested.emit()
+			accept_event()
+		elif event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
 			zoom_by(1.2 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / 1.2)
 			accept_event()
 		elif event.button_index == MOUSE_BUTTON_LEFT:
@@ -215,6 +223,10 @@ func restore_view_draft(draft: Dictionary) -> void:
 
 
 static func _activity_id(id: String) -> String:
+	if id == "fish":
+		return "fish"
+	if id == "clear_land":
+		return "demolish"
 	if id == "plant_paddy" or id == "harvest":
 		return "paddy"
 	if id == "gather_wood":
@@ -233,7 +245,15 @@ func show_actual_flow(reports: Array[TurnReport]) -> void:
 		return
 	# Show only the last resolved day, never combine different daily trajectories.
 	village.show_actual_flow(reports.back())
+	village.show_turn_activity(reports.back())
+	village.show_harvest_activity(reports.back().year_harvest_food_by_tile)
 
 
 func clear_feedback() -> void:
 	feedback.clear()
+
+
+func pan_view(direction: Vector2) -> void:
+	var movement: Vector3 = Vector3(direction.x, 0, direction.y).rotated(Vector3.UP, rig.rotation.y)
+	pan = (pan + Vector2(movement.x, movement.z)).clamp(Vector2(-14, -14), Vector2(14, 14))
+	_apply_camera()

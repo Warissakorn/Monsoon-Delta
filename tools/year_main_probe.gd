@@ -43,6 +43,9 @@ func _click_at(point: Vector2) -> void:
 
 
 func _click(control: Control) -> void:
+	# Newly shown forms need their layout before scrolling to the target.
+	await process_frame
+	await process_frame
 	var ancestor: Node = control.get_parent()
 	while ancestor != null:
 		if ancestor is ScrollContainer:

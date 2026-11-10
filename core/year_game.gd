@@ -12,12 +12,16 @@ static var _campaign_configs: Dictionary = {}
 
 static func config(s: Dictionary = {}) -> Dictionary:
 	var base: Dictionary = YearExpansion.config() if expanded(s) else DataDB.balance()["year_game"]
-	if s.get("ruleset") != "year365_v3":
+	if s.get("ruleset") not in ["year365_v3", "year365_v4"]:
 		return base
 	var leader: String = s.get("leader", "farmer")
-	if _campaign_configs.has(leader):
-		return _campaign_configs[leader]
+	var cache_key: String = leader + String(s["ruleset"])
+	if _campaign_configs.has(cache_key):
+		return _campaign_configs[cache_key]
 	var result: Dictionary = base.duplicate(true)
+	if YearClassic.enabled(s):
+		result["jobs"].merge(YearClassic.config()["jobs"], true)
+		result["tolerance"].merge(YearClassic.config()["tolerance"], true)
 	var bonuses: Dictionary = DataDB.balance()["year_campaign"]["leaders"][leader]
 	if leader == "carpenter":
 		for id: String in ["build_house", "upgrade_house"]:
@@ -30,12 +34,12 @@ static func config(s: Dictionary = {}) -> Dictionary:
 			result["jobs"][id]["days"] = maxi(1, int(result["jobs"][id]["days"]) - int(bonuses["earth_days_discount"]))
 	elif leader == "fisher":
 		result["jobs"]["fish"]["outputs"]["food"] += int(bonuses["fish_food_bonus"])
-	_campaign_configs[leader] = result
+	_campaign_configs[cache_key] = result
 	return result
 
 
 static func expanded(s: Dictionary) -> bool:
-	return s.get("ruleset", "year365_v1") in ["year365_v2", "year365_v3"]
+	return s.get("ruleset", "year365_v1") in ["year365_v2", "year365_v3", "year365_v4"]
 
 
 static func resources(s: Dictionary) -> Array[String]:
@@ -43,13 +47,15 @@ static func resources(s: Dictionary) -> Array[String]:
 
 
 static func structures(s: Dictionary) -> Array[String]:
-	return YearExpansion.STRUCTURES if expanded(s) else STRUCTURES
+	return YearClassic.STRUCTURES if YearClassic.enabled(s) else (YearExpansion.STRUCTURES if expanded(s) else STRUCTURES)
 
 
 static func repeatable(s: Dictionary) -> Array[String]:
 	var result: Array[String] = REPEATABLE.duplicate()
 	if expanded(s):
 		result.append_array(["gather_fiber", "assemble_kits"])
+	if YearClassic.enabled(s):
+		result.append("brace_house")
 	return result
 
 
@@ -57,7 +63,7 @@ static func new_expanded(seed_value: int = 42, goal: String = "none", project: S
 	return YearExpansion.create(seed_value, goal, project)
 
 
-static func new_campaign(seed_value: int, goal: String, project: String, leader: String = "farmer", difficulty: int = 0) -> Dictionary:
+static func new_campaign(seed_value: int, goal: String, project: String, leader: String = "farmer", difficulty: int = 0, classic: bool = false) -> Dictionary:
 	if leader not in ["farmer", "carpenter", "fisher", "soil_doctor"] or difficulty < 0 or difficulty > 10:
 		return {}
 	var result: Dictionary = new_expanded(seed_value, goal, project)
@@ -66,6 +72,8 @@ static func new_campaign(seed_value: int, goal: String, project: String, leader:
 	result["ruleset"] = "year365_v3"
 	result["leader"] = leader
 	result["difficulty"] = difficulty
+	if classic:
+		YearClassic.initialize(result)
 	return result
 
 
@@ -126,7 +134,7 @@ static func workers(s: Dictionary) -> int:
 static func housing(s: Dictionary) -> int:
 	var total: int = 0
 	for index: int in range(s["structures"].size()):
-		if s["structures"][index] in ["house", "stilt_house"] and int(s["health"][index]) > 0:
+		if s["structures"][index] in ["house", "stilt_house", "raft_house"] and int(s["health"][index]) > 0:
 			total += (3 if "housing3" in s["research"] else 2) + (1 if YearExpansion.upgrade(s, index) == "house_room" else 0)
 	return total
 
@@ -154,6 +162,9 @@ static func target_matches(s: Dictionary, id: String, index: int) -> bool:
 	var structure: String = s["structures"][index]
 	var target: String = config(s)["jobs"][id]["target"]
 	match target:
+		"wet_channel": return structure.is_empty() and tile["feature"] == "none" and s["deposits"][index] == "" and float(tile["water"]) >= float(YearClassic.config()["build_min_water"])
+		"fixed_home": return structure in ["house", "stilt_house"] and int(s["health"][index]) > 0
+		"clearing": return structure.is_empty() and tile["feature"] in ["paddy", "sapling"]
 		"forest": return tile["feature"] == "forest" and (id == "forage" or int(s["stock"][index]) >= 3)
 		"river": return tile["is_river"] or float(tile["water"]) >= 0.1
 		"stone", "clay", "fiber": return s["deposits"][index] == target and int(s["stock"][index]) >= int(config(s)["jobs"][id].get("stock", 1))
@@ -200,7 +211,7 @@ static func check_order(s: Dictionary, id: String, index: int, batches: int = 1,
 			return "year.error.target"
 	if id == "plant_paddy" and int(s["day"]) >= 300:
 		return "year.error.season"
-	if id.begins_with("build_") and id not in ["build_gate", "build_wheel"] and float(s["board"]["tiles"][index]["water"]) >= 0.5:
+	if id.begins_with("build_") and id not in ["build_gate", "build_wheel", "build_raft", "build_fish_trap"] and float(s["board"]["tiles"][index]["water"]) >= 0.5:
 		return "year.error.water"
 	for job: Dictionary in s["jobs"]:
 		if int(job["tile"]) == index:
@@ -279,6 +290,8 @@ static func toggle_gate(s: Dictionary, index: int) -> String:
 
 
 static func _job_days(s: Dictionary, id: String, index: int = -1) -> int:
+	if id == "brace_house":
+		return 1
 	var days: int = 1 if id == "repair" and "housing3" in s["research"] else int(config(s)["jobs"][id]["days"])
 	if expanded(s) and index >= 0:
 		if id == "repair" and YearExpansion.upgrade(s, index) == "gate_service":
@@ -309,6 +322,10 @@ static func job_status(s: Dictionary, job: Dictionary) -> String:
 		return "year.job.exhausted"
 	if config(s)["jobs"][id].has("stock") and int(s["stock"][index]) < int(config(s)["jobs"][id]["stock"]):
 		return "year.job.exhausted"
+	if id == "clear_land" and tile["feature"] not in ["paddy", "sapling"]:
+		return "year.job.complete"
+	if id == "brace_house" and (s["structures"][index] not in ["house", "stilt_house"] or int(s["health"][index]) == 0):
+		return "year.job.damage"
 	if id == "repair" and int(s["health"][index]) >= 100:
 		return "year.job.complete"
 	if id == "harvest" and int(s["crop_growth"][index]) < 45:
@@ -317,7 +334,7 @@ static func job_status(s: Dictionary, job: Dictionary) -> String:
 		return "year.job.damage"
 	if id == "fish" and float(tile["water"]) < 0.05:
 		return "year.job.water"
-	if id not in ["fish", "build_gate", "build_wheel", "dig", "repair", "demolish"] and float(tile["water"]) >= 0.75:
+	if id not in ["fish", "build_gate", "build_wheel", "build_raft", "build_fish_trap", "brace_house", "dig", "repair", "demolish"] and float(tile["water"]) >= 0.75:
 		return "year.job.water"
 	if not job["reserved"]:
 		for resource: String in YearExpansion.job_inputs(s, job):
@@ -333,16 +350,21 @@ static func outputs(s: Dictionary, id: String) -> Dictionary:
 	return result
 
 
-static func _finish_job(s: Dictionary, job: Dictionary, events: Array) -> void:
+static func _finish_job(s: Dictionary, job: Dictionary, events: Array, visual: TurnReport = null) -> void:
 	var id: String = job["id"]
 	var index: int = int(job["tile"])
 	var definition: Dictionary = config(s)["jobs"][id]
 	var tile: Dictionary = s["board"]["tiles"][index]
+	var before: Dictionary = YearLedger.snapshot(s) if visual != null else {}
 	for resource: String in outputs(s, id):
 		var amount: int = int(outputs(s, id)[resource])
 		s["resources"][resource] = int(s["resources"][resource]) + amount
 		if resource in (["food", "planks", "kits"] if expanded(s) else ["food", "planks"]):
 			s["stats"][resource] = int(s["stats"][resource]) + amount
+	if id == "fish" and visual != null:
+		var coord: Vector2i = Vector2i(int(tile["q"]), int(tile["r"]))
+		visual.fish_food_by_tile[coord] = int(outputs(s, id).get("food", 0))
+		visual.fish_food += int(outputs(s, id).get("food", 0))
 	if definition.has("stock"):
 		s["stock"][index] = maxi(0, int(s["stock"][index]) - int(definition["stock"]))
 		if int(s["stock"][index]) == 0:
@@ -366,6 +388,8 @@ static func _finish_job(s: Dictionary, job: Dictionary, events: Array) -> void:
 	if expanded(s) and id in ["dig", "fill", "levee"]:
 		s["stats"]["earthworks"] = int(s["stats"]["earthworks"]) + 1
 	match id:
+		"clear_land": YearClassic.clear(s, index)
+		"brace_house": s["brace_days"][index] = 1
 		"plant_paddy":
 			tile["feature"] = "paddy"
 			s["crop_growth"][index] = 0
@@ -378,6 +402,8 @@ static func _finish_job(s: Dictionary, job: Dictionary, events: Array) -> void:
 			s["stats"]["food"] = int(s["stats"]["food"]) + amount
 			s["stats"]["harvest"] = int(s["stats"]["harvest"]) + amount
 			s["crop_growth"][index] = 0
+			if visual != null:
+				visual.year_harvest_food_by_tile[Vector2i(int(tile["q"]), int(tile["r"]))] = amount
 		"dig": tile["elevation"] = maxi(-3, int(tile["elevation"]) - 1)
 		"fill": tile["elevation"] = mini(4, int(tile["elevation"]) + 1)
 		"levee": tile["elevation"] = mini(4, int(tile["elevation"]) + 2)
@@ -389,13 +415,19 @@ static func _finish_job(s: Dictionary, job: Dictionary, events: Array) -> void:
 			if expanded(s):
 				s["upgrades"][index] = ""
 				s["gate_half"][index] = false
+			if YearClassic.enabled(s):
+				s["brace_days"][index] = 0
 			s["structures"][index] = ""
 			s["health"][index] = 0
 			tile["building"] = "none"
 			s["resources"]["wood"] = int(s["resources"]["wood"]) + 2
 
+	YearLedger.record(visual, s, before, "year.action." + id, index)
+	YearLedger.fact(visual, s, index, "year.action." + id, "", "")
+
 
 static func _work(s: Dictionary, events: Array, visual: TurnReport = null) -> void:
+	var before_labor: int = int(s["population"]) - workers(s)
 	var done: Array = []
 	for job: Dictionary in s["jobs"]:
 		var status: String = job_status(s, job)
@@ -406,13 +438,15 @@ static func _work(s: Dictionary, events: Array, visual: TurnReport = null) -> vo
 			continue
 		var definition: Dictionary = config(s)["jobs"][job["id"]]
 		if not job["reserved"]:
+			var before_inputs: Dictionary = YearLedger.snapshot(s) if visual != null else {}
 			for resource: String in YearExpansion.job_inputs(s, job):
 				s["resources"][resource] = int(s["resources"][resource]) - int(YearExpansion.job_inputs(s, job)[resource])
 			job["reserved"] = true
+			YearLedger.record(visual, s, before_inputs, "yearplus.cause.inputs", int(job["tile"]))
 		job["progress"] = int(job["progress"]) + 1
 		if int(job["progress"]) < _job_days(s, job["id"], int(job["tile"])):
 			continue
-		_finish_job(s, job, events)
+		_finish_job(s, job, events, visual)
 		if visual != null:
 			visual.year_jobs_completed.append({"tile": int(job["tile"]), "id": String(job["id"])})
 		job["progress"] = 0
@@ -425,6 +459,10 @@ static func _work(s: Dictionary, events: Array, visual: TurnReport = null) -> vo
 				events.append("year.event.work_complete")
 	for job: Dictionary in done:
 		s["jobs"].erase(job)
+	var labor_before: Dictionary = YearLedger.snapshot(s) if visual != null else {}
+	if visual != null:
+		labor_before["labor"] = before_labor
+	YearLedger.record(visual, s, labor_before, "yearplus.cause.workers")
 
 
 static func _water(s: Dictionary, events: Array, visual: TurnReport = null) -> void:
@@ -464,10 +502,17 @@ static func _water(s: Dictionary, events: Array, visual: TurnReport = null) -> v
 			var tolerance: float = float(config(s)["tolerance"][structure]) + (0.25 if "housing2" in s["research"] else 0.0)
 			if YearExpansion.upgrade(s, index) in ["house_safe", "granary_raised"]:
 				tolerance += 0.4
-			if tile.water >= tolerance:
+			if YearClassic.enabled(s) and int(s["brace_days"][index]) > 0:
+				YearLedger.fact(visual, s, index, "yearplus.braced", tolerance, tolerance + float(YearClassic.config()["brace_bonus"]))
+				tolerance += float(YearClassic.config()["brace_bonus"])
+			if tile.water >= tolerance and structure != "raft_house":
+				var before_damage: Dictionary = YearLedger.snapshot(s) if visual != null else {}
+				var old_health: int = int(s["health"][index])
 				s["health"][index] = maxi(0, int(s["health"][index]) - int(config(s)["damage_per_day"]))
 				s["stats"]["damage"] = int(s["stats"]["damage"]) + int(config(s)["damage_per_day"])
 				damaged = true
+				YearLedger.record(visual, s, before_damage, "year.event.damage", index)
+				YearLedger.fact(visual, s, index, "year.event.damage", old_health, int(s["health"][index]))
 				if int(s["health"][index]) == 0 and structure == "hall":
 					s["outcome"] = "lost_hall"
 				if int(s["health"][index]) == 0 and structure == "gate":
@@ -477,11 +522,16 @@ static func _water(s: Dictionary, events: Array, visual: TurnReport = null) -> v
 			s["sapling_ready"][index] = 0
 			s["stock"][index] = 30
 			events.append("year.event.forest_grown")
+			YearLedger.fact(visual, s, index, "year.event.forest_grown", "sapling", "forest")
+		if YearClassic.enabled(s):
+			s["brace_days"][index] = 0
+			continue
 		if tile.feature != C.Feature.PADDY:
 			continue
 		if tile.water >= 1.0:
 			s["crop_stress"][index] = int(s["crop_stress"][index]) + 1
 			if int(s["crop_stress"][index]) >= 5 and int(s["crop_growth"][index]) > 0:
+				YearLedger.fact(visual, s, index, "year.event.crop_lost", int(s["crop_growth"][index]), 0)
 				s["crop_growth"][index] = 0
 				events.append("year.event.crop_lost")
 			continue
@@ -502,14 +552,20 @@ static func _water(s: Dictionary, events: Array, visual: TurnReport = null) -> v
 		if watered:
 			var previous: int = int(s["crop_growth"][index])
 			s["crop_growth"][index] = mini(90, previous + 1)
+			if visual != null and previous < 90:
+				visual.paddy_gains.append(tile.coord)
+				YearLedger.fact(visual, s, index, "yearplus.crop_growth", previous, int(s["crop_growth"][index]))
 			if previous == 44:
 				events.append("year.event.harvest_ready")
+	if YearClassic.enabled(s):
+		YearClassic.crops_and_fish(s, board, season, events, visual)
 	if damaged:
 		events.append("year.event.damage")
 	s["board"] = board.to_dict()
 
 
-static func _population(s: Dictionary, events: Array) -> void:
+static func _population(s: Dictionary, events: Array, visual: TurnReport = null) -> void:
+	var before: Dictionary = YearLedger.snapshot(s) if visual != null else {}
 	var need: int = food_need(s)
 	if int(s["resources"]["food"]) < need:
 		s["resources"]["food"] = 0
@@ -523,6 +579,8 @@ static func _population(s: Dictionary, events: Array) -> void:
 		s["starvation"] = 0
 		if expanded(s):
 			s["stats"]["fed_days"] = int(s["stats"]["fed_days"]) + 1
+	YearLedger.record(visual, s, before, "yearplus.cause.food")
+	before = YearLedger.snapshot(s) if visual != null else {}
 	if int(s["resources"]["food"]) < need * 7:
 		events.append("year.event.food_low")
 	var capacity: int = housing(s)
@@ -530,11 +588,15 @@ static func _population(s: Dictionary, events: Array) -> void:
 		s["population"] = maxi(0, int(s["population"]) - 1)
 		s["stats"]["departed"] = int(s["stats"]["departed"]) + 1
 		events.append("year.event.housing_low")
+	YearLedger.record(visual, s, before, "year.event.housing_low")
+	before = YearLedger.snapshot(s) if visual != null else {}
 	if int(s["day"]) % 60 == 0 and int(s["population"]) < mini(capacity, int(config(s)["max_population"])) and int(s["resources"]["food"]) >= int(s["population"]) * 10:
 		s["population"] = int(s["population"]) + 1
 		s["resources"]["food"] = int(s["resources"]["food"]) - 8
 		s["stats"]["born"] = int(s["stats"]["born"]) + 1
 		events.append("year.event.birth")
+	YearLedger.record(visual, s, before, "year.event.birth")
+	before = YearLedger.snapshot(s) if visual != null else {}
 	# Population loss suspends the lowest priority work, never overcommits people.
 	for index: int in range(s["jobs"].size() - 1, -1, -1):
 		if workers(s) <= int(s["population"]):
@@ -542,10 +604,14 @@ static func _population(s: Dictionary, events: Array) -> void:
 		s["jobs"][index]["paused"] = true
 	if int(s["population"]) == 0:
 		s["outcome"] = "lost_population"
+	YearLedger.record(visual, s, before, "yearplus.cause.workers")
+	before = YearLedger.snapshot(s) if visual != null else {}
 	if int(s["resources"]["food"]) > storage(s):
 		s["resources"]["food"] = storage(s)
 		if int(s["day"]) % 7 == 0:
 			events.append("year.event.storage")
+
+	YearLedger.record(visual, s, before, "year.event.storage")
 
 
 static func forests(s: Dictionary) -> int:
@@ -590,10 +656,11 @@ static func resolve_day(s: Dictionary, visual: TurnReport = null) -> Array:
 	var events: Array = []
 	if s["outcome"] != "running":
 		return events
+	YearLedger.begin(visual, s)
 	s["day"] = int(s["day"]) + 1
 	_work(s, events, visual)
 	_water(s, events, visual)
-	_population(s, events)
+	_population(s, events, visual)
 	var day: int = int(s["day"])
 	if day in [121, 181, 301]:
 		events.append("year.event.season")
@@ -601,6 +668,7 @@ static func resolve_day(s: Dictionary, visual: TurnReport = null) -> Array:
 	var coming: int = mini(364, day + 2)
 	if day < 363 and int(s["weather"][coming]) >= 1800 and (coming == 0 or int(s["weather"][coming - 1]) < 1800):
 		events.append("year.event.storm")
+	var before_rewards: Dictionary = YearLedger.snapshot(s) if visual != null else {}
 	if s["outcome"] == "running":
 		_challenges(s, events)
 		if expanded(s):
@@ -608,6 +676,7 @@ static func resolve_day(s: Dictionary, visual: TurnReport = null) -> Array:
 		if day == 365:
 			s["outcome"] = "won"
 			events.append("year.event.won")
+	YearLedger.record(visual, s, before_rewards, "yearplus.cause.rewards")
 	if s["outcome"] != "running":
 		s["score"] = score(s)
 		if s["outcome"] != "won":
@@ -617,6 +686,7 @@ static func resolve_day(s: Dictionary, visual: TurnReport = null) -> Array:
 		if not job["paused"] and job_status(s, job) not in ["year.job.working", "year.job.complete"]:
 			events.append("year.event.work_blocked")
 			break
+	YearLedger.finish(visual, s, events)
 	return events
 
 

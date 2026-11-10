@@ -69,6 +69,7 @@ func show_command(id: String, coord: Vector2i) -> bool:
 	var kind: String = "build"
 	match id:
 		"paddy": kind = "farm"
+		"fish": kind = "fish"
 		"dig", "fill", "chop", "plant", "demolish": kind = id
 		"toggle_gate": kind = "operate"
 		"house", "stilt_house", "raft_house", "gate", "reservoir", "fish_trap", "granary", "waterwheel", "brace_house": kind = "build"

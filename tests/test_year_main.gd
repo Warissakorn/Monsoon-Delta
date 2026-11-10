@@ -64,16 +64,18 @@ func test_history_tracks_real_resource_changes_and_is_detached_from_planning_and
 	var before: Dictionary = session.year["resources"].duplicate(true)
 	var report: Dictionary = session.advance_year(7)
 	assert_true(int(report["days"]) > 0)
-	assert_eq(session.daily_history.size(), 1)
+	assert_eq(session.daily_history.size(), int(report["days"]))
 	var history: Dictionary = session.daily_history.duplicate(true)[0]
-	assert_eq(history["before"], before)
-	assert_eq(history["after"], session.year["resources"])
 	for resource: String in YearGame.resources(session.year):
-		assert_eq(int(history["before"][resource]) + int(history["delta"][resource]), history["after"][resource])
+		assert_eq(history["before"][resource], before[resource])
+		assert_eq(session.daily_history.back()["after"][resource], session.year["resources"][resource])
+	for entry: Dictionary in session.daily_history:
+		for resource: String in YearGame.resources(session.year):
+			assert_eq(int(entry["before"][resource]) + int(entry["delta"][resource]), entry["after"][resource])
 	session.year["resources"]["wood"] += 1
 	assert_eq(session.daily_history[0], history)
 	assert_eq(session.advance_year(0)["days"], 0)
-	assert_eq(session.daily_history.size(), 1)
+	assert_eq(session.daily_history.size(), int(report["days"]))
 	assert_eq(session.load_year(), "")
 	assert_true(session.daily_history.is_empty())
 
@@ -109,7 +111,7 @@ func test_advancing_warns_for_idle_workers_and_preview_does_not_commit() -> void
 	screen._advance_confirmation.hide()
 	screen._advance_confirmation.confirmed.emit()
 	assert_true(int(screen.session.year["day"]) > 0)
-	assert_eq(screen.session.daily_history.size(), 1)
+	assert_eq(screen.session.daily_history.size(), int(screen.session.year["day"]))
 	var day: int = int(screen.session.year["day"])
 	screen._advance(7)
 	assert_eq(screen.session.year["day"], day, "rapid confirmation cannot advance twice")

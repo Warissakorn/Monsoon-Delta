@@ -31,13 +31,13 @@ func start_year(seed_value: int = 42, goal: String = "none", project: String = "
 	return checkpoint_year()
 
 
-func start_campaign(seed_value: int, goal: String, project: String, leader: String = "farmer", difficulty: int = 0) -> String:
+func start_campaign(seed_value: int, goal: String, project: String, leader: String = "farmer", difficulty: int = 0, classic: bool = false) -> String:
 	if FileAccess.file_exists(save_path):
 		var previous: Dictionary = _read_year()
 		if not String(previous["error"]).is_empty():
 			last_save_error = previous["error"]
 			return last_save_error
-	var next: Dictionary = YearGame.new_campaign(seed_value, goal, project, leader, difficulty)
+	var next: Dictionary = YearGame.new_campaign(seed_value, goal, project, leader, difficulty, classic)
 	if next.is_empty():
 		return "msg.new_game_failed"
 	year = next
@@ -58,6 +58,7 @@ func edit_year(action: String, id: String = "", tile: int = -1, batches: int = 1
 		"pause": error = YearGame.edit_job(copy, tile, false)
 		"cancel": error = YearGame.edit_job(copy, tile, true)
 		"learn": error = YearGame.learn(copy, id)
+		"irrigation": error = YearClassic.policy(copy, tile, id)
 		"gate": error = YearGame.toggle_gate(copy, tile)
 		"project": error = YearExpansion.choose_project(copy, id)
 	if not error.is_empty():
@@ -92,16 +93,12 @@ func redo_year() -> bool:
 func advance_year(days: int) -> Dictionary:
 	if year.is_empty():
 		return {"days": 0, "events": []}
-	var before: Dictionary = year["resources"].duplicate(true)
-	var first_day: int = int(year["day"])
 	visual_reports.clear()
 	var report: Dictionary = YearGame.advance(year, days, visual_reports)
 	if int(report["days"]) > 0:
-		var delta: Dictionary = {}
-		for resource: String in YearGame.resources(year):
-			delta[resource] = int(year["resources"][resource]) - int(before[resource])
-		daily_history.append({"from_day": first_day, "day": int(year["day"]), "before": before, "after": year["resources"].duplicate(true), "delta": delta, "events": report["events"].duplicate()})
-		if daily_history.size() > 60:
+		for visual: TurnReport in visual_reports:
+			daily_history.append(visual.year_ledger.duplicate(true))
+		while daily_history.size() > 365:
 			daily_history.pop_front()
 		undo_plans.clear()
 		redo_plans.clear()

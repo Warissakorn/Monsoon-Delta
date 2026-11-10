@@ -3,6 +3,7 @@ extends Control
 ## Read-only 2D hex presentation of the shared water simulation.
 
 signal tile_selected(index: int)
+signal cancel_requested()
 var model: Dictionary = {}
 var selected: int = -1
 var targets: Array[int] = []
@@ -54,6 +55,10 @@ func polygon_of(index: int) -> PackedVector2Array:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		cancel_requested.emit()
+		accept_event()
+		return
 	if event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
 		zoom_by(1.2 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / 1.2, event.position)
 		accept_event()

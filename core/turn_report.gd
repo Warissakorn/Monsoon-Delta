@@ -28,6 +28,8 @@ var flow_edges: Array[PackedFloat32Array] = []
 var wheel_transfers: Array[Dictionary] = []
 # Year-only presentation records, deliberately absent from to_dict and saves.
 var year_jobs_completed: Array[Dictionary] = []
+var year_ledger: Dictionary = {}
+var year_harvest_food_by_tile: Dictionary = {}
 # Per-trap food is also kept in session history for inspecting actual results;
 # it remains outside GameState, checkpoint envelopes and serialized reports.
 var fish_food_by_tile: Dictionary = {}

@@ -1094,5 +1094,56 @@
         "earth_days_discount": 1
       }
     }
+  },
+  "year_classic": {
+    "jobs": {
+      "clear_land": {
+        "workers": 1,
+        "days": 1,
+        "target": "clearing",
+        "inputs": {},
+        "outputs": {}
+      },
+      "build_raft": {
+        "workers": 2,
+        "days": 6,
+        "target": "wet_channel",
+        "inputs": {
+          "planks": 3,
+          "fiber": 2
+        },
+        "outputs": {},
+        "builds": "raft_house"
+      },
+      "build_fish_trap": {
+        "workers": 1,
+        "days": 3,
+        "target": "wet_channel",
+        "inputs": {
+          "wood": 3
+        },
+        "outputs": {},
+        "builds": "fish_trap"
+      },
+      "brace_house": {
+        "workers": 1,
+        "days": 1,
+        "target": "fixed_home",
+        "inputs": {
+          "wood": 1
+        },
+        "outputs": {}
+      }
+    },
+    "tolerance": {
+      "raft_house": 1000000.0,
+      "fish_trap": 2.0
+    },
+    "brace_bonus": 0.5,
+    "moisture_capacity": 2,
+    "trap_min_water": 0.05,
+    "trap_max_water": 1.0,
+    "trap_food_per_day": 1,
+    "build_min_water": 0.1
   }
 }

@@ -4,6 +4,12 @@ extends RefCounted
 
 static func board(year: Dictionary) -> GameState:
 	var state: GameState = YearGame.board_of(year)
+	if YearClassic.enabled(year):
+		state.ruleset = GameState.ruleset_for(true, true, true)
+		for index: int in range(state.tiles.size()):
+			state.tiles[index].brace_turns = int(year["brace_days"][index])
+			state.tiles[index].soil_moisture = int(year["soil_moisture"][index])
+			state.tiles[index].irrigation_policy = String(year["irrigation_policy"][index])
 	state.population = int(year["population"])
 	state.food = int(year["resources"]["food"])
 	state.wood = int(year["resources"]["wood"])

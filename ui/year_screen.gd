@@ -10,6 +10,21 @@ var _settings: AcceptDialog
 var _advance_confirmation: ConfirmationDialog
 var _pending_days: int = 1
 var _history: Label
+var _history_choice: OptionButton
+var _history_rows: VBoxContainer
+var _history_day: int = -1
+var _history_return: Button
+var _history_view: Dictionary = {}
+var _history_selected: int = -1
+var _classic: CheckBox
+var _irrigation: OptionButton
+var _try_button: Button
+var _order_confirmation: ConfirmationDialog
+var _order_snapshot: Dictionary = {}
+var _pending_order: Dictionary = {}
+var _impact_button: Button
+var _impact_tile: int = -1
+var _review_impacts: Array[Dictionary] = []
 var _leader: OptionButton
 var _difficulty: SpinBox
 var _food_plan: Label
@@ -183,6 +198,7 @@ func _ready() -> void:
 	board.custom_minimum_size = Vector2(500, 320)
 	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	board.tile_selected.connect(select_tile)
+	board.cancel_requested.connect(_cancel_tool)
 	map_column.add_child(board)
 	var map_tools: HBoxContainer = HBoxContainer.new()
 	map_column.add_child(map_tools)
@@ -259,6 +275,16 @@ func _ready() -> void:
 	_direction.item_selected.connect(func(_index: int): _refresh_selection())
 	_order_button = _button("year.order", _order)
 	actions.add_child(_order_button)
+	_try_button = _button("yearplus.try_order", _try_order)
+	actions.add_child(_try_button)
+	_history_return = _button("yearplus.return_history", _return_history)
+	_history_return.hide()
+	actions.add_child(_history_return)
+	_irrigation = OptionButton.new()
+	for choice: String in Irrigation.POLICIES:
+		_irrigation.add_item(tr("yearplus.policy." + choice))
+	_irrigation.item_selected.connect(func(index: int): _edit("irrigation", Irrigation.POLICIES[index]))
+	actions.add_child(_irrigation)
 	_gate_button = _button("year.gate", func(): _edit("gate"))
 	actions.add_child(_gate_button)
 	_reason = _label("", "Caption")
@@ -293,8 +319,17 @@ func _ready() -> void:
 	_planning_rows = VBoxContainer.new()
 	planning.add_child(_planning_rows)
 	var history: VBoxContainer = _tab(tabs, "year.history")
+	_history_choice = OptionButton.new()
+	_history_choice.item_selected.connect(func(index: int):
+		_history_day = int(_history_choice.get_item_metadata(index))
+		_refresh_history()
+	)
+	history.add_child(_history_choice)
 	_history = _label("")
 	history.add_child(_history)
+	history.add_child(_label(tr("yearplus.history_note"), "Caption"))
+	_history_rows = VBoxContainer.new()
+	history.add_child(_history_rows)
 	var reports: VBoxContainer = _tab(tabs, "year.report")
 	_messages = _label("")
 	reports.add_child(_messages)
@@ -353,6 +388,14 @@ func _ready() -> void:
 	for project: String in ["food", "water", "craft"]:
 		_project.add_item(tr("exp.project." + project))
 	setup.add_child(_project)
+	_classic = CheckBox.new()
+	_classic.text = tr("yearplus.enable")
+	_classic.visible = not session is TransportSession
+	setup.add_child(_classic)
+	var classic_help: Label = _label(tr("yearplus.enable_help"), "Caption")
+	classic_help.visible = _classic.visible
+	setup.add_child(classic_help)
+	_sync_new_year_form()
 	_restart.confirmed.connect(_new_year)
 	add_child(_restart)
 	_populate_actions()
@@ -369,7 +412,22 @@ func _ready() -> void:
 	)
 	add_child(_leave_confirmation)
 	_advance_confirmation = ConfirmationDialog.new()
+	_advance_confirmation.title = tr("action.confirm")
+	_advance_confirmation.ok_button_text = tr("action.confirm")
+	_advance_confirmation.cancel_button_text = tr("action.cancel")
 	_advance_confirmation.confirmed.connect(func(): _advance(_pending_days))
+	_impact_button = _advance_confirmation.add_button(tr("yearplus.inspect_risk"), false, "inspect")
+	_advance_confirmation.custom_action.connect(func(_action_name: StringName):
+		_advance_confirmation.hide()
+		if _impact_tile >= 0:
+			_focus_tile(_impact_tile)
+	)
+	_order_confirmation = ConfirmationDialog.new()
+	_order_confirmation.title = tr("yearplus.try_order")
+	_order_confirmation.ok_button_text = tr("year.order")
+	_order_confirmation.cancel_button_text = tr("action.cancel")
+	_order_confirmation.confirmed.connect(_commit_tried_order)
+	add_child(_order_confirmation)
 	add_child(_advance_confirmation)
 	_refresh()
 	_apply_reduced_motion()
@@ -474,8 +532,21 @@ func _refresh_selection() -> void:
 		_inspection.text += "\n" + tr("exp.gate." + ("half" if YearGame.expanded(s) and s["gate_half"][selected] else ("open" if tile["gate_open"] else "closed")))
 	if _preview.button_pressed and not _predicted.is_empty():
 		_inspection.text += "\n" + tr("year.preview_tile") % [float(_predicted["board"]["tiles"][selected]["water"]), int(_predicted["health"][selected])]
+	_gate_button.disabled = structure != "gate" or int(s["health"][selected]) <= 0 or s["outcome"] != "running"
+	_irrigation.visible = YearClassic.enabled(s) and tile["feature"] == "paddy"
+	if _irrigation.visible:
+		_irrigation.select(Irrigation.POLICIES.find(String(s["irrigation_policy"][selected])))
+		_irrigation.disabled = s["outcome"] != "running"
+		_inspection.text += "\n" + tr("yearplus.moisture") % int(s["soil_moisture"][selected])
 	var id: String = action_id()
 	if id.is_empty():
+		_order_button.disabled = true
+		_try_button.disabled = true
+		board.model = s
+		board.selected = selected
+		board.targets.clear()
+		board.predicted = _predicted if _preview.button_pressed else {}
+		board.update_view()
 		return
 	var definition: Dictionary = YearGame.config(s)["jobs"][id]
 	var reusable: bool = id in YearGame.repeatable(s)
@@ -496,7 +567,8 @@ func _refresh_selection() -> void:
 	var error: String = YearGame.check_order(s, id, selected, int(_batches.value), _repeat.button_pressed, _direction.selected, stop_at, reserve)
 	_reason.text = "" if error.is_empty() else tr(error)
 	_order_button.disabled = not error.is_empty()
-	_gate_button.disabled = structure != "gate" or int(s["health"][selected]) <= 0 or s["outcome"] != "running"
+	_try_button.disabled = _order_button.disabled
+	_try_button.visible = not session is TransportSession
 	board.model = s
 	board.selected = selected
 	board.targets.clear()
@@ -521,7 +593,7 @@ func _refresh() -> void:
 	var need: int = YearGame.food_need(s)
 	_status.text = tr("year.status") % [int(s["day"]), tr("year.season." + DailyProduction.season(maxi(1, int(s["day"])))), int(s["population"]), YearGame.housing(s), _worker_count(), int(s["population"]), int(s["resources"]["food"]) / maxi(1, need), int(s["knowledge"])]
 	_resources.text = _materials(s["resources"])
-	if s.get("ruleset") == "year365_v3":
+	if s.get("ruleset") in ["year365_v3", "year365_v4"]:
 		_status.text += " · " + tr("leader." + String(s["leader"]) + ".name") + " · " + tr("year.difficulty") % int(s["difficulty"])
 	var forecast: PackedStringArray = PackedStringArray()
 	for entry: Dictionary in YearWeather.forecast(s):
@@ -638,6 +710,7 @@ func _advance(days: int) -> void:
 	var before_year: Dictionary = session.year.duplicate(true)
 	var before_resources: Dictionary = _resource_snapshot()
 	var before: Dictionary = session.year["resources"].duplicate(true)
+	_history_day = -1
 	var report: Dictionary = session.advance_year(days)
 	var events: PackedStringArray = PackedStringArray()
 	for event: String in report["events"]:
@@ -662,12 +735,15 @@ func _new_year() -> void:
 	if session is TransportSession:
 		error = session.start_year(initial_seed, initial_goal, initial_project)
 	else:
-		error = session.start_campaign(initial_seed, initial_goal, initial_project, MainMenu.LEADERS[_leader.selected], int(_difficulty.value))
+		error = session.start_campaign(initial_seed, initial_goal, initial_project, MainMenu.LEADERS[_leader.selected], int(_difficulty.value), _classic.button_pressed)
 	if not error.is_empty():
 		_latest_notice = tr(error)
 		_refresh()
 		return
 	_log.clear()
+	_history_day = -1
+	_history_view.clear()
+	_history_return.hide()
 	_resource_feedback.clear()
 	board.clear_feedback()
 	_latest_notice = ""
@@ -715,16 +791,71 @@ func show_new_year() -> void:
 
 
 func _refresh_history() -> void:
-	var rows: PackedStringArray = PackedStringArray()
+	_history_choice.clear()
+	for child: Node in _history_rows.get_children():
+		_history_rows.remove_child(child)
+		child.queue_free()
+	if session.daily_history.is_empty():
+		_history.text = tr("year.history_empty")
+		return
+	var chosen: Dictionary = session.daily_history.back()
 	for index: int in range(session.daily_history.size() - 1, -1, -1):
 		var entry: Dictionary = session.daily_history[index]
-		rows.append(tr("year.history_days") % [int(entry["from_day"]) + 1, int(entry["day"])])
-		for resource: String in YearGame.resources(session.year):
-			rows.append("%s: %d → %d (%+d)" % [tr("daily.resource." + resource), int(entry["before"][resource]), int(entry["after"][resource]), int(entry["delta"][resource])])
-		for event: String in entry["events"]:
-			rows.append(tr(event))
-		rows.append("")
-	_history.text = "\n".join(rows) if not rows.is_empty() else tr("year.history_empty")
+		_history_choice.add_item(tr("year.history_days") % [int(entry["day"]), int(entry["day"])])
+		_history_choice.set_item_metadata(_history_choice.item_count - 1, int(entry["day"]))
+		if int(entry["day"]) == _history_day:
+			chosen = entry
+			_history_choice.select(_history_choice.item_count - 1)
+	var rows: PackedStringArray = [tr("year.history_days") % [int(chosen["from_day"]) + 1, int(chosen["day"])]]
+	for key: String in chosen["before"]:
+		rows.append("%s: %d → %d (%+d)" % [_ledger_resource(key), int(chosen["before"][key]), int(chosen["after"][key]), int(chosen["delta"][key])])
+	for cause: Dictionary in chosen.get("causes", []):
+		var deltas: PackedStringArray = []
+		for key: String in cause["delta"]:
+			deltas.append("%s %+d" % [_ledger_resource(key), int(cause["delta"][key])])
+		var at: String = " (%d,%d)" % [cause["coord"].x, cause["coord"].y] if cause.has("coord") else ""
+		rows.append(tr(cause["cause"]) + at + ": " + " · ".join(deltas))
+	for event: String in chosen["events"]:
+		rows.append(tr(event))
+	_history.text = "\n".join(rows)
+	for fact: Dictionary in chosen.get("locations", []):
+		var coord: Vector2i = fact["coord"]
+		var text: String = "%s (%d,%d) · %s" % [tr(fact["kind"]), coord.x, coord.y, tr("year.site." + fact["site"])]
+		if str(fact["before"]) != "" or str(fact["after"]) != "":
+			text += " · %s → %s" % [_ledger_value(fact["before"]), _ledger_value(fact["after"])]
+		if fact.has("source"):
+			text += " · " + tr("yearplus.source") % [fact["source"].x, fact["source"].y]
+		var button: Button = Button.new()
+		button.text = text
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		button.pressed.connect(_inspect_history.bind(int(fact["tile"]), coord))
+		_history_rows.add_child(button)
+
+
+func _ledger_resource(key: String) -> String:
+	var labels: Dictionary = {"people": "resource.people", "labor": "resource.labor", "housing": "resourcefx.housing", "knowledge": "yearplus.knowledge"}
+	return tr(labels.get(key, "daily.resource." + key))
+
+
+func _inspect_history(index: int, coord: Vector2i) -> void:
+	if _history_view.is_empty():
+		_history_view = board.view_draft()
+		_history_selected = selected
+	_focus_tile(index)
+	if board is YearBoard3D:
+		(board as YearBoard3D).village.show_result_location(coord)
+	_history_return.show()
+
+
+func _return_history() -> void:
+	if not _history_view.is_empty():
+		select_tile(_history_selected)
+		board.restore_view_draft(_history_view)
+		_history_view.clear()
+	if board is YearBoard3D:
+		(board as YearBoard3D).village.clear_result_location()
+	_history_return.hide()
+	_tabs.current_tab = 5
 
 
 func _build_settings() -> void:
@@ -764,13 +895,30 @@ func _request_advance(days: int) -> void:
 		return
 	_pending_days = days
 	var idle: int = int(session.year["population"]) - _worker_count()
+	_review_impacts.clear()
 	var preview: Dictionary = _advance_preview(days)
+	var impacts: Array[Dictionary] = YearOrderPreview.impacts(session.year, preview) if session is TransportSession else _review_impacts
+	_impact_tile = -1
+	var details: PackedStringArray = []
+	for impact: Dictionary in impacts:
+		var index: int = int(impact["tile"])
+		if index >= 0 and _impact_tile < 0:
+			_impact_tile = index
+		if details.size() < 8:
+			var at: Dictionary = session.year["board"]["tiles"][index] if index >= 0 else {}
+			details.append(tr(impact["kind"]) + (" (%d,%d)" % [int(at["q"]), int(at["r"])] if not at.is_empty() else "") + ": %d → %d" % [int(impact["before"]), int(impact["after"])])
+	_impact_button.visible = _impact_tile >= 0
+	var warnings: PackedStringArray = []
 	if preview["outcome"] in ["lost_hall", "lost_population"]:
-		_advance_confirmation.dialog_text = tr("yearplan.confirm_loss") % [int(preview["day"]), tr("year.outcome." + String(preview["outcome"]))]
-		_advance_confirmation.popup_centered()
-	elif GamePreferences.read()["confirm_unused_labor"] and idle > 0:
-		_advance_confirmation.dialog_text = tr("year.unused_workers") % idle
-		_advance_confirmation.popup_centered()
+		warnings.append(tr("yearplan.confirm_loss") % [int(preview["day"]), tr("year.outcome." + String(preview["outcome"]))])
+	elif not impacts.is_empty():
+		warnings.append(tr("yearplus.confirm_impact") % [int(preview["day"]), impacts.size()])
+	warnings.append_array(details)
+	if GamePreferences.read()["confirm_unused_labor"] and idle > 0:
+		warnings.append(tr("year.unused_workers") % idle)
+	if not warnings.is_empty():
+		_advance_confirmation.dialog_text = "\n".join(warnings)
+		_advance_confirmation.popup_centered(Vector2i(650, 0))
 	else:
 		_advance(days)
 
@@ -789,30 +937,39 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	var focused: Control = get_viewport().gui_get_focus_owner()
 	if focused is LineEdit or focused is TextEdit:
 		return
-	if _restart.visible or _settings.visible or _advance_confirmation.visible or _leave_confirmation.visible:
+	if _restart.visible or _settings.visible or _advance_confirmation.visible or _leave_confirmation.visible or _order_confirmation.visible:
 		return
-	if event.keycode == KEY_ESCAPE:
+	var code: Key = event.physical_keycode if event.physical_keycode != 0 else event.keycode
+	if code == KEY_ESCAPE:
 		_settings.popup_centered(Vector2i(600, 260))
-	elif event.keycode == KEY_F2:
+	elif code == KEY_F2:
 		_tabs.current_tab = 4
-	elif event.keycode == KEY_H:
+	elif code == KEY_H:
 		_tabs.current_tab = 1
-	elif event.keycode == KEY_SPACE:
+	elif code == KEY_F3:
+		_tabs.current_tab = 5
+	elif code == KEY_TAB:
+		_preview.button_pressed = not _preview.button_pressed
+	elif code in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]:
 		_request_advance(1)
-	elif event.ctrl_pressed and event.keycode == KEY_Z:
+	elif event.ctrl_pressed and code == KEY_Z:
 		if event.shift_pressed:
 			_redo_plan()
 		else:
 			_undo_plan()
-	elif event.ctrl_pressed and event.keycode == KEY_Y:
+	elif event.ctrl_pressed and code == KEY_Y:
 		_redo_plan()
-	elif board is YearBoard3D and event.keycode in [KEY_Q, KEY_E, KEY_L]:
-		if event.keycode == KEY_L:
+	elif code in [KEY_W, KEY_A, KEY_S, KEY_D, KEY_UP, KEY_LEFT, KEY_DOWN, KEY_RIGHT] and board is YearBoard3D:
+		(board as YearBoard3D).pan_view(Vector2(-1 if code in [KEY_A, KEY_LEFT] else (1 if code in [KEY_D, KEY_RIGHT] else 0), -1 if code in [KEY_W, KEY_UP] else (1 if code in [KEY_S, KEY_DOWN] else 0)))
+	elif board is YearBoard3D and code in [KEY_Q, KEY_E, KEY_L, KEY_V]:
+		if code in [KEY_L, KEY_V]:
 			(board as YearBoard3D).toggle_labels()
 		else:
-			(board as YearBoard3D).rotate_view(-1 if event.keycode == KEY_Q else 1)
+			(board as YearBoard3D).rotate_view(-1 if code == KEY_Q else 1)
 	else:
-		return
+		var tools: Dictionary = {KEY_1: "dig", KEY_2: "fill", KEY_3: "plant_paddy", KEY_4: "build_house", KEY_5: "upgrade_house", KEY_6: "build_raft", KEY_7: "build_gate", KEY_8: "build_reservoir", KEY_9: "build_fish_trap", KEY_0: "build_granary", KEY_C: "gather_wood", KEY_P: "plant_forest", KEY_B: "build_wheel", KEY_X: "demolish", KEY_R: "brace_house"}
+		if not tools.has(code) or not _select_action(tools[code]):
+			return
 	get_viewport().set_input_as_handled()
 
 
@@ -825,10 +982,15 @@ func request_quit() -> void:
 
 
 func ui_draft() -> Dictionary:
-	return {"seed": _seed.text, "goal": _goal.selected, "project": _project.selected, "leader": _leader.selected, "difficulty": _difficulty.value, "group": _group.selected, "action": _action.selected, "batches": _batches.value, "repeat": _repeat.button_pressed, "direction": _direction.selected, "preview": _preview.button_pressed, "tab": _tabs.current_tab, "stop_at": _stop_at.value, "reserve": _reserve.value, "queue_filter": _queue_filter.selected}
+	return {"seed": _seed.text, "goal": _goal.selected, "project": _project.selected, "leader": _leader.selected, "difficulty": _difficulty.value, "group": _group.selected, "action": _action.selected, "batches": _batches.value, "repeat": _repeat.button_pressed, "direction": _direction.selected, "preview": _preview.button_pressed, "tab": _tabs.current_tab, "stop_at": _stop_at.value, "reserve": _reserve.value, "queue_filter": _queue_filter.selected, "classic": _classic.button_pressed, "history_day": _history_day, "history_view": _history_view.duplicate(true), "history_selected": _history_selected}
 
 
 func restore_ui_draft(draft: Dictionary) -> void:
+	_classic.button_pressed = bool(draft.get("classic", false))
+	_history_day = int(draft.get("history_day", -1))
+	_history_view = draft.get("history_view", {}).duplicate(true)
+	_history_selected = int(draft.get("history_selected", -1))
+	_history_return.visible = not _history_view.is_empty()
 	_seed.text = draft["seed"]
 	_goal.select(draft["goal"])
 	_project.select(draft["project"])
@@ -896,7 +1058,7 @@ func _apply_reduced_motion() -> void:
 
 func _process(_delta: float) -> void:
 	if board != null and _leave_confirmation != null:
-		board.set_suspended(_settings.visible or _restart.visible or _advance_confirmation.visible or _leave_confirmation.visible)
+		board.set_suspended(_settings.visible or _restart.visible or _advance_confirmation.visible or _leave_confirmation.visible or _order_confirmation.visible)
 
 
 func _resource_snapshot() -> Dictionary:
@@ -979,4 +1141,93 @@ func _focus_tile(index: int) -> void:
 
 
 func _advance_preview(days: int) -> Dictionary:
-	return YearGame.preview(session.year, days)["state"]
+	var reports: Array[TurnReport] = []
+	var result: Dictionary = YearGame.preview(session.year, days, reports)
+	for report: TurnReport in reports:
+		for fact: Dictionary in report.year_ledger["locations"]:
+			if fact["kind"] in ["year.event.damage", "year.event.crop_lost"]:
+				_review_impacts.append(fact.duplicate(true))
+	for impact: Dictionary in YearOrderPreview.impacts(session.year, result["state"]):
+		if int(impact["tile"]) < 0:
+			_review_impacts.append(impact)
+	return result["state"]
+
+
+func _sync_new_year_form() -> void:
+	var s: Dictionary = session.year
+	_seed.text = str(s["board"]["seed"]) if not s.is_empty() else str(initial_seed)
+	_goal.select(["none", "growth", "forest", "rice"].find(String(s.get("goal", initial_goal))))
+	_project.select(["food", "water", "craft"].find(String(s.get("project", initial_project))))
+	_leader.select(MainMenu.LEADERS.find(String(s.get("leader", "farmer"))))
+	_difficulty.value = int(s.get("difficulty", initial_difficulty))
+	_classic.set_pressed_no_signal(YearClassic.enabled(s))
+
+
+func _select_action(id: String) -> bool:
+	if not YearGame.config(session.year)["jobs"].has(id):
+		return false
+	_group.select(GROUPS.find(action_group(id)))
+	_populate_actions()
+	for index: int in range(_action.item_count):
+		if _action.get_item_metadata(index) == id:
+			_action.select(index)
+	_tabs.current_tab = 0
+	_refresh_selection()
+	return true
+
+
+func _try_order() -> void:
+	_pending_order = {"id": action_id(), "tile": selected, "batches": int(_batches.value), "repeat": _repeat.button_pressed, "direction": _direction.selected, "stop_at": int(_stop_at.value) if _policy.visible and _stop_at.editable else 0, "reserve": int(_reserve.value) if _policy.visible and _reserve.editable else 0}
+	var o: Dictionary = _pending_order
+	var result: Dictionary = YearOrderPreview.describe(session.year, o["id"], o["tile"], o["batches"], o["repeat"], o["direction"], o["stop_at"], o["reserve"])
+	if not String(result["error"]).is_empty():
+		_latest_notice = tr(result["error"])
+		_refresh()
+		return
+	_order_snapshot = session.year.duplicate(true)
+	var cost: Dictionary = {}
+	for key: String in result["reserved"]:
+		if int(result["reserved"][key]) > 0:
+			cost[key] = int(result["reserved"][key])
+	var rows: PackedStringArray = [tr("yearplus.try_assumption"), tr("yearplus.reserved") + " " + _materials(cost)]
+	for branch: String in ["baseline", "planned"]:
+		var after: Dictionary = result[branch]
+		rows.append(tr("yearplus." + branch) + ": " + tr("yearplus.try_summary") % [int(after["day"]), int(after["resources"]["food"]), int(after["population"]), YearGame.housing(after), int(after["stats"]["damage"]) - int(session.year["stats"]["damage"]), tr("year.outcome." + String(after["outcome"]))])
+		rows.append(_materials(after["resources"]))
+	_order_confirmation.dialog_text = "\n\n".join(rows)
+	_order_confirmation.popup_centered(Vector2i(650, 0))
+
+
+func _commit_tried_order() -> void:
+	if session.year != _order_snapshot or _pending_order.is_empty():
+		_latest_notice = tr("yearplus.stale")
+		_refresh()
+		return
+	var o: Dictionary = _pending_order.duplicate(true)
+	_pending_order.clear()
+	_order_snapshot.clear()
+	var before: Dictionary = _resource_snapshot()
+	var error: String = session.edit_year("order", o["id"], o["tile"], o["batches"], o["repeat"], o["direction"], o["stop_at"], o["reserve"])
+	_latest_notice = tr(error) if not error.is_empty() else ""
+	_refresh()
+	_show_resource_changes(before)
+	board.show_order(o["id"], o["tile"], error)
+
+
+func _input(event: InputEvent) -> void:
+	# Tab is otherwise consumed by default focus navigation before unhandled input.
+	if event is InputEventKey and (event.physical_keycode == KEY_TAB or event.keycode == KEY_TAB):
+		_unhandled_key_input(event)
+
+
+func _cancel_tool() -> void:
+	_action.select(-1)
+	_reason.text = tr("yearplus.tool_cancelled")
+	_recipe.text = ""
+	_refresh_selection()
+
+
+func _ledger_value(value: Variant) -> String:
+	if value is String and value in ["sapling", "forest"]:
+		return tr("year.site." + value)
+	return str(value)
