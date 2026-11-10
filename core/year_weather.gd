@@ -20,9 +20,13 @@ static func generate(seed_value: int) -> Array:
 	return result
 
 
+static func inflow(s: Dictionary, index: int) -> float:
+	return float(s["weather"][index]) / 1000.0 * (1.0 + float(s.get("difficulty", 0)) * float(DataDB.balance()["year_campaign"]["inflow_per_difficulty"]))
+
+
 static func forecast(s: Dictionary) -> Array:
 	var horizon: int = 14 if "water3" in s["research"] else 7
 	var result: Array = []
 	for index: int in range(int(s["day"]), mini(365, int(s["day"]) + horizon)):
-		result.append({"day": index + 1, "inflow": float(s["weather"][index]) / 1000.0})
+		result.append({"day": index + 1, "inflow": inflow(s, index)})
 	return result

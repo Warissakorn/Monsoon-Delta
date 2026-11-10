@@ -7,6 +7,7 @@ signal continue_requested()
 signal sandbox_requested()
 signal daily_requested()
 signal year_requested()
+signal new_year_requested()
 signal transport_requested()
 signal lesson_requested(scenario_id: String)
 signal language_changed(language: String)
@@ -18,6 +19,7 @@ const GOALS: Array[String] = ["none", "growth", "forest", "rice"]
 const LandscapeArt: GDScript = preload("res://view/menu_artwork.gd")
 
 var save_path: String = SaveIO.DEFAULT_PATH
+var year_save_path: String = YearSession.YEAR_PATH
 var initial_seed: int = 42
 var initial_difficulty: int = 0
 var initial_ruleset: String = "legacy"
@@ -132,7 +134,7 @@ func _validate_checkpoint() -> void:
 	_continue_button.tooltip_text = ""
 	if _continue_button.visible:
 		_describe_checkpoint(loaded["state"])
-	_new_game_button.theme_type_variation = "QuietButton" if _continue_button.visible else "PrimaryButton"
+	_new_game_button.theme_type_variation = "QuietButton"
 	var error: String = loaded["error"]
 	if not error.is_empty():
 		show_error(error)
@@ -299,7 +301,30 @@ func _build_home(parent: Node) -> void:
 	_home.add_theme_constant_override("separation", 14)
 	_home.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	parent.add_child(_home)
-	_home.add_child(_label("setup.title", "Heading"))
+	_home.add_child(_label("year.main", "Heading"))
+	var year_session: YearSession = YearSession.new()
+	year_session.save_path = year_save_path
+	var year_error: String = year_session.load_year()
+	var year_button: Button = _button("year.continue" if year_error.is_empty() else "year.play", func():
+		if year_error == "msg.no_save":
+			new_year_requested.emit()
+		else:
+			year_requested.emit(), "PrimaryButton", true)
+	year_button.name = "FullYearGame"
+	_home.add_child(year_button)
+	if not year_session.year.is_empty():
+		var saved: Dictionary = year_session.year
+		var summary: Label = _label("", "Caption", true)
+		summary.name = "YearContinueSummary"
+		summary.text = tr("year.continue_summary") % [int(saved["day"]), int(saved["population"]), int(saved["resources"]["food"]), tr("year.outcome." + String(saved["outcome"]))]
+		year_button.tooltip_text = summary.text + "\n" + tr("pause.seed") % String(saved["board"]["seed"])
+		_home.add_child(summary)
+	elif year_error != "msg.no_save":
+		_home.add_child(_label(year_error, "Caption", true))
+	var new_year: Button = _button("year.new", func(): new_year_requested.emit(), "QuietButton", true)
+	new_year.name = "NewFullYearGame"
+	_home.add_child(new_year)
+	_home.add_child(_label("year.classic", "Caption", true))
 	_home.add_child(_label("app.subtitle", "Caption", true))
 	var top_space: Control = Control.new()
 	top_space.custom_minimum_size.y = 10
@@ -309,7 +334,7 @@ func _build_home(parent: Node) -> void:
 	_continue_group.add_theme_constant_override("separation", 6)
 	_continue_group.hide()
 	_home.add_child(_continue_group)
-	_continue_button = _button("menu.continue", func(): continue_requested.emit(), "PrimaryButton", true)
+	_continue_button = _button("menu.continue", func(): continue_requested.emit(), "QuietButton", true)
 	_continue_button.name = "ContinueGame"
 	_continue_button.hide()
 	_continue_group.add_child(_continue_button)
@@ -319,9 +344,6 @@ func _build_home(parent: Node) -> void:
 	_continue_group.add_child(_continue_summary)
 	_new_game_button = _button("menu.new_game", func(): _show_page(_setup), "PrimaryButton", true)
 	_home.add_child(_new_game_button)
-	var year_button: Button = _button("year.menu", func(): year_requested.emit(), "PrimaryButton", true)
-	year_button.name = "FullYearGame"
-	_home.add_child(year_button)
 	var transport_button: Button = _button("transport.menu", func(): transport_requested.emit(), "QuietButton", true)
 	transport_button.name = "TransportPilot"
 	_home.add_child(transport_button)

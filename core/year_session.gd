@@ -4,6 +4,7 @@ extends GameSession
 
 const YEAR_PATH: String = "user://year365.json"
 var year: Dictionary = {}
+var daily_history: Array[Dictionary] = []
 var undo_plans: Array[Dictionary] = []
 var redo_plans: Array[Dictionary] = []
 
@@ -13,10 +14,32 @@ func _init() -> void:
 
 
 func start_year(seed_value: int = 42, goal: String = "none", project: String = "") -> String:
+	if FileAccess.file_exists(save_path):
+		var previous: Dictionary = _read_year()
+		if not String(previous["error"]).is_empty():
+			last_save_error = previous["error"]
+			return last_save_error
 	var next: Dictionary = YearGame.new_game(seed_value, goal) if project.is_empty() else YearGame.new_expanded(seed_value, goal, project)
 	if next.is_empty():
 		return "msg.new_game_failed"
 	year = next
+	daily_history.clear()
+	undo_plans.clear()
+	redo_plans.clear()
+	return checkpoint_year()
+
+
+func start_campaign(seed_value: int, goal: String, project: String, leader: String = "farmer", difficulty: int = 0) -> String:
+	if FileAccess.file_exists(save_path):
+		var previous: Dictionary = _read_year()
+		if not String(previous["error"]).is_empty():
+			last_save_error = previous["error"]
+			return last_save_error
+	var next: Dictionary = YearGame.new_campaign(seed_value, goal, project, leader, difficulty)
+	if next.is_empty():
+		return "msg.new_game_failed"
+	year = next
+	daily_history.clear()
 	undo_plans.clear()
 	redo_plans.clear()
 	return checkpoint_year()
@@ -66,8 +89,16 @@ func redo_year() -> bool:
 func advance_year(days: int) -> Dictionary:
 	if year.is_empty():
 		return {"days": 0, "events": []}
+	var before: Dictionary = year["resources"].duplicate(true)
+	var first_day: int = int(year["day"])
 	var report: Dictionary = YearGame.advance(year, days)
 	if int(report["days"]) > 0:
+		var delta: Dictionary = {}
+		for resource: String in YearGame.resources(year):
+			delta[resource] = int(year["resources"][resource]) - int(before[resource])
+		daily_history.append({"from_day": first_day, "day": int(year["day"]), "before": before, "after": year["resources"].duplicate(true), "delta": delta, "events": report["events"].duplicate()})
+		if daily_history.size() > 60:
+			daily_history.pop_front()
 		undo_plans.clear()
 		redo_plans.clear()
 		checkpoint_year()
@@ -82,6 +113,7 @@ func load_year() -> String:
 		last_save_error = result["error"]
 		return last_save_error
 	year = result["state"]
+	daily_history.clear()
 	undo_plans.clear()
 	redo_plans.clear()
 	last_save_error = ""

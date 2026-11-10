@@ -2,8 +2,20 @@ class_name YearScreen
 extends Control
 
 signal menu_requested()
+signal language_requested()
+var initial_setup: bool = false
+var _leave_confirmation: ConfirmationDialog
+var _quit_after_confirm: bool = false
+var _settings: AcceptDialog
+var _advance_confirmation: ConfirmationDialog
+var _pending_days: int = 1
+var _history: Label
+var _leader: OptionButton
+var _difficulty: SpinBox
+var _food_plan: Label
 var session: YearSession
 var initial_seed: int = 42
+var initial_difficulty: int = 0
 var initial_goal: String = "none"
 var initial_project: String = "food"
 var board: YearBoard
@@ -58,9 +70,12 @@ func _ready() -> void:
 		session = YearSession.new()
 	if session.year.is_empty():
 		var error: String = session.load_year()
-		if error == "msg.no_save":
-			error = session.start_year(initial_seed, initial_goal, initial_project)
-		if not error.is_empty():
+		if error == "msg.no_save" and not initial_setup:
+			if session is TransportSession:
+				error = session.start_year(initial_seed, initial_goal, initial_project)
+			else:
+				error = session.start_campaign(initial_seed, initial_goal, initial_project, "farmer", initial_difficulty)
+		if not error.is_empty() and error != "msg.no_save":
 			_log.append(tr(error))
 	var background: ColorRect = ColorRect.new()
 	background.color = Color("#0b2128")
@@ -76,8 +91,9 @@ func _ready() -> void:
 	margin.add_child(root)
 	var nav: HBoxContainer = HBoxContainer.new()
 	root.add_child(nav)
-	nav.add_child(_button("menu.back", func(): menu_requested.emit()))
-	_new_button = _button("year.new", func(): _restart.popup_centered(Vector2i(650, 420)))
+	nav.add_child(_button("menu.back", _request_menu))
+	nav.add_child(_button("menu.settings", func(): _settings.popup_centered(Vector2i(600, 260))))
+	_new_button = _button("year.new", func(): _restart.popup_centered(Vector2i(650, 650)))
 	nav.add_child(_new_button)
 	nav.add_child(_button("daily.retry_save", func(): session.checkpoint_year(); _refresh()))
 	var title: Label = _label(tr(_title_key()), "Heading")
@@ -90,7 +106,7 @@ func _ready() -> void:
 	var time: HBoxContainer = HBoxContainer.new()
 	root.add_child(time)
 	for days: int in [1, 7, 365]:
-		var button: Button = _button("daily.next_event" if days == 365 else ("daily.day" if days == 1 else "daily.week"), _advance.bind(days))
+		var button: Button = _button("daily.next_event" if days == 365 else ("daily.day" if days == 1 else "daily.week"), _request_advance.bind(days))
 		time.add_child(button)
 		_time_buttons.append(button)
 	_undo = _button("daily.undo", func(): session.undo_year(); _refresh())
@@ -114,7 +130,7 @@ func _ready() -> void:
 	map_column.size_flags_stretch_ratio = 1.3
 	columns.add_child(map_column)
 	board = _make_board()
-	board.custom_minimum_size = Vector2(600, 400)
+	board.custom_minimum_size = Vector2(500, 320)
 	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	board.tile_selected.connect(select_tile)
 	map_column.add_child(board)
@@ -129,7 +145,7 @@ func _ready() -> void:
 	map_column.add_child(_summary)
 	var tabs: TabContainer = TabContainer.new()
 	_tabs = tabs
-	tabs.custom_minimum_size.x = 650
+	tabs.custom_minimum_size.x = 460 if get_viewport_rect().size.x < 1500 else 650
 	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columns.add_child(tabs)
 	var actions: VBoxContainer = _tab(tabs, "year.actions")
@@ -201,6 +217,12 @@ func _ready() -> void:
 	var challenges: VBoxContainer = _tab(tabs, "year.challenges")
 	_challenges = _label("")
 	challenges.add_child(_challenges)
+	var planning: VBoxContainer = _tab(tabs, "year.food_plan")
+	_food_plan = _label("")
+	planning.add_child(_food_plan)
+	var history: VBoxContainer = _tab(tabs, "year.history")
+	_history = _label("")
+	history.add_child(_history)
 	var reports: VBoxContainer = _tab(tabs, "year.report")
 	_messages = _label("")
 	reports.add_child(_messages)
@@ -221,7 +243,13 @@ func _ready() -> void:
 	_restart.dialog_text = ""
 	var setup: VBoxContainer = VBoxContainer.new()
 	setup.custom_minimum_size.x = 600
-	_restart.add_child(setup)
+	setup.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var setup_scroll: ScrollContainer = ScrollContainer.new()
+	setup_scroll.custom_minimum_size = Vector2(600, 400)
+	setup_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	setup_scroll.follow_focus = true
+	_restart.add_child(setup_scroll)
+	setup_scroll.add_child(setup)
 	var confirmation: Label = _label(tr("year.restart_confirm"), "Caption")
 	confirmation.autowrap_mode = TextServer.AUTOWRAP_OFF
 	setup.add_child(confirmation)
@@ -235,6 +263,17 @@ func _ready() -> void:
 	for goal: String in ["none", "growth", "forest", "rice"]:
 		_goal.add_item(tr("goal." + goal + ".name"))
 	setup.add_child(_goal)
+	setup.add_child(_label(tr("setup.leader")))
+	_leader = OptionButton.new()
+	for leader: String in MainMenu.LEADERS:
+		_leader.add_item(tr("leader." + leader + ".name"))
+	setup.add_child(_leader)
+	setup.add_child(_label(tr("setup.difficulty")))
+	_difficulty = SpinBox.new()
+	_difficulty.max_value = 10
+	_difficulty.value = initial_difficulty
+	setup.add_child(_difficulty)
+	setup.add_child(_label(tr("year.profile_help"), "Caption"))
 	var project_label: Label = _label(tr("exp.new_project"))
 	project_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	setup.add_child(project_label)
@@ -247,7 +286,22 @@ func _ready() -> void:
 	_populate_actions()
 	if not session.year.is_empty():
 		selected = session.year["structures"].find("hall")
+	_build_settings()
+	_leave_confirmation = ConfirmationDialog.new()
+	_leave_confirmation.dialog_text = tr("msg.unsaved_progress")
+	_leave_confirmation.confirmed.connect(func():
+		if _quit_after_confirm:
+			get_tree().quit()
+		else:
+			menu_requested.emit()
+	)
+	add_child(_leave_confirmation)
+	_advance_confirmation = ConfirmationDialog.new()
+	_advance_confirmation.confirmed.connect(func(): _advance(_pending_days))
+	add_child(_advance_confirmation)
 	_refresh()
+	if initial_setup:
+		show_new_year()
 
 
 func _label(text: String, style: String = "") -> Label:
@@ -385,14 +439,19 @@ func _refresh() -> void:
 		_messages.text = tr(session.last_save_error)
 		return
 	var s: Dictionary = session.year
+	_refresh_history()
 	var need: int = YearGame.food_need(s)
 	_status.text = tr("year.status") % [int(s["day"]), tr("year.season." + DailyProduction.season(maxi(1, int(s["day"])))), int(s["population"]), YearGame.housing(s), _worker_count(), int(s["population"]), int(s["resources"]["food"]) / maxi(1, need), int(s["knowledge"])]
 	_resources.text = _materials(s["resources"])
+	if s.get("ruleset") == "year365_v3":
+		_status.text += " · " + tr("leader." + String(s["leader"]) + ".name") + " · " + tr("year.difficulty") % int(s["difficulty"])
 	var forecast: PackedStringArray = PackedStringArray()
 	for entry: Dictionary in YearWeather.forecast(s):
 		forecast.append("%d: %.2f" % [int(entry["day"]), float(entry["inflow"])])
 	_forecast.text = tr("year.forecast") + " · ".join(forecast)
 	_predicted = _preview_year()
+	_food_plan.text = tr("year.food_plan_summary") % [need, YearGame.housing(s), int(s["population"]) - _worker_count(), int(_predicted["resources"]["food"]) - int(s["resources"]["food"])]
+	_food_plan.text += "\n" + tr("year.food_plan_hint")
 	_refresh_selection()
 	_undo.disabled = session.undo_plans.is_empty()
 	_redo.disabled = session.redo_plans.is_empty()
@@ -487,7 +546,15 @@ func _new_year() -> void:
 	initial_seed = SeedUtil.parse_seed_text(_seed.text)
 	initial_goal = ["none", "growth", "forest", "rice"][_goal.selected]
 	initial_project = ["food", "water", "craft"][_project.selected]
-	session.start_year(initial_seed, initial_goal, initial_project)
+	var error: String
+	if session is TransportSession:
+		error = session.start_year(initial_seed, initial_goal, initial_project)
+	else:
+		error = session.start_campaign(initial_seed, initial_goal, initial_project, MainMenu.LEADERS[_leader.selected], int(_difficulty.value))
+	if not error.is_empty():
+		_latest_notice = tr(error)
+		_refresh()
+		return
 	_log.clear()
 	_latest_notice = ""
 	if not session.year.is_empty():
@@ -527,3 +594,120 @@ func _refresh_project() -> void:
 			rows.append(tr("exp.story." + project + str(step + 1)))
 	rows.append(tr("exp.recovery") % [int(s["stats"]["recovery_repairs"]), tr("daily.done" if s["recovery_claimed"] else "daily.pending")])
 	_project_text.text = "\n\n".join(rows)
+
+
+func show_new_year() -> void:
+	_restart.popup_centered(Vector2i(650, 650))
+
+
+func _refresh_history() -> void:
+	var rows: PackedStringArray = PackedStringArray()
+	for index: int in range(session.daily_history.size() - 1, -1, -1):
+		var entry: Dictionary = session.daily_history[index]
+		rows.append(tr("year.history_days") % [int(entry["from_day"]) + 1, int(entry["day"])])
+		for resource: String in YearGame.resources(session.year):
+			rows.append("%s: %d → %d (%+d)" % [tr("daily.resource." + resource), int(entry["before"][resource]), int(entry["after"][resource]), int(entry["delta"][resource])])
+		for event: String in entry["events"]:
+			rows.append(tr(event))
+		rows.append("")
+	_history.text = "\n".join(rows) if not rows.is_empty() else tr("year.history_empty")
+
+
+func _build_settings() -> void:
+	_settings = AcceptDialog.new()
+	_settings.title = tr("menu.settings")
+	var content: VBoxContainer = VBoxContainer.new()
+	_settings.add_child(content)
+	content.add_child(_label(tr("year.shortcuts")))
+	content.add_child(_button("menu.language", func(): language_requested.emit()))
+	var confirm: CheckBox = CheckBox.new()
+	confirm.text = tr("year.confirm_workers")
+	confirm.button_pressed = GamePreferences.read()["confirm_unused_labor"]
+	confirm.toggled.connect(func(enabled: bool):
+		var error: String = GamePreferences.write({"confirm_unused_labor": enabled})
+		if not error.is_empty():
+			_latest_notice = tr(error)
+			_refresh()
+	)
+	content.add_child(confirm)
+	add_child(_settings)
+
+
+func _request_advance(days: int) -> void:
+	if session.year.is_empty() or session.year["outcome"] != "running":
+		return
+	_pending_days = days
+	var idle: int = int(session.year["population"]) - _worker_count()
+	if GamePreferences.read()["confirm_unused_labor"] and idle > 0:
+		_advance_confirmation.dialog_text = tr("year.unused_workers") % idle
+		_advance_confirmation.popup_centered()
+	elif _preview_year()["outcome"] != "running":
+		_advance_confirmation.dialog_text = tr("confirm.loss")
+		_advance_confirmation.popup_centered()
+	else:
+		_advance(days)
+
+
+func _request_menu() -> void:
+	if not session.last_save_error.is_empty():
+		_quit_after_confirm = false
+		_leave_confirmation.popup_centered()
+		return
+	menu_requested.emit()
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if not event is InputEventKey or not event.pressed or event.echo:
+		return
+	var focused: Control = get_viewport().gui_get_focus_owner()
+	if focused is LineEdit or focused is TextEdit:
+		return
+	if _restart.visible or _settings.visible or _advance_confirmation.visible or _leave_confirmation.visible:
+		return
+	if event.keycode == KEY_ESCAPE:
+		_settings.popup_centered(Vector2i(600, 260))
+	elif event.keycode == KEY_SPACE:
+		_request_advance(1)
+	elif event.ctrl_pressed and event.keycode == KEY_Z:
+		if event.shift_pressed:
+			session.redo_year()
+		else:
+			session.undo_year()
+		_refresh()
+	elif event.ctrl_pressed and event.keycode == KEY_Y:
+		session.redo_year()
+		_refresh()
+	else:
+		return
+	get_viewport().set_input_as_handled()
+
+
+func request_quit() -> void:
+	if session.last_save_error.is_empty():
+		get_tree().quit()
+	else:
+		_quit_after_confirm = true
+		_leave_confirmation.popup_centered()
+
+
+func ui_draft() -> Dictionary:
+	return {"seed": _seed.text, "goal": _goal.selected, "project": _project.selected, "leader": _leader.selected, "difficulty": _difficulty.value, "group": _group.selected, "action": _action.selected, "batches": _batches.value, "repeat": _repeat.button_pressed, "direction": _direction.selected, "preview": _preview.button_pressed, "tab": _tabs.current_tab, "stop_at": _stop_at.value, "reserve": _reserve.value}
+
+
+func restore_ui_draft(draft: Dictionary) -> void:
+	_seed.text = draft["seed"]
+	_goal.select(draft["goal"])
+	_project.select(draft["project"])
+	_leader.select(draft["leader"])
+	_difficulty.value = draft["difficulty"]
+	_group.select(draft["group"])
+	_populate_actions()
+	_action.select(draft["action"])
+	_batches.value = draft["batches"]
+	_repeat.button_pressed = draft["repeat"]
+	_direction.select(draft["direction"])
+	_preview.button_pressed = draft["preview"]
+	_tabs.current_tab = draft["tab"]
+	_stop_at.value = draft["stop_at"]
+	_reserve.value = draft["reserve"]
+	_refresh()

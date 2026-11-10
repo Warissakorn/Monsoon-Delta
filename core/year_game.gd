@@ -7,12 +7,35 @@ const STRUCTURES: Array[String] = ["", "hall", "house", "stilt_house", "sawmill"
 const REPEATABLE: Array[String] = ["forage", "fish", "gather_wood", "gather_stone", "gather_clay", "saw_planks", "fire_bricks", "repair"]
 
 
+static var _campaign_configs: Dictionary = {}
+
+
 static func config(s: Dictionary = {}) -> Dictionary:
-	return YearExpansion.config() if expanded(s) else DataDB.balance()["year_game"]
+	var base: Dictionary = YearExpansion.config() if expanded(s) else DataDB.balance()["year_game"]
+	if s.get("ruleset") != "year365_v3":
+		return base
+	var leader: String = s.get("leader", "farmer")
+	if _campaign_configs.has(leader):
+		return _campaign_configs[leader]
+	var result: Dictionary = base.duplicate(true)
+	var bonuses: Dictionary = DataDB.balance()["year_campaign"]["leaders"][leader]
+	if leader == "carpenter":
+		for id: String in ["build_house", "upgrade_house"]:
+			if result["jobs"].has(id):
+				var inputs: Dictionary = result["jobs"][id]["inputs"]
+				if inputs.has("wood"):
+					inputs["wood"] = maxi(0, int(inputs["wood"]) - int(bonuses["house_wood_discount"]))
+	elif leader == "soil_doctor":
+		for id: String in ["dig", "fill"]:
+			result["jobs"][id]["days"] = maxi(1, int(result["jobs"][id]["days"]) - int(bonuses["earth_days_discount"]))
+	elif leader == "fisher":
+		result["jobs"]["fish"]["outputs"]["food"] += int(bonuses["fish_food_bonus"])
+	_campaign_configs[leader] = result
+	return result
 
 
 static func expanded(s: Dictionary) -> bool:
-	return s.get("ruleset", "year365_v1") == "year365_v2"
+	return s.get("ruleset", "year365_v1") in ["year365_v2", "year365_v3"]
 
 
 static func resources(s: Dictionary) -> Array[String]:
@@ -32,6 +55,18 @@ static func repeatable(s: Dictionary) -> Array[String]:
 
 static func new_expanded(seed_value: int = 42, goal: String = "none", project: String = "food") -> Dictionary:
 	return YearExpansion.create(seed_value, goal, project)
+
+
+static func new_campaign(seed_value: int, goal: String, project: String, leader: String = "farmer", difficulty: int = 0) -> Dictionary:
+	if leader not in ["farmer", "carpenter", "fisher", "soil_doctor"] or difficulty < 0 or difficulty > 10:
+		return {}
+	var result: Dictionary = new_expanded(seed_value, goal, project)
+	if result.is_empty():
+		return {}
+	result["ruleset"] = "year365_v3"
+	result["leader"] = leader
+	result["difficulty"] = difficulty
+	return result
 
 
 static func new_game(seed_value: int = 42, goal: String = "none") -> Dictionary:
@@ -338,7 +373,7 @@ static func _finish_job(s: Dictionary, job: Dictionary, events: Array) -> void:
 			tile["feature"] = "sapling"
 			s["sapling_ready"][index] = int(s["day"]) + (15 if "agriculture3" in s["research"] else 30)
 		"harvest":
-			var amount: int = int(s["crop_growth"][index]) + (20 if "agriculture1" in s["research"] else 0)
+			var amount: int = int(s["crop_growth"][index]) + (20 if "agriculture1" in s["research"] else 0) + (int(DataDB.balance()["year_campaign"]["leaders"]["farmer"]["harvest_bonus"]) if s.get("leader") == "farmer" else 0)
 			s["resources"]["food"] = int(s["resources"]["food"]) + amount
 			s["stats"]["food"] = int(s["stats"]["food"]) + amount
 			s["stats"]["harvest"] = int(s["stats"]["harvest"]) + amount
@@ -408,9 +443,9 @@ static func _water(s: Dictionary, events: Array) -> void:
 			elif s["structures"][index] == "gate":
 				board.tiles[index].gate_open = true
 	if expanded(s):
-		YearExpansion.simulate(board, s, float(s["weather"][int(s["day"]) - 1]) / 1000.0)
+		YearExpansion.simulate(board, s, YearWeather.inflow(s, int(s["day"]) - 1))
 	else:
-		WaterSim.simulate(board, float(s["weather"][int(s["day"]) - 1]) / 1000.0, false)
+		WaterSim.simulate(board, YearWeather.inflow(s, int(s["day"]) - 1), false)
 	WaterSim.absorb(board)
 	WaterSim.evaporate(board)
 	var damaged: bool = false
@@ -541,7 +576,8 @@ static func goal_met(s: Dictionary) -> bool:
 
 
 static func score(s: Dictionary) -> int:
-	return int(s["population"]) * 100 + int(s["resources"]["food"]) + s["claimed"].size() * 50 + (250 if s["outcome"] == "won" and goal_met(s) else 0) + (int(s["project_stage"]) * 100 if expanded(s) else 0)
+	var base: int = int(s["population"]) * 100 + int(s["resources"]["food"]) + s["claimed"].size() * 50 + (250 if s["outcome"] == "won" and goal_met(s) else 0) + (int(s["project_stage"]) * 100 if expanded(s) else 0)
+	return roundi(float(base) * (1.0 + float(s.get("difficulty", 0)) * float(DataDB.balance()["year_campaign"]["score_per_difficulty"])))
 
 
 static func resolve_day(s: Dictionary) -> Array:

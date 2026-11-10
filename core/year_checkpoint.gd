@@ -9,14 +9,20 @@ const FIELDS: Array[String] = ["day", "board", "weather", "resources", "populati
 
 
 static func envelope(s: Dictionary) -> Dictionary:
-	return {"format": FORMAT, "version": 2 if YearGame.expanded(s) else 1, "ruleset": "year365_v2" if YearGame.expanded(s) else RULESET, "state": s.duplicate(true), "float64": SaveIO._encode_float64(s["board"])}
+	return {"format": FORMAT, "version": 3 if s.get("ruleset") == "year365_v3" else (2 if YearGame.expanded(s) else 1), "ruleset": s.get("ruleset", RULESET), "state": s.duplicate(true), "float64": SaveIO._encode_float64(s["board"])}
 
 
 static func valid(s: Variant) -> bool:
 	if not s is Dictionary:
 		return false
 	var expanded: bool = YearGame.expanded(s)
-	var fields: Array[String] = FIELDS + YearExpansion.EXTRA_FIELDS if expanded else FIELDS
+	var fields: Array[String] = FIELDS.duplicate()
+	if expanded:
+		fields.append_array(YearExpansion.EXTRA_FIELDS)
+	if s.get("ruleset") == "year365_v3":
+		fields.append_array(["leader", "difficulty"])
+		if not s.get("leader") is String or s["leader"] not in ["farmer", "carpenter", "fisher", "soil_doctor"] or not SaveIO._integer(s.get("difficulty"), 0, 10):
+			return false
 	if s.size() != fields.size() or not SaveIO._has_fields(s, fields):
 		return false
 	var count: int = 127 if expanded else 61
@@ -160,11 +166,12 @@ static func decode(value: Variant) -> Dictionary:
 	var bad: Dictionary = {"error": "msg.save_corrupt", "state": {}}
 	if not value is Dictionary or not value.get("format") is String or not value.get("ruleset") is String:
 		return bad
-	if value["format"] != FORMAT or not SaveIO._integer(value.get("version"), 1, 2) or value["ruleset"] not in [RULESET, "year365_v2"]:
+	if value["format"] != FORMAT or not SaveIO._integer(value.get("version"), 1, 3) or value["ruleset"] not in [RULESET, "year365_v2", "year365_v3"]:
 		return {"error": "msg.save_unsupported", "state": {}}
 	if not value.get("state") is Dictionary:
 		return bad
-	if (int(value["version"]) == 2) != YearGame.expanded(value["state"]) or value["ruleset"] != ("year365_v2" if int(value["version"]) == 2 else RULESET):
+	var expected: String = [RULESET, "year365_v2", "year365_v3"][int(value["version"]) - 1]
+	if value["ruleset"] != expected or value["state"].get("ruleset", RULESET) != expected:
 		return bad
 	if not valid(value.get("state")):
 		return bad
@@ -174,6 +181,8 @@ static func decode(value: Variant) -> Dictionary:
 	# Canonical ints and board caches make load -> continue exactly reproducible.
 	for key: String in ["day", "population", "starvation", "knowledge", "score"]:
 		s[key] = int(s[key])
+	if s.get("ruleset") == "year365_v3":
+		s["difficulty"] = int(s["difficulty"])
 	for key: String in s["resources"]:
 		s["resources"][key] = int(s["resources"][key])
 	for key: String in s["stats"]:

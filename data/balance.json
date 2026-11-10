@@ -1076,5 +1076,23 @@
         }
       ]
     }
+  },
+  "year_campaign": {
+    "inflow_per_difficulty": 0.05,
+    "score_per_difficulty": 0.1,
+    "leaders": {
+      "farmer": {
+        "harvest_bonus": 1
+      },
+      "carpenter": {
+        "house_wood_discount": 1
+      },
+      "fisher": {
+        "fish_food_bonus": 1
+      },
+      "soil_doctor": {
+        "earth_days_discount": 1
+      }
+    }
   }
 }
