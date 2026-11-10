@@ -26,6 +26,8 @@ var snapshots: Array[PackedFloat32Array] = []
 # Each iteration has tile_count * 6 directed transfers in Hex.DIRECTIONS order.
 var flow_edges: Array[PackedFloat32Array] = []
 var wheel_transfers: Array[Dictionary] = []
+# Year-only presentation records, deliberately absent from to_dict and saves.
+var year_jobs_completed: Array[Dictionary] = []
 # Per-trap food is also kept in session history for inspecting actual results;
 # it remains outside GameState, checkpoint envelopes and serialized reports.
 var fish_food_by_tile: Dictionary = {}

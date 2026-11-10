@@ -395,7 +395,7 @@ static func _finish_job(s: Dictionary, job: Dictionary, events: Array) -> void:
 			s["resources"]["wood"] = int(s["resources"]["wood"]) + 2
 
 
-static func _work(s: Dictionary, events: Array) -> void:
+static func _work(s: Dictionary, events: Array, visual: TurnReport = null) -> void:
 	var done: Array = []
 	for job: Dictionary in s["jobs"]:
 		var status: String = job_status(s, job)
@@ -413,6 +413,8 @@ static func _work(s: Dictionary, events: Array) -> void:
 		if int(job["progress"]) < _job_days(s, job["id"], int(job["tile"])):
 			continue
 		_finish_job(s, job, events)
+		if visual != null:
+			visual.year_jobs_completed.append({"tile": int(job["tile"]), "id": String(job["id"])})
 		job["progress"] = 0
 		if job["repeat"]:
 			job["reserved"] = false
@@ -589,7 +591,7 @@ static func resolve_day(s: Dictionary, visual: TurnReport = null) -> Array:
 	if s["outcome"] != "running":
 		return events
 	s["day"] = int(s["day"]) + 1
-	_work(s, events)
+	_work(s, events, visual)
 	_water(s, events, visual)
 	_population(s, events)
 	var day: int = int(s["day"])

@@ -43,6 +43,13 @@ func _click_at(point: Vector2) -> void:
 
 
 func _click(control: Control) -> void:
+	var ancestor: Node = control.get_parent()
+	while ancestor != null:
+		if ancestor is ScrollContainer:
+			ancestor.ensure_control_visible(control)
+		ancestor = ancestor.get_parent()
+	await process_frame
+	await process_frame
 	var point: Vector2 = control.get_global_rect().get_center()
 	if control.get_window() != root:
 		point += Vector2(control.get_window().position)

@@ -20,6 +20,15 @@ var initial_goal: String = "none"
 var initial_project: String = "food"
 var board: YearBoard
 var selected: int = -1
+var _plan: Dictionary = {}
+var _advice_text: Label
+var _advice_button: Button
+var _advice_card: PanelContainer
+var _planning_assumption: Label
+var _planning_rows: VBoxContainer
+var _queue_list: VBoxContainer
+var _queue_filter: OptionButton
+var _queue_summary: Label
 var _resource_chips: Dictionary = {}
 var _resource_feedback: ResourceFeedback
 var _progress: ProgressBar
@@ -160,6 +169,16 @@ func _ready() -> void:
 	map_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	map_column.size_flags_stretch_ratio = 1.3
 	columns.add_child(map_column)
+	_advice_card = PanelContainer.new()
+	_advice_card.theme_type_variation = "CardPanel"
+	var advice: VBoxContainer = VBoxContainer.new()
+	_advice_card.add_child(advice)
+	advice.add_child(_label(tr("yearplan.advisor"), "Caption"))
+	_advice_text = _label("")
+	_advice_text.max_lines_visible = 2
+	advice.add_child(_advice_text)
+	_advice_button = _button("yearplan.prepare", _act_on_advice)
+	advice.add_child(_advice_button)
 	board = _make_board()
 	board.custom_minimum_size = Vector2(500, 320)
 	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -182,7 +201,12 @@ func _ready() -> void:
 	_tabs = tabs
 	tabs.custom_minimum_size.x = 460 if get_viewport_rect().size.x < 1500 else 650
 	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	columns.add_child(tabs)
+	var side_column: VBoxContainer = VBoxContainer.new()
+	side_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columns.add_child(side_column)
+	side_column.add_child(_advice_card)
+	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	side_column.add_child(tabs)
 	var actions: VBoxContainer = _tab(tabs, "year.actions")
 	_inspection = _label("")
 	actions.add_child(_inspection)
@@ -241,6 +265,15 @@ func _ready() -> void:
 	actions.add_child(_reason)
 	actions.add_child(_label(tr("year.order_help"), "Caption"))
 	_queue = _tab(tabs, "year.work")
+	_queue_summary = _label("", "Caption")
+	_queue.add_child(_queue_summary)
+	_queue_filter = OptionButton.new()
+	for kind: String in ["all", "working", "blocked", "paused"]:
+		_queue_filter.add_item(tr("yearplan.filter." + kind))
+	_queue_filter.item_selected.connect(func(_index: int): _refresh_queue())
+	_queue.add_child(_queue_filter)
+	_queue_list = VBoxContainer.new()
+	_queue.add_child(_queue_list)
 	var learning: VBoxContainer = _tab(tabs, "year.research")
 	learning.add_child(_label(tr("year.research_help"), "Caption"))
 	for id: String in YearGame.config()["research"]:
@@ -255,6 +288,10 @@ func _ready() -> void:
 	var planning: VBoxContainer = _tab(tabs, "year.food_plan")
 	_food_plan = _label("")
 	planning.add_child(_food_plan)
+	_planning_assumption = _label(tr("yearplan.assumption"), "Caption")
+	planning.add_child(_planning_assumption)
+	_planning_rows = VBoxContainer.new()
+	planning.add_child(_planning_rows)
 	var history: VBoxContainer = _tab(tabs, "year.history")
 	_history = _label("")
 	history.add_child(_history)
@@ -493,6 +530,7 @@ func _refresh() -> void:
 	_predicted = _preview_year()
 	_food_plan.text = tr("year.food_plan_summary") % [need, YearGame.housing(s), int(s["population"]) - _worker_count(), int(_predicted["resources"]["food"]) - int(s["resources"]["food"])]
 	_food_plan.text += "\n" + tr("year.food_plan_hint")
+	_refresh_planning()
 	_refresh_selection()
 	_undo.disabled = session.undo_plans.is_empty()
 	_redo.disabled = session.redo_plans.is_empty()
@@ -515,28 +553,51 @@ func _refresh() -> void:
 		_research[id].text = tr("year.research." + id) + (" · " + tr("daily.done") if learned else " · %d" % int(definition["cost"]))
 		_research[id].disabled = learned or s["outcome"] != "running" or int(s["knowledge"]) < int(definition["cost"]) or (not String(definition["requires"]).is_empty() and definition["requires"] not in s["research"])
 	_refresh_project()
-	for child: Node in _queue.get_children():
-		_queue.remove_child(child)
+	_refresh_queue()
+
+
+func _refresh_queue() -> void:
+	if session.year.is_empty():
+		return
+	var s: Dictionary = session.year
+	_queue_summary.text = tr("yearplan.queue_summary") % [s["jobs"].size(), _worker_count(), int(s["population"])]
+	for child: Node in _queue_list.get_children():
+		_queue_list.remove_child(child)
 		child.queue_free()
 	if s["jobs"].is_empty():
-		_queue.add_child(_label(tr("daily.empty_queue")))
+		_queue_list.add_child(_label(tr("daily.empty_queue")))
+	var visible_jobs: int = 0
 	for job: Dictionary in s["jobs"]:
 		var index: int = int(job["tile"])
+		var row_info: Dictionary = {}
+		for row: Dictionary in _plan.get("jobs", []):
+			if int(row["tile"]) == index:
+				row_info = row
+		var filter: String = ["all", "working", "blocked", "paused"][_queue_filter.selected]
+		if filter != "all" and row_info.get("kind", "") != filter:
+			continue
+		visible_jobs += 1
 		var container: VBoxContainer = VBoxContainer.new()
-		_queue.add_child(container)
+		_queue_list.add_child(container)
 		container.add_child(_label(tr("year.action." + String(job["id"])) + " · " + tr(YearGame.job_status(s, job))))
 		container.add_child(_label(tr("daily.job_progress") % [int(job["remaining"]), int(job["progress"]), YearGame._job_days(s, job["id"], index), tr("year.repeat") if job["repeat"] else tr("daily.working")], "Caption"))
 		if YearGame.expanded(s):
 			container.add_child(_label(tr("exp.policy_state") % [int(job["stop_at"]), int(job["reserve"])], "Caption"))
+		var completion: int = int(row_info.get("completion_day", 0))
+		if not session is TransportSession:
+			container.add_child(_label(tr("yearplan.completion") % completion if completion > 0 else tr("yearplan.no_completion"), "Caption"))
 		var row: HBoxContainer = HBoxContainer.new()
 		container.add_child(row)
-		row.add_child(_button("year.locate", select_tile.bind(index)))
+		row.add_child(_button("year.locate", _focus_tile.bind(index)))
 		var pause: Button = _button("daily.resume" if job["paused"] else "daily.pause", _edit_job.bind(index, false))
 		pause.name = "PauseTile_" + str(index)
 		row.add_child(pause)
 		var cancel: Button = _button("daily.cancel", _edit_job.bind(index, true))
 		cancel.name = "CancelTile_" + str(index)
 		row.add_child(cancel)
+
+	if visible_jobs == 0 and not s["jobs"].is_empty():
+		_queue_list.add_child(_label(tr("yearplan.empty_filter"), "Caption"))
 
 
 func _edit(action: String, id: String = "") -> void:
@@ -703,11 +764,12 @@ func _request_advance(days: int) -> void:
 		return
 	_pending_days = days
 	var idle: int = int(session.year["population"]) - _worker_count()
-	if GamePreferences.read()["confirm_unused_labor"] and idle > 0:
-		_advance_confirmation.dialog_text = tr("year.unused_workers") % idle
+	var preview: Dictionary = _advance_preview(days)
+	if preview["outcome"] in ["lost_hall", "lost_population"]:
+		_advance_confirmation.dialog_text = tr("yearplan.confirm_loss") % [int(preview["day"]), tr("year.outcome." + String(preview["outcome"]))]
 		_advance_confirmation.popup_centered()
-	elif _preview_year()["outcome"] != "running":
-		_advance_confirmation.dialog_text = tr("confirm.loss")
+	elif GamePreferences.read()["confirm_unused_labor"] and idle > 0:
+		_advance_confirmation.dialog_text = tr("year.unused_workers") % idle
 		_advance_confirmation.popup_centered()
 	else:
 		_advance(days)
@@ -731,6 +793,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		return
 	if event.keycode == KEY_ESCAPE:
 		_settings.popup_centered(Vector2i(600, 260))
+	elif event.keycode == KEY_F2:
+		_tabs.current_tab = 4
+	elif event.keycode == KEY_H:
+		_tabs.current_tab = 1
 	elif event.keycode == KEY_SPACE:
 		_request_advance(1)
 	elif event.ctrl_pressed and event.keycode == KEY_Z:
@@ -759,7 +825,7 @@ func request_quit() -> void:
 
 
 func ui_draft() -> Dictionary:
-	return {"seed": _seed.text, "goal": _goal.selected, "project": _project.selected, "leader": _leader.selected, "difficulty": _difficulty.value, "group": _group.selected, "action": _action.selected, "batches": _batches.value, "repeat": _repeat.button_pressed, "direction": _direction.selected, "preview": _preview.button_pressed, "tab": _tabs.current_tab, "stop_at": _stop_at.value, "reserve": _reserve.value}
+	return {"seed": _seed.text, "goal": _goal.selected, "project": _project.selected, "leader": _leader.selected, "difficulty": _difficulty.value, "group": _group.selected, "action": _action.selected, "batches": _batches.value, "repeat": _repeat.button_pressed, "direction": _direction.selected, "preview": _preview.button_pressed, "tab": _tabs.current_tab, "stop_at": _stop_at.value, "reserve": _reserve.value, "queue_filter": _queue_filter.selected}
 
 
 func restore_ui_draft(draft: Dictionary) -> void:
@@ -778,6 +844,7 @@ func restore_ui_draft(draft: Dictionary) -> void:
 	_tabs.current_tab = draft["tab"]
 	_stop_at.value = draft["stop_at"]
 	_reserve.value = draft["reserve"]
+	_queue_filter.select(int(draft.get("queue_filter", 0)))
 	_refresh()
 
 
@@ -836,3 +903,80 @@ func _resource_snapshot() -> Dictionary:
 	var result: Dictionary = YearPresentation.resources(session.year)
 	result["labor"] = int(session.year["population"]) - _worker_count()
 	return result
+
+
+func _refresh_planning() -> void:
+	_advice_card.visible = not session is TransportSession
+	_planning_assumption.visible = _advice_card.visible
+	_clear_planning_rows()
+	if session is TransportSession:
+		_plan = {"jobs": YearPlanner.job_rows(session.year)}
+		return
+	_plan = YearPlanner.describe(session.year)
+	var advice: Dictionary = _plan["advice"]
+	var message: String = tr("yearplan.advice." + String(advice["kind"]))
+	_advice_text.text = message if advice["values"].is_empty() else message % advice["values"]
+	if advice["kind"] == "blocked":
+		for job: Dictionary in _plan["jobs"]:
+			if int(job["tile"]) == int(advice["tile"]):
+				_advice_text.text += "\n" + tr(String(job["status"]))
+	_advice_button.visible = advice["kind"] not in ["safe", "finished"]
+	_advice_button.text = tr("yearplan.prepare" if not String(advice["action"]).is_empty() else ("year.locate" if int(advice["tile"]) >= 0 else "yearplan.review_work"))
+	for day: Dictionary in _plan["days"]:
+		var row: VBoxContainer = VBoxContainer.new()
+		_planning_rows.add_child(row)
+		row.add_child(_label(tr("yearplan.day") % [int(day["day"]), int(day["food"]), int(day["population"]), int(day["housing"]), float(day["inflow"])]))
+		var events: PackedStringArray = PackedStringArray()
+		for event: String in day["events"]:
+			if tr(event) not in events:
+				events.append(tr(event))
+		if not events.is_empty():
+			row.add_child(_label(" · ".join(events), "Caption"))
+		for index: int in day["damaged"]:
+			var tile: Dictionary = session.year["board"]["tiles"][index]
+			var locate: Button = _button("year.locate", _focus_tile.bind(index))
+			locate.text = tr("yearplan.damage_location") % [int(tile["q"]), int(tile["r"])]
+			row.add_child(locate)
+	if _plan["days"].is_empty():
+		_planning_rows.add_child(_label(tr("yearplan.finished"), "Caption"))
+
+
+func _clear_planning_rows() -> void:
+	for child: Node in _planning_rows.get_children():
+		_planning_rows.remove_child(child)
+		child.queue_free()
+
+
+func _act_on_advice() -> void:
+	var advice: Dictionary = _plan.get("advice", {})
+	if advice.is_empty():
+		return
+	var index: int = int(advice["tile"])
+	var id: String = advice["action"]
+	if index < 0:
+		_tabs.current_tab = 1
+		return
+	if not id.is_empty():
+		if not YearGame.check_order(session.year, id, index).is_empty():
+			_refresh()
+			return
+		_repeat.set_pressed_no_signal(false)
+		_batches.value = 1
+		_stop_at.value = 0
+		_reserve.value = 0
+		_group.select(GROUPS.find(action_group(id)))
+		_populate_actions()
+		for option: int in range(_action.item_count):
+			if _action.get_item_metadata(option) == id:
+				_action.select(option)
+	_focus_tile(index)
+
+
+func _focus_tile(index: int) -> void:
+	_tabs.current_tab = 0
+	select_tile(index)
+	board.focus_selected()
+
+
+func _advance_preview(days: int) -> Dictionary:
+	return YearGame.preview(session.year, days)["state"]
