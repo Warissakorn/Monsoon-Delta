@@ -181,6 +181,12 @@ func test_language_change_preserves_live_year_history_and_setup_draft() -> void:
 	screen._populate_actions()
 	screen._batches.value = 3
 	screen._preview.button_pressed = true
+	(screen.board as YearBoard3D).set_reduced_motion(true)
+	(screen.board as YearBoard3D).rotate_view(1)
+	screen.board.zoom_by(1.3)
+	screen.board.focus_selected()
+	(screen.board as YearBoard3D).toggle_labels()
+	var camera_draft: Dictionary = screen.board.view_draft()
 	var draft: Dictionary = screen.ui_draft()
 	var state: Dictionary = screen.session.year.duplicate(true)
 	var history: Array[Dictionary] = screen.session.daily_history.duplicate(true)
@@ -188,6 +194,7 @@ func test_language_change_preserves_live_year_history_and_setup_draft() -> void:
 	boot._change_year_language()
 	screen = boot._screen as YearScreen
 	assert_eq(screen.ui_draft(), draft)
+	assert_eq(screen.board.view_draft(), camera_draft)
 	assert_eq(screen.session.year, state)
 	assert_eq(screen.session.daily_history, history)
 	assert_eq(FileAccess.get_file_as_bytes(PATH), bytes)

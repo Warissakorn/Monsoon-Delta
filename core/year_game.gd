@@ -425,7 +425,7 @@ static func _work(s: Dictionary, events: Array) -> void:
 		s["jobs"].erase(job)
 
 
-static func _water(s: Dictionary, events: Array) -> void:
+static func _water(s: Dictionary, events: Array, visual: TurnReport = null) -> void:
 	var board: GameState = board_of(s)
 	var season: String = DailyProduction.season(int(s["day"]))
 	board.turn = 4 if season in ["early_rain", "flood"] else 1
@@ -442,10 +442,14 @@ static func _water(s: Dictionary, events: Array) -> void:
 				board.tiles[index].building = C.Building.NONE
 			elif s["structures"][index] == "gate":
 				board.tiles[index].gate_open = true
+	var water_result: Dictionary
 	if expanded(s):
-		YearExpansion.simulate(board, s, YearWeather.inflow(s, int(s["day"]) - 1))
+		water_result = YearExpansion.simulate(board, s, YearWeather.inflow(s, int(s["day"]) - 1), visual != null)
 	else:
-		WaterSim.simulate(board, YearWeather.inflow(s, int(s["day"]) - 1), false)
+		water_result = WaterSim.simulate(board, YearWeather.inflow(s, int(s["day"]) - 1), visual != null)
+	if visual != null:
+		visual.flow_edges.assign(water_result["flow_edges"])
+		visual.wheel_transfers.assign(water_result["wheel_transfers"])
 	WaterSim.absorb(board)
 	WaterSim.evaporate(board)
 	var damaged: bool = false
@@ -580,13 +584,13 @@ static func score(s: Dictionary) -> int:
 	return roundi(float(base) * (1.0 + float(s.get("difficulty", 0)) * float(DataDB.balance()["year_campaign"]["score_per_difficulty"])))
 
 
-static func resolve_day(s: Dictionary) -> Array:
+static func resolve_day(s: Dictionary, visual: TurnReport = null) -> Array:
 	var events: Array = []
 	if s["outcome"] != "running":
 		return events
 	s["day"] = int(s["day"]) + 1
 	_work(s, events)
-	_water(s, events)
+	_water(s, events, visual)
 	_population(s, events)
 	var day: int = int(s["day"])
 	if day in [121, 181, 301]:
@@ -614,14 +618,17 @@ static func resolve_day(s: Dictionary) -> Array:
 	return events
 
 
-static func advance(s: Dictionary, days: int) -> Dictionary:
+static func advance(s: Dictionary, days: int, visual_reports: Variant = null) -> Dictionary:
 	var report: Dictionary = {"days": 0, "events": []}
 	if days < 1 or days > 365:
 		return report
 	for step: int in range(days):
 		if s["outcome"] != "running":
 			break
-		var events: Array = resolve_day(s)
+		var visual: TurnReport = TurnReport.new() if visual_reports is Array else null
+		var events: Array = resolve_day(s, visual)
+		if visual != null:
+			visual_reports.append(visual)
 		report["days"] = int(report["days"]) + 1
 		report["events"].append_array(events)
 		if not events.is_empty():
@@ -629,6 +636,6 @@ static func advance(s: Dictionary, days: int) -> Dictionary:
 	return report
 
 
-static func preview(s: Dictionary, days: int = 1) -> Dictionary:
+static func preview(s: Dictionary, days: int = 1, visual_reports: Variant = null) -> Dictionary:
 	var copy: Dictionary = s.duplicate(true)
-	return {"state": copy, "report": advance(copy, days)}
+	return {"state": copy, "report": advance(copy, days, visual_reports)}

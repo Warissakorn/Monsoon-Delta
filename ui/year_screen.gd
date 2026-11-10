@@ -20,6 +20,9 @@ var initial_goal: String = "none"
 var initial_project: String = "food"
 var board: YearBoard
 var selected: int = -1
+var _resource_chips: Dictionary = {}
+var _resource_feedback: ResourceFeedback
+var _progress: ProgressBar
 var _status: Label
 var _resources: Label
 var _forecast: Label
@@ -103,18 +106,46 @@ func _ready() -> void:
 	root.add_child(_status)
 	_resources = _label("")
 	root.add_child(_resources)
+	_resources.hide()
+	var chips: HFlowContainer = HFlowContainer.new()
+	chips.add_theme_constant_override("h_separation", 18)
+	root.add_child(chips)
+	for key: String in ["people", "labor", "food", "wood", "stone", "clay", "planks", "bricks", "fiber", "kits"]:
+		var chip: HBoxContainer = HBoxContainer.new()
+		chips.add_child(chip)
+		var icon_key: String = key
+		var icon: TextureRect = TextureRect.new()
+		icon.texture = load("res://assets/icons/" + icon_key + ".svg")
+		icon.custom_minimum_size = Vector2(24, 24)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		chip.add_child(icon)
+		var value: Label = _label("")
+		value.autowrap_mode = TextServer.AUTOWRAP_OFF
+		chip.add_child(value)
+		_resource_chips[key] = value
+	_resource_feedback = ResourceFeedback.new()
+	_resource_feedback.keys.assign(["people", "labor", "housing", "food", "wood", "stone", "clay", "planks", "bricks", "fiber", "kits"])
+	add_child(_resource_feedback)
+	_resource_feedback.bind_chips(_resource_chips)
+	_progress = ProgressBar.new()
+	_progress.max_value = 365
+	_progress.custom_minimum_size.y = 8
+	_progress.show_percentage = false
+	root.add_child(_progress)
 	var time: HBoxContainer = HBoxContainer.new()
 	root.add_child(time)
 	for days: int in [1, 7, 365]:
 		var button: Button = _button("daily.next_event" if days == 365 else ("daily.day" if days == 1 else "daily.week"), _request_advance.bind(days))
 		time.add_child(button)
 		_time_buttons.append(button)
-	_undo = _button("daily.undo", func(): session.undo_year(); _refresh())
+	_undo = _button("daily.undo", _undo_plan)
 	time.add_child(_undo)
-	_redo = _button("daily.redo", func(): session.redo_year(); _refresh())
+	_redo = _button("daily.redo", _redo_plan)
 	time.add_child(_redo)
 	_preview = CheckBox.new()
 	_preview.text = tr("year.preview")
+	_preview.set_pressed_no_signal(true)
 	_preview.toggled.connect(func(_enabled: bool): _refresh_selection())
 	time.add_child(_preview)
 	_forecast = _label("", "Caption")
@@ -140,7 +171,11 @@ func _ready() -> void:
 	map_tools.add_child(_button("exp.zoom_in", func(): board.zoom_by(1.25)))
 	map_tools.add_child(_button("exp.map_fit", func(): board.fit_map()))
 	map_tools.add_child(_button("exp.map_focus", func(): board.focus_selected()))
-	map_column.add_child(_label(tr("exp.map_help"), "Caption"))
+	if board is YearBoard3D:
+		map_tools.add_child(_button("year3d.rotate_left", func(): (board as YearBoard3D).rotate_view(-1)))
+		map_tools.add_child(_button("year3d.rotate_right", func(): (board as YearBoard3D).rotate_view(1)))
+		map_tools.add_child(_button("year3d.levels", func(): (board as YearBoard3D).toggle_labels()))
+	map_column.add_child(_label(tr("year3d.help" if board is YearBoard3D else "exp.map_help"), "Caption"))
 	_summary = _label("", "Caption")
 	map_column.add_child(_summary)
 	var tabs: TabContainer = TabContainer.new()
@@ -300,6 +335,7 @@ func _ready() -> void:
 	_advance_confirmation.confirmed.connect(func(): _advance(_pending_days))
 	add_child(_advance_confirmation)
 	_refresh()
+	_apply_reduced_motion()
 	if initial_setup:
 		show_new_year()
 
@@ -319,11 +355,14 @@ func _title_key() -> String:
 
 
 func _make_board() -> YearBoard:
-	return YearBoard.new()
+	return YearBoard3D.new()
 
 
 func _preview_year() -> Dictionary:
-	return YearGame.preview(session.year)["state"]
+	var reports: Array[TurnReport] = []
+	var result: Dictionary = YearGame.preview(session.year, 1, reports)
+	board.set_forecast_flow(null if reports.is_empty() else reports.back())
+	return result["state"]
 
 
 func _worker_count() -> int:
@@ -428,7 +467,7 @@ func _refresh_selection() -> void:
 		if YearGame.check_order(s, id, index, int(_batches.value), _repeat.button_pressed, _direction.selected, stop_at, reserve).is_empty():
 			board.targets.append(index)
 	board.predicted = _predicted if _preview.button_pressed else {}
-	board.queue_redraw()
+	board.update_view()
 
 
 func _refresh() -> void:
@@ -439,6 +478,8 @@ func _refresh() -> void:
 		_messages.text = tr(session.last_save_error)
 		return
 	var s: Dictionary = session.year
+	_progress.value = int(s["day"])
+	_refresh_resource_chips()
 	_refresh_history()
 	var need: int = YearGame.food_need(s)
 	_status.text = tr("year.status") % [int(s["day"]), tr("year.season." + DailyProduction.season(maxi(1, int(s["day"])))), int(s["population"]), YearGame.housing(s), _worker_count(), int(s["population"]), int(s["resources"]["food"]) / maxi(1, need), int(s["knowledge"])]
@@ -501,11 +542,15 @@ func _refresh() -> void:
 func _edit(action: String, id: String = "") -> void:
 	var stop_at: int = int(_stop_at.value) if _policy.visible and _stop_at.editable else 0
 	var reserve: int = int(_reserve.value) if _policy.visible and _reserve.editable else 0
+	var before_resources: Dictionary = _resource_snapshot()
 	var error: String = session.edit_year(action, id, selected, int(_batches.value), _repeat.button_pressed, _direction.selected, stop_at, reserve)
 	if not error.is_empty():
 		_log.append(tr(error))
 		_latest_notice = tr(error)
 	_refresh()
+	_show_resource_changes(before_resources)
+	if action == "order":
+		board.show_order(id, selected, error)
 
 
 func _order() -> void:
@@ -529,6 +574,8 @@ func _advance(days: int) -> void:
 		return
 	_last_advance = now
 	get_viewport().set_input_as_handled()
+	var before_year: Dictionary = session.year.duplicate(true)
+	var before_resources: Dictionary = _resource_snapshot()
 	var before: Dictionary = session.year["resources"].duplicate(true)
 	var report: Dictionary = session.advance_year(days)
 	var events: PackedStringArray = PackedStringArray()
@@ -540,6 +587,10 @@ func _advance(days: int) -> void:
 	while _log.size() > 30:
 		_log.pop_front()
 	_refresh()
+	_show_resource_changes(before_resources)
+	board.show_day_changes(before_year)
+	board.show_actual_flow(session.visual_reports)
+	_last_advance = Time.get_ticks_msec()
 
 
 func _new_year() -> void:
@@ -556,6 +607,8 @@ func _new_year() -> void:
 		_refresh()
 		return
 	_log.clear()
+	_resource_feedback.clear()
+	board.clear_feedback()
 	_latest_notice = ""
 	if not session.year.is_empty():
 		selected = session.year["structures"].find("hall")
@@ -630,6 +683,18 @@ func _build_settings() -> void:
 			_refresh()
 	)
 	content.add_child(confirm)
+	var motion: CheckBox = CheckBox.new()
+	motion.text = tr("pause.reduced_motion")
+	motion.button_pressed = GamePreferences.read()["reduced_motion"]
+	motion.toggled.connect(func(enabled: bool):
+		var error: String = GamePreferences.write({"reduced_motion": enabled})
+		if error.is_empty():
+			_apply_reduced_motion()
+		else:
+			_latest_notice = tr(error)
+			_refresh()
+	)
+	content.add_child(motion)
 	add_child(_settings)
 
 
@@ -670,13 +735,16 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		_request_advance(1)
 	elif event.ctrl_pressed and event.keycode == KEY_Z:
 		if event.shift_pressed:
-			session.redo_year()
+			_redo_plan()
 		else:
-			session.undo_year()
-		_refresh()
+			_undo_plan()
 	elif event.ctrl_pressed and event.keycode == KEY_Y:
-		session.redo_year()
-		_refresh()
+		_redo_plan()
+	elif board is YearBoard3D and event.keycode in [KEY_Q, KEY_E, KEY_L]:
+		if event.keycode == KEY_L:
+			(board as YearBoard3D).toggle_labels()
+		else:
+			(board as YearBoard3D).rotate_view(-1 if event.keycode == KEY_Q else 1)
 	else:
 		return
 	get_viewport().set_input_as_handled()
@@ -711,3 +779,60 @@ func restore_ui_draft(draft: Dictionary) -> void:
 	_stop_at.value = draft["stop_at"]
 	_reserve.value = draft["reserve"]
 	_refresh()
+
+
+func _refresh_resource_chips() -> void:
+	var values: Dictionary = _resource_snapshot()
+	for key: String in _resource_chips:
+		var chip: Label = _resource_chips[key]
+		chip.get_parent().visible = values.has(key)
+		if values.has(key):
+			chip.text = "%s %d" % [tr("resource." + key) if key in ["people", "labor"] else tr("daily.resource." + key), int(values[key])]
+
+
+func _show_resource_changes(before: Dictionary) -> void:
+	var after: Dictionary = _resource_snapshot()
+	# Legacy years do not have the expansion's fiber or kits.
+	for key: String in ["fiber", "kits"]:
+		if not before.has(key):
+			before[key] = 0
+		if not after.has(key):
+			after[key] = 0
+	_resource_feedback.show_changes(before, after)
+
+
+func _undo_plan() -> void:
+	if session.year.is_empty():
+		return
+	var before: Dictionary = _resource_snapshot()
+	session.undo_year()
+	board.clear_feedback()
+	_refresh()
+	_show_resource_changes(before)
+
+
+func _redo_plan() -> void:
+	if session.year.is_empty():
+		return
+	var before: Dictionary = _resource_snapshot()
+	session.redo_year()
+	board.clear_feedback()
+	_refresh()
+	_show_resource_changes(before)
+
+
+func _apply_reduced_motion() -> void:
+	var enabled: bool = GamePreferences.read()["reduced_motion"]
+	board.set_reduced_motion(enabled)
+	_resource_feedback.set_reduced_motion(enabled)
+
+
+func _process(_delta: float) -> void:
+	if board != null and _leave_confirmation != null:
+		board.set_suspended(_settings.visible or _restart.visible or _advance_confirmation.visible or _leave_confirmation.visible)
+
+
+func _resource_snapshot() -> Dictionary:
+	var result: Dictionary = YearPresentation.resources(session.year)
+	result["labor"] = int(session.year["population"]) - _worker_count()
+	return result

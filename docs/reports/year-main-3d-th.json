@@ -1,0 +1,66 @@
+{
+  "checks": [
+    {
+      "check": "main board uses shared 3D village renderer",
+      "passed": true
+    },
+    {
+      "check": "camera and levels do not change state or checkpoint",
+      "passed": true
+    },
+    {
+      "check": "ray pick selects real work tile after rotation",
+      "passed": true
+    },
+    {
+      "check": "native order reserves a real job",
+      "passed": true
+    },
+    {
+      "check": "real order produces resource feedback",
+      "passed": true
+    },
+    {
+      "check": "native undo restores exact order inputs",
+      "passed": true
+    },
+    {
+      "check": "native redo restores exact job and reservations",
+      "passed": true
+    },
+    {
+      "check": "native preview toggle clears forecast overlays",
+      "passed": true
+    },
+    {
+      "check": "preview shows next-day water",
+      "passed": true
+    },
+    {
+      "check": "preview uses recorded water transfers",
+      "passed": true
+    },
+    {
+      "check": "day confirmation does not advance simulation",
+      "passed": true
+    },
+    {
+      "check": "native confirmation advances exactly one day",
+      "passed": true
+    },
+    {
+      "check": "committed day shows its actual water flow",
+      "passed": true
+    },
+    {
+      "check": "native history tab shows committed resource totals",
+      "passed": true
+    },
+    {
+      "check": "setup fields visible",
+      "passed": true
+    }
+  ],
+  "language": "th",
+  "passed": true
+}

@@ -124,3 +124,45 @@ func _draw() -> void:
 		if not structure.is_empty():
 			draw_rect(Rect2(center + Vector2(-_radius * 0.45, -_radius * 0.45), Vector2(_radius * 0.9, 4)), Color("#223431"))
 			draw_rect(Rect2(center + Vector2(-_radius * 0.45, -_radius * 0.45), Vector2(_radius * 0.9 * float(model["health"][index]) / 100.0, 4)), Color("#d6b56e"))
+
+
+func update_view() -> void:
+	queue_redraw()
+
+
+func set_reduced_motion(_enabled: bool) -> void:
+	pass
+
+
+func set_suspended(_enabled: bool) -> void:
+	pass
+
+
+func show_order(_id: String, _index: int, _error: String = "") -> void:
+	pass
+
+
+func show_day_changes(_before: Dictionary) -> void:
+	pass
+
+
+func view_draft() -> Dictionary:
+	return {"zoom": zoom, "pan": pan}
+
+
+func restore_view_draft(draft: Dictionary) -> void:
+	zoom = draft["zoom"]
+	pan = draft["pan"]
+	update_view()
+
+
+func set_forecast_flow(_report: TurnReport) -> void:
+	pass
+
+
+func show_actual_flow(_reports: Array[TurnReport]) -> void:
+	pass
+
+
+func clear_feedback() -> void:
+	pass

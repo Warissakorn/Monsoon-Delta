@@ -252,12 +252,10 @@ func _change_year_language() -> void:
 	screen.menu_requested.connect(_show_menu)
 	screen.language_requested.connect(_change_year_language)
 	var selected: int = old.selected
-	var zoom: float = old.board.zoom
-	var pan: Vector2 = old.board.pan
+	var camera_draft: Dictionary = old.board.view_draft()
 	_replace_screen(screen)
 	screen.select_tile(selected)
-	screen.board.zoom = zoom
-	screen.board.pan = pan
+	screen.board.restore_view_draft(camera_draft)
 	screen.restore_ui_draft(draft)
 
 

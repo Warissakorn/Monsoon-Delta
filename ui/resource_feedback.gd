@@ -6,6 +6,7 @@ const LIFETIME: float = 2.4
 const TOKEN_LIFETIME: float = 0.65
 const MAX_TOKENS: int = 15
 
+var keys: Array[String] = KEYS.duplicate()
 var _chips: Dictionary = {}
 var _entries: Array[Dictionary] = []
 var _reduced_motion: bool = false
@@ -24,9 +25,9 @@ static func capture(state: GameState) -> Dictionary:
 	return ResourceLedger.capture(state)
 
 
-static func difference(before: Dictionary, after: Dictionary) -> Dictionary:
+static func difference(before: Dictionary, after: Dictionary, tracked_keys: Array[String] = KEYS) -> Dictionary:
 	var result: Dictionary = {}
-	for key: String in KEYS:
+	for key: String in tracked_keys:
 		var delta: int = int(after[key]) - int(before[key])
 		if delta != 0:
 			result[key] = {"before": int(before[key]), "after": int(after[key]), "delta": delta}
@@ -40,11 +41,12 @@ func bind_chips(chips: Dictionary) -> void:
 
 func show_changes(before: Dictionary, after: Dictionary) -> void:
 	clear()
-	last_changes = difference(before, after)
+	last_changes = difference(before, after, keys)
 	if last_changes.is_empty():
 		return
 	generation += 1
 	var groups: Dictionary = {}
+	var token_budget: int = MAX_TOKENS
 	for key: String in last_changes:
 		var target: String = "people" if key == "housing" else key
 		if not _chips.has(target):
@@ -88,11 +90,12 @@ func show_changes(before: Dictionary, after: Dictionary) -> void:
 		badge.tooltip_text = tr("resourcefx.change") % [tr("resourcefx.housing" if key == "housing" else "resource." + key), int(last_changes[key]["before"]), int(last_changes[key]["after"]), int(last_changes[key]["delta"])]
 		var entry: Dictionary = {"key": key, "target": target, "root": marker, "halo": halo, "badge": badge, "color": color, "age": 0.0, "tokens": [], "base": Vector2.ZERO}
 		if not _reduced_motion:
-			for _index: int in range(3):
+			for _index: int in range(mini(3, token_budget)):
 				var token: TextureRect = _icon(key, 13)
 				token.name = "ResourceToken"
 				marker.add_child(token)
 				entry["tokens"].append(token)
+				token_budget -= 1
 		_entries.append(entry)
 	_layout()
 	_update_visuals()

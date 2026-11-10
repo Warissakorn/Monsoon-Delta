@@ -5,6 +5,7 @@ extends GameSession
 const YEAR_PATH: String = "user://year365.json"
 var year: Dictionary = {}
 var daily_history: Array[Dictionary] = []
+var visual_reports: Array[TurnReport] = []
 var undo_plans: Array[Dictionary] = []
 var redo_plans: Array[Dictionary] = []
 
@@ -24,6 +25,7 @@ func start_year(seed_value: int = 42, goal: String = "none", project: String = "
 		return "msg.new_game_failed"
 	year = next
 	daily_history.clear()
+	visual_reports.clear()
 	undo_plans.clear()
 	redo_plans.clear()
 	return checkpoint_year()
@@ -40,6 +42,7 @@ func start_campaign(seed_value: int, goal: String, project: String, leader: Stri
 		return "msg.new_game_failed"
 	year = next
 	daily_history.clear()
+	visual_reports.clear()
 	undo_plans.clear()
 	redo_plans.clear()
 	return checkpoint_year()
@@ -91,7 +94,8 @@ func advance_year(days: int) -> Dictionary:
 		return {"days": 0, "events": []}
 	var before: Dictionary = year["resources"].duplicate(true)
 	var first_day: int = int(year["day"])
-	var report: Dictionary = YearGame.advance(year, days)
+	visual_reports.clear()
+	var report: Dictionary = YearGame.advance(year, days, visual_reports)
 	if int(report["days"]) > 0:
 		var delta: Dictionary = {}
 		for resource: String in YearGame.resources(year):
@@ -114,6 +118,7 @@ func load_year() -> String:
 		return last_save_error
 	year = result["state"]
 	daily_history.clear()
+	visual_reports.clear()
 	undo_plans.clear()
 	redo_plans.clear()
 	last_save_error = ""
