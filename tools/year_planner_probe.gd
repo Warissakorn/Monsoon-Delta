@@ -82,7 +82,7 @@ func _run() -> void:
 		_check(screen._tabs.current_tab == 0 and screen.selected == int(screen._plan["days"][0]["damaged"][0]), "risk location returns to the board inspector")
 	bytes = FileAccess.get_file_as_bytes(danger.save_path)
 	await _click(screen._time_buttons[1])
-	_check(screen._advance_confirmation.visible and screen._advance_confirmation.dialog_text.contains(TranslationServer.translate("year.outcome.lost_hall")), "loss confirmation precedes idle-worker warning")
+	_check(screen._advance_confirmation.visible and screen._advance_text.text.contains(TranslationServer.translate("year.outcome.lost_hall")), "loss confirmation precedes idle-worker warning")
 	await _capture("planner-risk-" + language)
 	await _click(screen._advance_confirmation.get_cancel_button())
 	_check(int(danger.year["day"]) == 0 and FileAccess.get_file_as_bytes(danger.save_path) == bytes, "native cancellation preserves day and checkpoint")

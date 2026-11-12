@@ -1,0 +1,82 @@
+{
+  "checks": [
+    {
+      "check": "explicit three-year campaign validates",
+      "passed": true
+    },
+    {
+      "check": "loaded campaign duration is preserved in setup",
+      "passed": true
+    },
+    {
+      "check": "cancelling duration changes preserves the checkpoint",
+      "passed": true
+    },
+    {
+      "check": "native develop-hex button opens contextual actions",
+      "passed": true
+    },
+    {
+      "check": "area dialog and its close button fit the window",
+      "passed": true
+    },
+    {
+      "check": "native trial resolves beyond seven days until the house finishes",
+      "passed": true
+    },
+    {
+      "check": "trial does not assign resources or save",
+      "passed": true
+    },
+    {
+      "check": "preview focuses its forecast details for reading",
+      "passed": true
+    },
+    {
+      "check": "native confirmation assigns exactly one job",
+      "passed": true
+    },
+    {
+      "check": "native Undo restores the plan and materials",
+      "passed": true
+    },
+    {
+      "check": "public replay reaches a live second-year boundary",
+      "passed": true
+    },
+    {
+      "check": "native next-day input enters year two without resetting the village",
+      "passed": true
+    },
+    {
+      "check": "second-year checkpoint reloads exactly",
+      "passed": true
+    },
+    {
+      "check": "authored crop-risk fixture validates",
+      "passed": true
+    },
+    {
+      "check": "advisor warns rather than suggesting a harvest that will be too late",
+      "passed": true
+    },
+    {
+      "check": "crop-loss forecast has a map marker",
+      "passed": true
+    },
+    {
+      "check": "native warning offers individual risk locations",
+      "passed": true
+    },
+    {
+      "check": "risk confirmation buttons fit the window",
+      "passed": true
+    },
+    {
+      "check": "inspecting a risk does not advance or save",
+      "passed": true
+    }
+  ],
+  "language": "en",
+  "passed": true
+}

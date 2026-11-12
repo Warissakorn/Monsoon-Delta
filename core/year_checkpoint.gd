@@ -9,7 +9,7 @@ const FIELDS: Array[String] = ["day", "board", "weather", "resources", "populati
 
 
 static func envelope(s: Dictionary) -> Dictionary:
-	return {"format": FORMAT, "version": 5 if YearHeritage.enabled(s) else (4 if YearClassic.enabled(s) else (3 if s.get("ruleset") == "year365_v3" else (2 if YearGame.expanded(s) else 1))), "ruleset": s.get("ruleset", RULESET), "state": s.duplicate(true), "float64": SaveIO._encode_float64(s["board"])}
+	return {"format": FORMAT, "version": 6 if YearGame.multi_year(s) else (5 if YearHeritage.enabled(s) else (4 if YearClassic.enabled(s) else (3 if s.get("ruleset") == "year365_v3" else (2 if YearGame.expanded(s) else 1)))), "ruleset": s.get("ruleset", RULESET), "state": s.duplicate(true), "float64": SaveIO._encode_float64(s["board"])}
 
 
 static func valid(s: Variant) -> bool:
@@ -19,7 +19,7 @@ static func valid(s: Variant) -> bool:
 	var fields: Array[String] = FIELDS.duplicate()
 	if expanded:
 		fields.append_array(YearExpansion.EXTRA_FIELDS)
-	if s.get("ruleset") in ["year365_v3", "year365_v4", "year365_v5"]:
+	if s.get("ruleset") in ["year365_v3", "year365_v4", "year365_v5", "year365_v6"]:
 		fields.append_array(["leader", "difficulty"])
 		if not s.get("leader") is String or s["leader"] not in ["farmer", "carpenter", "fisher", "soil_doctor"] or not SaveIO._integer(s.get("difficulty"), 0, 10):
 			return false
@@ -27,11 +27,15 @@ static func valid(s: Variant) -> bool:
 		fields.append_array(YearClassic.FIELDS)
 	if YearHeritage.enabled(s):
 		fields.append_array(YearHeritage.FIELDS)
+	if YearGame.multi_year(s):
+		fields.append("campaign_years")
+		if not SaveIO._integer(s.get("campaign_years"), 3, 5) or int(s["campaign_years"]) not in [3, 5]:
+			return false
 	if s.size() != fields.size() or not SaveIO._has_fields(s, fields):
 		return false
 	var count: int = 127 if expanded else 61
 	for key: String in ["day", "population", "starvation", "knowledge", "score"]:
-		var limit: int = 365 if key == "day" else (12 if key == "population" else 1000000)
+		var limit: int = YearGame.total_days(s) if key == "day" else (12 if key == "population" else 1000000)
 		if not SaveIO._integer(s[key], 0, limit):
 			return false
 	if not s["board"] is Dictionary or not SaveIO._valid_state(s["board"], Hex.coords(6) if expanded else Hex.coords()):
@@ -39,13 +43,13 @@ static func valid(s: Variant) -> bool:
 	# The embedded board only carries water/terrain, never a legacy run's rules.
 	if s["board"].get("ruleset", "legacy") != "legacy" or s["board"].has("settlement_progress"):
 		return false
-	if not s["weather"] is Array or s["weather"].size() != 365:
+	if not s["weather"] is Array or s["weather"].size() != YearGame.total_days(s):
 		return false
 	for amount: Variant in s["weather"]:
 		if not SaveIO._integer(amount, 0, 20000):
 			return false
-	var expected_weather: Array = YearWeather.generate(String(s["board"]["seed"]).to_int())
-	for index: int in range(365):
+	var expected_weather: Array = YearWeather.generate(String(s["board"]["seed"]).to_int(), int(s.get("campaign_years", 1)))
+	for index: int in range(YearGame.total_days(s)):
 		if int(s["weather"][index]) != int(expected_weather[index]):
 			return false
 	if not s["resources"] is Dictionary or s["resources"].size() != YearGame.resources(s).size():
@@ -127,9 +131,9 @@ static func valid(s: Variant) -> bool:
 		return false
 	if not s["outcome"] is String or s["outcome"] not in ["running", "won", "lost_hall", "lost_population"]:
 		return false
-	if s["outcome"] == "running" and (int(s["day"]) >= 365 or int(s["population"]) == 0):
+	if s["outcome"] == "running" and (int(s["day"]) >= YearGame.total_days(s) or int(s["population"]) == 0):
 		return false
-	if s["outcome"] == "won" and (int(s["day"]) != 365 or int(s["population"]) == 0):
+	if s["outcome"] == "won" and (int(s["day"]) != YearGame.total_days(s) or int(s["population"]) == 0):
 		return false
 	var hall: int = s["structures"].find("hall")
 	if s["outcome"] in ["running", "won"] and int(s["health"][hall]) <= 0:
@@ -183,11 +187,11 @@ static func decode(value: Variant) -> Dictionary:
 	var bad: Dictionary = {"error": "msg.save_corrupt", "state": {}}
 	if not value is Dictionary or not value.get("format") is String or not value.get("ruleset") is String:
 		return bad
-	if value["format"] != FORMAT or not SaveIO._integer(value.get("version"), 1, 5) or value["ruleset"] not in [RULESET, "year365_v2", "year365_v3", "year365_v4", "year365_v5"]:
+	if value["format"] != FORMAT or not SaveIO._integer(value.get("version"), 1, 6) or value["ruleset"] not in [RULESET, "year365_v2", "year365_v3", "year365_v4", "year365_v5", "year365_v6"]:
 		return {"error": "msg.save_unsupported", "state": {}}
 	if not value.get("state") is Dictionary:
 		return bad
-	var expected: String = [RULESET, "year365_v2", "year365_v3", "year365_v4", "year365_v5"][int(value["version"]) - 1]
+	var expected: String = [RULESET, "year365_v2", "year365_v3", "year365_v4", "year365_v5", "year365_v6"][int(value["version"]) - 1]
 	if value["ruleset"] != expected or value["state"].get("ruleset", RULESET) != expected:
 		return bad
 	if not valid(value.get("state")):
@@ -198,7 +202,7 @@ static func decode(value: Variant) -> Dictionary:
 	# Canonical ints and board caches make load -> continue exactly reproducible.
 	for key: String in ["day", "population", "starvation", "knowledge", "score"]:
 		s[key] = int(s[key])
-	if s.get("ruleset") in ["year365_v3", "year365_v4", "year365_v5"]:
+	if s.get("ruleset") in ["year365_v3", "year365_v4", "year365_v5", "year365_v6"]:
 		s["difficulty"] = int(s["difficulty"])
 	for key: String in s["resources"]:
 		s["resources"][key] = int(s["resources"][key])
@@ -221,6 +225,8 @@ static func decode(value: Variant) -> Dictionary:
 				job[key] = int(job[key])
 			for key: String in job["inputs"]:
 				job["inputs"][key] = int(job["inputs"][key])
+	if YearGame.multi_year(s):
+		s["campaign_years"] = int(s["campaign_years"])
 	if YearHeritage.enabled(s):
 		YearHeritage.canonicalize(s)
 	s["board"] = GameState.from_dict(s["board"]).to_dict()
