@@ -35,6 +35,15 @@ var _heritage_buildings: VBoxContainer
 var _result_button: Button
 var _result_dialog: AcceptDialog
 var _food_plan: Label
+var _campaign_years: OptionButton
+var _trial_horizon: OptionButton
+var _area_button: Button
+var _area_dialog: AcceptDialog
+var _area_panel: YearAreaDevelopmentPanel
+var _risk_choice: OptionButton
+var _advance_text: Label
+var _area_scroll: ScrollContainer
+var _order_text: Label
 var session: YearSession
 var initial_seed: int = 42
 var initial_difficulty: int = 0
@@ -236,6 +245,9 @@ func _ready() -> void:
 	var actions: VBoxContainer = _tab(tabs, "year.actions")
 	_inspection = _label("")
 	actions.add_child(_inspection)
+	_area_button = _button("yeararea.open", open_area_development)
+	_area_button.visible = not session is TransportSession
+	actions.add_child(_area_button)
 	_group = OptionButton.new()
 	for group: String in GROUPS:
 		_group.add_item(tr("year.group." + group))
@@ -285,7 +297,12 @@ func _ready() -> void:
 	_direction.item_selected.connect(func(_index: int): _refresh_selection())
 	_order_button = _button("year.order", _order)
 	actions.add_child(_order_button)
-	_try_button = _button("yearplus.try_order", _try_order)
+	_try_button = _button("yeararea.preview", _try_order)
+	_trial_horizon = OptionButton.new()
+	_trial_horizon.add_item(tr("yearreview.seven"))
+	_trial_horizon.add_item(tr("yearreview.until_complete"))
+	_trial_horizon.visible = not session is TransportSession
+	actions.add_child(_trial_horizon)
 	actions.add_child(_try_button)
 	_history_return = _button("yearplus.return_history", _return_history)
 	_history_return.hide()
@@ -410,6 +427,17 @@ func _ready() -> void:
 	for project: String in ["food", "water", "craft"]:
 		_project.add_item(tr("exp.project." + project))
 	setup.add_child(_project)
+	var years_label: Label = _label(tr("yearmulti.length"))
+	years_label.visible = not session is TransportSession
+	setup.add_child(years_label)
+	_campaign_years = OptionButton.new()
+	for years: int in [1, 3, 5]:
+		_campaign_years.add_item(tr("yearmulti.years") % years)
+	_campaign_years.visible = not session is TransportSession
+	setup.add_child(_campaign_years)
+	var years_help: Label = _label(tr("yearmulti.help"), "Caption")
+	years_help.visible = _campaign_years.visible
+	setup.add_child(years_help)
 	_classic = CheckBox.new()
 	_classic.text = tr("yearplus.enable")
 	_classic.visible = not session is TransportSession
@@ -417,6 +445,7 @@ func _ready() -> void:
 	var classic_help: Label = _label(tr("yearplus.enable_help"), "Caption")
 	classic_help.visible = _classic.visible
 	setup.add_child(classic_help)
+	_campaign_years.item_selected.connect(func(_index: int): _campaign_length_changed())
 	_sync_new_year_form()
 	_restart.confirmed.connect(_new_year)
 	add_child(_restart)
@@ -444,16 +473,46 @@ func _ready() -> void:
 		if _impact_tile >= 0:
 			_focus_tile(_impact_tile)
 	)
+	var review_scroll: ScrollContainer = ScrollContainer.new()
+	review_scroll.custom_minimum_size = Vector2(620, 220)
+	review_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	review_scroll.follow_focus = true
+	_advance_confirmation.add_child(review_scroll)
+	var review: VBoxContainer = VBoxContainer.new()
+	review.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	review_scroll.add_child(review)
+	_advance_text = _label("")
+	review.add_child(_advance_text)
+	_risk_choice = OptionButton.new()
+	_risk_choice.fit_to_longest_item = false
+	_risk_choice.item_selected.connect(func(index: int): _impact_tile = int(_risk_choice.get_item_metadata(index)))
+	review.add_child(_risk_choice)
 	_order_confirmation = ConfirmationDialog.new()
-	_order_confirmation.title = tr("yearplus.try_order")
+	_order_confirmation.title = tr("yeararea.preview")
 	_order_confirmation.ok_button_text = tr("year.order")
 	_order_confirmation.cancel_button_text = tr("action.cancel")
 	_order_confirmation.confirmed.connect(_commit_tried_order)
+	var order_scroll: ScrollContainer = ScrollContainer.new()
+	order_scroll.custom_minimum_size = Vector2(650, 400)
+	order_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	order_scroll.follow_focus = true
+	_order_confirmation.add_child(order_scroll)
+	_order_text = _label("")
+	order_scroll.add_child(_order_text)
 	add_child(_order_confirmation)
 	_result_dialog = AcceptDialog.new()
 	_result_dialog.title = tr("yearheritage.result")
 	_result_dialog.ok_button_text = tr("action.close")
 	add_child(_result_dialog)
+	_area_dialog = AcceptDialog.new()
+	_area_dialog.title = tr("yeararea.open")
+	_area_dialog.ok_button_text = tr("action.close")
+	_area_scroll = ScrollContainer.new()
+	_area_scroll.custom_minimum_size = Vector2(700, 470)
+	_area_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_area_scroll.follow_focus = true
+	_area_dialog.add_child(_area_scroll)
+	add_child(_area_dialog)
 	add_child(_advance_confirmation)
 	_refresh()
 	_apply_reduced_motion()
@@ -472,7 +531,7 @@ func _label(text: String, style: String = "") -> Label:
 
 
 func _title_key() -> String:
-	return "year.title"
+	return "yearmulti.title" if session != null and YearGame.multi_year(session.year) else "year.title"
 
 
 func _make_board() -> YearBoard:
@@ -590,7 +649,7 @@ func _refresh_selection() -> void:
 	_policy.visible = YearGame.expanded(s) and reusable
 	_stop_at.editable = not definition["outputs"].is_empty()
 	_reserve.editable = definition["inputs"].has("wood")
-	_recipe.text = tr("year.recipe") % [int(definition["workers"]), YearGame._job_days(s, id, selected), _materials(YearExpansion.inputs(s, id, selected)), _materials(YearGame.outputs(s, id))]
+	_recipe.text = tr("year.recipe") % [int(definition["workers"]), YearGame._job_days(s, id, selected), _materials(YearExpansion.inputs(s, id, selected)), _materials(YearAreaDevelopment.expected_output(s, id, selected))]
 	_recipe.text += "\n" + tr("year.action." + id + "_desc")
 	var stop_at: int = int(_stop_at.value) if _policy.visible and _stop_at.editable else 0
 	var reserve: int = int(_reserve.value) if _policy.visible and _reserve.editable else 0
@@ -617,13 +676,16 @@ func _refresh() -> void:
 		_messages.text = tr(session.last_save_error)
 		return
 	var s: Dictionary = session.year
+	_progress.max_value = YearGame.total_days(s)
 	_progress.value = int(s["day"])
 	_refresh_resource_chips()
 	_refresh_history()
 	var need: int = YearGame.food_need(s)
-	_status.text = tr("year.status") % [int(s["day"]), tr("year.season." + DailyProduction.season(maxi(1, int(s["day"])))), int(s["population"]), YearGame.housing(s), _worker_count(), int(s["population"]), int(s["resources"]["food"]) / maxi(1, need), int(s["knowledge"])]
+	_status.text = tr("year.status") % [YearGame.day_of_year(s) if int(s["day"]) > 0 else 0, tr("year.season." + YearGame.season(s)), int(s["population"]), YearGame.housing(s), _worker_count(), int(s["population"]), int(s["resources"]["food"]) / maxi(1, need), int(s["knowledge"])]
+	if YearGame.multi_year(s):
+		_status.text = tr("yearmulti.run") % [YearGame.year_number(s), int(s["campaign_years"])] + _status.text
 	_resources.text = _materials(s["resources"])
-	if s.get("ruleset") in ["year365_v3", "year365_v4", "year365_v5"]:
+	if s.get("ruleset") in ["year365_v3", "year365_v4", "year365_v5", "year365_v6"]:
 		_status.text += " · " + tr("leader." + String(s["leader"]) + ".name") + " · " + tr("year.difficulty") % int(s["difficulty"])
 	var forecast: PackedStringArray = PackedStringArray()
 	for entry: Dictionary in YearWeather.forecast(s):
@@ -768,7 +830,7 @@ func _new_year() -> void:
 	if session is TransportSession:
 		error = session.start_year(initial_seed, initial_goal, initial_project)
 	else:
-		error = session.start_campaign(initial_seed, initial_goal, initial_project, MainMenu.LEADERS[_leader.selected], int(_difficulty.value), _classic.button_pressed, _classic.button_pressed)
+		error = session.start_campaign(initial_seed, initial_goal, initial_project, MainMenu.LEADERS[_leader.selected], int(_difficulty.value), _classic.button_pressed, _classic.button_pressed, [1, 3, 5][_campaign_years.selected])
 	if not error.is_empty():
 		_latest_notice = tr(error)
 		_refresh()
@@ -933,14 +995,20 @@ func _request_advance(days: int) -> void:
 	var impacts: Array[Dictionary] = YearOrderPreview.impacts(session.year, preview) if session is TransportSession else _review_impacts
 	_impact_tile = -1
 	var details: PackedStringArray = []
+	_risk_choice.clear()
 	for impact: Dictionary in impacts:
 		var index: int = int(impact["tile"])
 		if index >= 0 and _impact_tile < 0:
 			_impact_tile = index
+		if index >= 0:
+			var tile: Dictionary = session.year["board"]["tiles"][index]
+			_risk_choice.add_item(tr(impact["kind"]) + " (%d,%d)" % [int(tile["q"]), int(tile["r"])])
+			_risk_choice.set_item_metadata(_risk_choice.item_count - 1, index)
 		if details.size() < 8:
 			var at: Dictionary = session.year["board"]["tiles"][index] if index >= 0 else {}
 			details.append(tr(impact["kind"]) + (" (%d,%d)" % [int(at["q"]), int(at["r"])] if not at.is_empty() else "") + ": %d → %d" % [int(impact["before"]), int(impact["after"])])
 	_impact_button.visible = _impact_tile >= 0
+	_risk_choice.visible = _impact_tile >= 0
 	var warnings: PackedStringArray = []
 	if preview["outcome"] in ["lost_hall", "lost_population"]:
 		warnings.append(tr("yearplan.confirm_loss") % [int(preview["day"]), tr("year.outcome." + String(preview["outcome"]))])
@@ -950,8 +1018,9 @@ func _request_advance(days: int) -> void:
 	if GamePreferences.read()["confirm_unused_labor"] and idle > 0:
 		warnings.append(tr("year.unused_workers") % idle)
 	if not warnings.is_empty():
-		_advance_confirmation.dialog_text = "\n".join(warnings)
-		_advance_confirmation.popup_centered(Vector2i(650, 0))
+		_advance_confirmation.dialog_text = ""
+		_advance_text.text = "\n".join(warnings)
+		_advance_confirmation.popup_centered(Vector2i(700, 360))
 	else:
 		_advance(days)
 
@@ -970,7 +1039,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	var focused: Control = get_viewport().gui_get_focus_owner()
 	if focused is LineEdit or focused is TextEdit:
 		return
-	if _restart.visible or _settings.visible or _advance_confirmation.visible or _leave_confirmation.visible or _order_confirmation.visible or _result_dialog.visible:
+	if _restart.visible or _settings.visible or _advance_confirmation.visible or _leave_confirmation.visible or _order_confirmation.visible or _result_dialog.visible or _area_dialog.visible:
 		return
 	var code: Key = event.physical_keycode if event.physical_keycode != 0 else event.keycode
 	if code == KEY_ESCAPE:
@@ -1015,11 +1084,14 @@ func request_quit() -> void:
 
 
 func ui_draft() -> Dictionary:
-	return {"seed": _seed.text, "goal": _goal.selected, "project": _project.selected, "leader": _leader.selected, "difficulty": _difficulty.value, "group": _group.selected, "action": _action.selected, "batches": _batches.value, "repeat": _repeat.button_pressed, "direction": _direction.selected, "preview": _preview.button_pressed, "tab": _tabs.current_tab, "stop_at": _stop_at.value, "reserve": _reserve.value, "queue_filter": _queue_filter.selected, "classic": _classic.button_pressed, "history_day": _history_day, "history_view": _history_view.duplicate(true), "history_selected": _history_selected}
+	return {"seed": _seed.text, "goal": _goal.selected, "project": _project.selected, "leader": _leader.selected, "difficulty": _difficulty.value, "group": _group.selected, "action": _action.selected, "batches": _batches.value, "repeat": _repeat.button_pressed, "direction": _direction.selected, "preview": _preview.button_pressed, "tab": _tabs.current_tab, "stop_at": _stop_at.value, "reserve": _reserve.value, "queue_filter": _queue_filter.selected, "classic": _classic.button_pressed, "campaign_years": _campaign_years.selected, "trial_horizon": _trial_horizon.selected, "history_day": _history_day, "history_view": _history_view.duplicate(true), "history_selected": _history_selected}
 
 
 func restore_ui_draft(draft: Dictionary) -> void:
 	_classic.button_pressed = bool(draft.get("classic", false))
+	_campaign_years.select(int(draft.get("campaign_years", 0)))
+	_campaign_length_changed()
+	_trial_horizon.select(int(draft.get("trial_horizon", 0)))
 	_history_day = int(draft.get("history_day", -1))
 	_history_view = draft.get("history_view", {}).duplicate(true)
 	_history_selected = int(draft.get("history_selected", -1))
@@ -1091,7 +1163,7 @@ func _apply_reduced_motion() -> void:
 
 func _process(_delta: float) -> void:
 	if board != null and _leave_confirmation != null:
-		board.set_suspended(_settings.visible or _restart.visible or _advance_confirmation.visible or _leave_confirmation.visible or _order_confirmation.visible or _result_dialog.visible)
+		board.set_suspended(_settings.visible or _restart.visible or _advance_confirmation.visible or _leave_confirmation.visible or _order_confirmation.visible or _result_dialog.visible or _area_dialog.visible)
 
 
 func _resource_snapshot() -> Dictionary:
@@ -1131,6 +1203,11 @@ func _refresh_planning() -> void:
 			var tile: Dictionary = session.year["board"]["tiles"][index]
 			var locate: Button = _button("year.locate", _focus_tile.bind(index))
 			locate.text = tr("yearplan.damage_location") % [int(tile["q"]), int(tile["r"])]
+			row.add_child(locate)
+		for index: int in day.get("crops", []):
+			var tile: Dictionary = session.year["board"]["tiles"][index]
+			var locate: Button = _button("year.locate", _focus_tile.bind(index))
+			locate.text = tr("yearreview.crop_location") % [int(tile["q"]), int(tile["r"])]
 			row.add_child(locate)
 	if _plan["days"].is_empty():
 		_planning_rows.add_child(_label(tr("yearplan.finished"), "Caption"))
@@ -1194,6 +1271,48 @@ func _sync_new_year_form() -> void:
 	_leader.select(MainMenu.LEADERS.find(String(s.get("leader", "farmer"))))
 	_difficulty.value = int(s.get("difficulty", initial_difficulty))
 	_classic.set_pressed_no_signal(YearClassic.enabled(s))
+	_campaign_years.select([1, 3, 5].find(int(s.get("campaign_years", 1))))
+	_campaign_length_changed()
+
+
+func _campaign_length_changed() -> void:
+	var multiple: bool = _campaign_years.selected > 0
+	_classic.disabled = multiple
+	if multiple:
+		_classic.set_pressed_no_signal(true)
+
+
+func open_area_development() -> void:
+	if session.year.is_empty() or selected < 0 or session is TransportSession:
+		return
+	get_viewport().set_input_as_handled()
+	if _area_panel != null:
+		_area_scroll.remove_child(_area_panel)
+		_area_panel.free()
+	_area_panel = YearAreaDevelopmentPanel.new()
+	_area_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_area_scroll.add_child(_area_panel)
+	_area_panel.command_requested.connect(_commit_area_order)
+	_area_panel.configure(session.year, selected)
+	_area_dialog.popup_centered(Vector2i(760, 600))
+
+
+func _commit_area_order(order: Dictionary, snapshot: Dictionary) -> void:
+	get_viewport().set_input_as_handled()
+	var index: int = int(order["tile"])
+	if session.year != snapshot:
+		_area_panel.configure(session.year, index, tr("yearplus.stale"))
+		return
+	var before: Dictionary = _resource_snapshot()
+	var error: String = session.edit_year(order["action"], order["id"], index, order["batches"], order["repeat"], order["direction"], order["stop_at"], order["reserve"])
+	selected = index
+	_refresh()
+	_show_resource_changes(before)
+	board.show_order(order["id"], index, error)
+	var notice: String = tr(error) if not error.is_empty() else tr("yeararea.assigned")
+	if not session.last_save_error.is_empty():
+		notice += "\n" + tr(session.last_save_error)
+	_area_panel.configure(session.year, index, notice)
 
 
 func _select_action(id: String) -> bool:
@@ -1212,23 +1331,16 @@ func _select_action(id: String) -> bool:
 func _try_order() -> void:
 	_pending_order = {"id": action_id(), "tile": selected, "batches": int(_batches.value), "repeat": _repeat.button_pressed, "direction": _direction.selected, "stop_at": int(_stop_at.value) if _policy.visible and _stop_at.editable else 0, "reserve": int(_reserve.value) if _policy.visible and _reserve.editable else 0}
 	var o: Dictionary = _pending_order
-	var result: Dictionary = YearOrderPreview.describe(session.year, o["id"], o["tile"], o["batches"], o["repeat"], o["direction"], o["stop_at"], o["reserve"])
+	var result: Dictionary = YearOrderPreview.describe(session.year, o["id"], o["tile"], o["batches"], o["repeat"], o["direction"], o["stop_at"], o["reserve"], _trial_horizon.selected == 1)
 	if not String(result["error"]).is_empty():
 		_latest_notice = tr(result["error"])
 		_refresh()
 		return
 	_order_snapshot = session.year.duplicate(true)
-	var cost: Dictionary = {}
-	for key: String in result["reserved"]:
-		if int(result["reserved"][key]) > 0:
-			cost[key] = int(result["reserved"][key])
-	var rows: PackedStringArray = [tr("yearplus.try_assumption"), tr("yearplus.reserved") + " " + _materials(cost)]
-	for branch: String in ["baseline", "planned"]:
-		var after: Dictionary = result[branch]
-		rows.append(tr("yearplus." + branch) + ": " + tr("yearplus.try_summary") % [int(after["day"]), int(after["resources"]["food"]), int(after["population"]), YearGame.housing(after), int(after["stats"]["damage"]) - int(session.year["stats"]["damage"]), tr("year.outcome." + String(after["outcome"]))])
-		rows.append(_materials(after["resources"]))
-	_order_confirmation.dialog_text = "\n\n".join(rows)
-	_order_confirmation.popup_centered(Vector2i(650, 0))
+	_order_text.text = YearPlanText.describe(session.year, result, selected)
+	if o["repeat"] and _trial_horizon.selected == 1:
+		_order_text.text = tr("yearreview.first_batch") + "\n\n" + _order_text.text
+	_order_confirmation.popup_centered(Vector2i(740, 550))
 
 
 func _commit_tried_order() -> void:
@@ -1285,7 +1397,7 @@ func _refresh_heritage() -> void:
 	var history: Dictionary = s["settlement_progress"]
 	_heritage_state.text = tr("yearheritage.condition") % [tr("settlement." + String(history["condition"])), int(history["evaluated_day"])]
 	var next_review: int = int(history["evaluated_day"]) + int(YearHeritage.config()["period_days"])
-	_heritage_state.text += "\n" + (tr("yearheritage.next_review") % next_review if next_review <= 365 and s["outcome"] == "running" else tr("yearheritage.no_review"))
+	_heritage_state.text += "\n" + (tr("yearheritage.next_review") % next_review if next_review <= YearGame.total_days(s) and s["outcome"] == "running" else tr("yearheritage.no_review"))
 	var progress: Dictionary = YearHeritage.progress(s)
 	_heritage_goal.text = _medal_summary()
 	if s["goal"] != "none":

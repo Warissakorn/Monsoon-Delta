@@ -13,7 +13,7 @@ static func board(year: Dictionary) -> GameState:
 	state.population = int(year["population"])
 	state.food = int(year["resources"]["food"])
 	state.wood = int(year["resources"]["wood"])
-	state.turn = 4 if DailyProduction.season(maxi(1, int(year["day"]))) in ["early_rain", "flood"] else 1
+	state.turn = 4 if YearGame.season(year) in ["early_rain", "flood"] else 1
 	# Route anchors for workplaces occupy the same footprint as storage. Their
 	# geometry is supplied by YearVillageView rather than a classic granary.
 	for index: int in range(state.tiles.size()):
@@ -47,14 +47,27 @@ static func board(year: Dictionary) -> GameState:
 	return state
 
 
-static func preview(year: Dictionary, after: Dictionary) -> Dictionary:
+static func preview(year: Dictionary, after: Dictionary, resolved: TurnReport = null) -> Dictionary:
 	if after.is_empty():
 		return {}
 	var state: GameState = board(after)
 	var report: TurnReport = TurnReport.new()
+	report.outcome = C.Outcome.LOSE_HALL if after["outcome"] == "lost_hall" else (C.Outcome.LOSE_POPULATION if after["outcome"] == "lost_population" else C.Outcome.NONE)
+	if resolved != null:
+		report.flow_edges.assign(resolved.flow_edges)
+		report.wheel_transfers.assign(resolved.wheel_transfers)
+		report.fish_food_by_tile = resolved.fish_food_by_tile.duplicate()
+		report.fish_food = resolved.fish_food
+		report.paddy_gains.assign(resolved.paddy_gains)
+		report.paddies_died.assign(resolved.paddies_died)
+		report.brace_results.assign(resolved.brace_results)
+		report.moisture_changes.assign(resolved.moisture_changes)
+		report.irrigation_results.assign(resolved.irrigation_results)
 	for index: int in range(state.tiles.size()):
 		if int(after["health"][index]) == 0 and int(year["health"][index]) > 0:
 			report.destroyed.append({"coord": state.tiles[index].coord, "building": C.Building.NONE})
+		if resolved == null and int(year["crop_growth"][index]) > 0 and int(after["crop_growth"][index]) == 0 and int(after["crop_stress"][index]) >= 5:
+			report.paddies_died.append(state.tiles[index].coord)
 	return {"state": state, "report": report}
 
 
