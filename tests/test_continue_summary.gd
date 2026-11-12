@@ -122,7 +122,7 @@ func test_failed_refresh_clears_stale_details_and_preserves_an_unsupported_file(
 	assert_eq(menu._continue_button.tooltip_text, "")
 	assert_eq(menu._error_key, "msg.save_unsupported")
 	assert_eq(FileAccess.get_file_as_string(PATH), unsupported)
-	assert_eq(menu._new_game_button.theme_type_variation, &"PrimaryButton")
+	assert_eq(menu._new_game_button.theme_type_variation, &"QuietButton")
 	file = FileAccess.open(PATH, FileAccess.WRITE)
 	file.store_string("broken checkpoint")
 	file.close()

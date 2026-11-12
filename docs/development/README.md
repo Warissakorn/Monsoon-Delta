@@ -133,6 +133,10 @@ XDG_DATA_HOME="$PWD/work/menu-draft-qa/en/data" XDG_CONFIG_HOME="$PWD/work/menu-
 
 ## รอบเต็ม 365 วัน
 
+ตรวจ [YearHeritage](../../core/year_heritage.gd) ด้วย `scripts/test.sh --filter=year_heritage` และ `tools/year_heritage_probe.gd` ไทย/อังกฤษตาม [คู่มืออายุอาคารและเหรียญ](../features/YEAR365.md#ตรวจอายุอาคารและเหรียญ) เวลาที่เก็บเป็นวันจริง ภาพที่เทียบเป็นช่วง 30 วันอยู่เฉพาะ YearPresentation ไม่ resolve/serialize สำเนา การเพิ่มกฎบันทึกต้องแยก `monsoon_year` จาก envelope หมายเลขเดียวกันของเซฟ normal เสมอ
+
+ระบบปี v5 เลือกผ่านฟอร์มปีใหม่ (รวมกฎ v4 และอายุอาคาร/เหรียญถาวร) ดู [กฎและบัญชีรายวัน](../features/YEAR365.md#ระบบหมู่บ้านเพิ่มเติมสำหรับปีใหม่) ตรวจเฉพาะส่วนด้วย `scripts/test.sh --filter=year_parity` และ native `tools/year_parity_probe.gd` ทั้งไทย/อังกฤษ คำเตือนใช้ผลถึงวันที่หยุดจริง การทดลองคำสั่งใช้ 7 วันผ่าน notice เหมือน YearPlanner; ทั้งคู่ไม่เขียนเซฟจนผู้เล่นยืนยัน
+
 เปิด `--scene=year` ดู [คู่มือ](../features/YEAR365.md) สำหรับกฎปัจจุบันและเซฟ แก้ `YearGame`/`YearWeather`/`YearCheckpoint` แล้วตรวจ `scripts/test.sh --filter=year` และชุดเต็ม รวม boot CLI เมื่อแก้ทางเข้า Native ใช้ `tools/year_probe.gd` ผ่าน GUI จนจบปี โดย `tools/year_strategy.gd` วางแผนบนสำเนา ใช้ XDG แยกตามคู่มือ เปลี่ยน format/ruleset อย่างชัดเจนหากแก้กฎที่ทำให้เซฟเก่าเข้ากันไม่ได้
 
 รอบใหม่ 127 ช่องใช้ `YearMap`/`YearExpansion` และ `year_expansion` ใน balance ส่วนรอบเดิมคง `year_game` ตรวจ `test_year_expansion.gd` รวมสามโครงการ × สาม seed และโหลดกลางน้ำหลาก [คู่มือระบบขยาย](../features/YEAR_PROJECTS.md) อธิบายสัญญารัศมี/โบนัส/เซฟ `tools/year_project_strategy.gd` ใช้คำสั่งสาธารณะสำหรับรอบใหม่; `tools/year_probe.gd -- --legacy` ตรวจรอบเดิม โดยยังต้องส่ง out-dir และภาษา ห้าม widen การโหลดเซฟปกติเป็น 127 ช่องตามไปด้วย

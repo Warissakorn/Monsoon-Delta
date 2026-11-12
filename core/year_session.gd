@@ -4,6 +4,8 @@ extends GameSession
 
 const YEAR_PATH: String = "user://year365.json"
 var year: Dictionary = {}
+var daily_history: Array[Dictionary] = []
+var visual_reports: Array[TurnReport] = []
 var undo_plans: Array[Dictionary] = []
 var redo_plans: Array[Dictionary] = []
 
@@ -13,10 +15,34 @@ func _init() -> void:
 
 
 func start_year(seed_value: int = 42, goal: String = "none", project: String = "") -> String:
+	if FileAccess.file_exists(save_path):
+		var previous: Dictionary = _read_year()
+		if not String(previous["error"]).is_empty():
+			last_save_error = previous["error"]
+			return last_save_error
 	var next: Dictionary = YearGame.new_game(seed_value, goal) if project.is_empty() else YearGame.new_expanded(seed_value, goal, project)
 	if next.is_empty():
 		return "msg.new_game_failed"
 	year = next
+	daily_history.clear()
+	visual_reports.clear()
+	undo_plans.clear()
+	redo_plans.clear()
+	return checkpoint_year()
+
+
+func start_campaign(seed_value: int, goal: String, project: String, leader: String = "farmer", difficulty: int = 0, classic: bool = false, heritage: bool = false) -> String:
+	if FileAccess.file_exists(save_path):
+		var previous: Dictionary = _read_year()
+		if not String(previous["error"]).is_empty():
+			last_save_error = previous["error"]
+			return last_save_error
+	var next: Dictionary = YearGame.new_campaign(seed_value, goal, project, leader, difficulty, classic, heritage)
+	if next.is_empty():
+		return "msg.new_game_failed"
+	year = next
+	daily_history.clear()
+	visual_reports.clear()
 	undo_plans.clear()
 	redo_plans.clear()
 	return checkpoint_year()
@@ -32,6 +58,7 @@ func edit_year(action: String, id: String = "", tile: int = -1, batches: int = 1
 		"pause": error = YearGame.edit_job(copy, tile, false)
 		"cancel": error = YearGame.edit_job(copy, tile, true)
 		"learn": error = YearGame.learn(copy, id)
+		"irrigation": error = YearClassic.policy(copy, tile, id)
 		"gate": error = YearGame.toggle_gate(copy, tile)
 		"project": error = YearExpansion.choose_project(copy, id)
 	if not error.is_empty():
@@ -66,8 +93,13 @@ func redo_year() -> bool:
 func advance_year(days: int) -> Dictionary:
 	if year.is_empty():
 		return {"days": 0, "events": []}
-	var report: Dictionary = YearGame.advance(year, days)
+	visual_reports.clear()
+	var report: Dictionary = YearGame.advance(year, days, visual_reports)
 	if int(report["days"]) > 0:
+		for visual: TurnReport in visual_reports:
+			daily_history.append(visual.year_ledger.duplicate(true))
+		while daily_history.size() > 365:
+			daily_history.pop_front()
 		undo_plans.clear()
 		redo_plans.clear()
 		checkpoint_year()
@@ -82,6 +114,8 @@ func load_year() -> String:
 		last_save_error = result["error"]
 		return last_save_error
 	year = result["state"]
+	daily_history.clear()
+	visual_reports.clear()
 	undo_plans.clear()
 	redo_plans.clear()
 	last_save_error = ""

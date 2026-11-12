@@ -71,3 +71,7 @@ func _update_route() -> void:
 		transport_board.route_mode = transport_panel.mode()
 		transport_board.route_resource = transport_panel.resource()
 	transport_board.queue_redraw()
+
+
+func _advance_preview(days: int) -> Dictionary:
+	return TransportGame.preview((session as TransportSession).model(), days)["state"]["year"]

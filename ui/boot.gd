@@ -152,6 +152,7 @@ func _show_menu(error: String = "", school_first: bool = false) -> void:
 	menu.sandbox_requested.connect(_show_sandbox)
 	menu.daily_requested.connect(_show_daily)
 	menu.year_requested.connect(_show_year)
+	menu.new_year_requested.connect(_show_new_year)
 	menu.transport_requested.connect(_show_transport)
 	menu.lesson_requested.connect(_start_lesson)
 	menu.language_changed.connect(_change_language)
@@ -218,10 +219,44 @@ func _continue_game() -> void:
 
 func _show_year(goal: String = "none") -> void:
 	var screen: YearScreen = YearScreen.new()
+	screen.initial_difficulty = _initial_difficulty
 	screen.initial_seed = _initial_seed
 	screen.initial_goal = goal
 	screen.menu_requested.connect(_show_menu)
+	screen.language_requested.connect(_change_year_language)
 	_replace_screen(screen)
+
+
+func _show_new_year() -> void:
+	var screen: YearScreen = YearScreen.new()
+	screen.initial_setup = true
+	screen.initial_seed = _initial_seed
+	screen.menu_requested.connect(_show_menu)
+	screen.language_requested.connect(_change_year_language)
+	_replace_screen(screen)
+
+
+func _change_year_language() -> void:
+	var old: YearScreen = _screen as YearScreen
+	var draft: Dictionary = old.ui_draft()
+	_language = "en" if _language == "th" else "th"
+	var error: String = GamePreferences.write({"language": _language})
+	if not error.is_empty():
+		old._latest_notice = old.tr(error)
+		old._refresh()
+		return
+	Localization.setup(_language)
+	var screen: YearScreen = TransportScreen.new() if old is TransportScreen else YearScreen.new()
+	screen.session = old.session
+	screen.initial_seed = old.initial_seed
+	screen.menu_requested.connect(_show_menu)
+	screen.language_requested.connect(_change_year_language)
+	var selected: int = old.selected
+	var camera_draft: Dictionary = old.board.view_draft()
+	_replace_screen(screen)
+	screen.select_tile(selected)
+	screen.board.restore_view_draft(camera_draft)
+	screen.restore_ui_draft(draft)
 
 
 func _show_transport(goal: String = "none") -> void:
@@ -229,6 +264,7 @@ func _show_transport(goal: String = "none") -> void:
 	screen.initial_seed = _initial_seed
 	screen.initial_goal = goal
 	screen.menu_requested.connect(_show_menu)
+	screen.language_requested.connect(_change_year_language)
 	_replace_screen(screen)
 
 
@@ -263,7 +299,7 @@ func _change_language(language: String) -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
-		if _screen is GameScreen:
+		if _screen is GameScreen or _screen is YearScreen:
 			_screen.request_quit()
 		else:
 			get_tree().quit()

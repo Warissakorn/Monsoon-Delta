@@ -161,24 +161,27 @@ static func after_day(s: Dictionary, events: Array) -> void:
 		events.append("exp.event.recovery")
 
 
-static func simulate(board: GameState, s: Dictionary, inflow: float) -> void:
+static func simulate(board: GameState, s: Dictionary, inflow: float, record_visuals: bool = false) -> Dictionary:
 	var half: Array[int] = []
 	for index: int in range(s["structures"].size()):
 		if s["gate_half"][index] and int(s["health"][index]) > 0:
 			half.append(index)
 	if half.is_empty():
-		WaterSim.simulate(board, inflow, false)
-		return
+		return WaterSim.simulate(board, inflow, record_visuals)
 	var iterations: int = int(board.mod("water_iterations"))
 	var wheel: float = float(board.mod("wheel_amount"))
 	board.mods["water_iterations"] = maxi(1, iterations / 2)
-	WaterSim.simulate(board, inflow * 0.5, false)
+	var first: Dictionary = WaterSim.simulate(board, inflow * 0.5, record_visuals)
 	for index: int in half:
 		board.tiles[index].gate_open = false
 	board.mods["water_iterations"] = maxi(1, iterations - int(board.mods["water_iterations"]))
 	board.mods["wheel_amount"] = 0.0
-	WaterSim.simulate(board, inflow * 0.5, false)
+	var second: Dictionary = WaterSim.simulate(board, inflow * 0.5, record_visuals)
 	for index: int in half:
 		board.tiles[index].gate_open = true
 	board.mods["water_iterations"] = iterations
 	board.mods["wheel_amount"] = wheel
+
+	first["flow_edges"].append_array(second["flow_edges"])
+	first["wheel_transfers"].append_array(second["wheel_transfers"])
+	return first

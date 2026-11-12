@@ -1,0 +1,78 @@
+{
+  "checks": [
+    {
+      "check": "isolated campaign starts",
+      "passed": true
+    },
+    {
+      "check": "advisor prepares the recommended recipe",
+      "passed": true
+    },
+    {
+      "check": "advisor does not commit work or rewrite checkpoint",
+      "passed": true
+    },
+    {
+      "check": "explicit native order commits work",
+      "passed": true
+    },
+    {
+      "check": "F2 opens village planning",
+      "passed": true
+    },
+    {
+      "check": "planning shows seven resolved daily projections",
+      "passed": true
+    },
+    {
+      "check": "H opens the work queue",
+      "passed": true
+    },
+    {
+      "check": "native pause returns assigned workers",
+      "passed": true
+    },
+    {
+      "check": "queue filtering does not write a checkpoint",
+      "passed": true
+    },
+    {
+      "check": "paused filter contains the paused job",
+      "passed": true
+    },
+    {
+      "check": "native resume restores the job",
+      "passed": true
+    },
+    {
+      "check": "resumed job leaves the paused filter",
+      "passed": true
+    },
+    {
+      "check": "flood fixture validates before opening",
+      "passed": true
+    },
+    {
+      "check": "forecast identifies a real next-day hall loss",
+      "passed": true
+    },
+    {
+      "check": "forecast supplies a clickable damage location",
+      "passed": true
+    },
+    {
+      "check": "risk location returns to the board inspector",
+      "passed": true
+    },
+    {
+      "check": "loss confirmation precedes idle-worker warning",
+      "passed": true
+    },
+    {
+      "check": "native cancellation preserves day and checkpoint",
+      "passed": true
+    }
+  ],
+  "language": "th",
+  "passed": true
+}
