@@ -9,6 +9,9 @@ var _initial_difficulty: int = 0
 var _initial_ruleset: String = "legacy"
 var _language: String = "en"
 var _save_path: String = SaveIO.DEFAULT_PATH
+var _practice_origin: Node
+var _practice_origin_language: String = ""
+var _practice_origin_process: ProcessMode = Node.PROCESS_MODE_INHERIT
 
 
 func _ready() -> void:
@@ -153,6 +156,7 @@ func _show_menu(error: String = "", school_first: bool = false) -> void:
 	menu.daily_requested.connect(_show_daily)
 	menu.year_requested.connect(_show_year)
 	menu.new_year_requested.connect(_show_new_year)
+	menu.year_practice_requested.connect(_start_year_practice)
 	menu.transport_requested.connect(_show_transport)
 	menu.lesson_requested.connect(_start_lesson)
 	menu.language_changed.connect(_change_language)
@@ -222,8 +226,7 @@ func _show_year(goal: String = "none") -> void:
 	screen.initial_difficulty = _initial_difficulty
 	screen.initial_seed = _initial_seed
 	screen.initial_goal = goal
-	screen.menu_requested.connect(_show_menu)
-	screen.language_requested.connect(_change_year_language)
+	_bind_year_screen(screen)
 	_replace_screen(screen)
 
 
@@ -231,8 +234,7 @@ func _show_new_year() -> void:
 	var screen: YearScreen = YearScreen.new()
 	screen.initial_setup = true
 	screen.initial_seed = _initial_seed
-	screen.menu_requested.connect(_show_menu)
-	screen.language_requested.connect(_change_year_language)
+	_bind_year_screen(screen)
 	_replace_screen(screen)
 
 
@@ -246,25 +248,30 @@ func _change_year_language() -> void:
 		old._refresh()
 		return
 	Localization.setup(_language)
-	var screen: YearScreen = TransportScreen.new() if old is TransportScreen else YearScreen.new()
+	var screen: YearScreen = YearPracticeScreen.new() if old is YearPracticeScreen else (TransportScreen.new() if old is TransportScreen else YearScreen.new())
 	screen.session = old.session
 	screen.initial_seed = old.initial_seed
-	screen.menu_requested.connect(_show_menu)
-	screen.language_requested.connect(_change_year_language)
+	screen.initial_setup = old.initial_setup
+	screen.initial_goal = old.initial_goal
+	screen.initial_project = old.initial_project
+	screen.initial_difficulty = old.initial_difficulty
+	var setup_visible: bool = old._restart.visible
+	_bind_year_screen(screen)
 	var selected: int = old.selected
 	var camera_draft: Dictionary = old.board.view_draft()
 	_replace_screen(screen)
 	screen.select_tile(selected)
 	screen.board.restore_view_draft(camera_draft)
 	screen.restore_ui_draft(draft)
+	if not setup_visible:
+		screen._restart.hide()
 
 
 func _show_transport(goal: String = "none") -> void:
 	var screen: TransportScreen = TransportScreen.new()
 	screen.initial_seed = _initial_seed
 	screen.initial_goal = goal
-	screen.menu_requested.connect(_show_menu)
-	screen.language_requested.connect(_change_year_language)
+	_bind_year_screen(screen)
 	_replace_screen(screen)
 
 
@@ -303,3 +310,77 @@ func _notification(what: int) -> void:
 			_screen.request_quit()
 		else:
 			get_tree().quit()
+
+
+func _bind_year_screen(screen: YearScreen) -> void:
+	screen.menu_requested.connect(_return_year_practice if screen is YearPracticeScreen else _show_menu)
+	screen.language_requested.connect(_change_year_language)
+	screen.practice_requested.connect(_start_year_practice)
+	if screen is YearPracticeScreen:
+		(screen as YearPracticeScreen).quit_requested.connect(_quit_year_practice)
+
+
+func _start_year_practice() -> void:
+	if _screen == null or _practice_origin != null:
+		return
+	_practice_origin = _screen
+	_practice_origin_language = _language
+	_practice_origin_process = _screen.process_mode
+	remove_child(_screen)
+	_practice_origin.process_mode = Node.PROCESS_MODE_DISABLED
+	var next: YearPracticeScreen = YearPracticeScreen.new()
+	_bind_year_screen(next)
+	_screen = next
+	add_child(next)
+
+
+func _return_year_practice() -> void:
+	if _practice_origin == null:
+		return
+	var origin: Node = _practice_origin
+	_practice_origin = null
+	origin.process_mode = _practice_origin_process
+	if _language == _practice_origin_language:
+		_replace_screen(origin)
+		return
+	# Rebuild translated text while retaining the live run and all of its planning data.
+	if origin is YearScreen:
+		var old: YearScreen = origin as YearScreen
+		var draft: Dictionary = old.ui_draft()
+		var camera: Dictionary = old.board.view_draft()
+		var selected: int = old.selected
+		var next: YearScreen = TransportScreen.new() if old is TransportScreen else YearScreen.new()
+		next.session = old.session
+		next.initial_seed = old.initial_seed
+		next.initial_setup = old.initial_setup
+		next.initial_goal = old.initial_goal
+		next.initial_project = old.initial_project
+		next.initial_difficulty = old.initial_difficulty
+		var setup_visible: bool = old._restart.visible
+		_bind_year_screen(next)
+		origin.queue_free()
+		_replace_screen(next)
+		next.select_tile(selected)
+		next.board.restore_view_draft(camera)
+		next.restore_ui_draft(draft)
+		if not setup_visible:
+			next._restart.hide()
+	else:
+		var draft: Dictionary = (origin as MainMenu).setup_draft()
+		origin.queue_free()
+		_show_menu()
+		(_screen as MainMenu).restore_setup_draft(draft)
+
+
+func _quit_year_practice() -> void:
+	_return_year_practice()
+	if _screen is YearScreen:
+		(_screen as YearScreen).request_quit()
+	else:
+		get_tree().quit()
+
+
+func _exit_tree() -> void:
+	if is_instance_valid(_practice_origin) and _practice_origin.get_parent() == null:
+		_practice_origin.free()
+	_practice_origin = null

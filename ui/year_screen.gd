@@ -3,10 +3,15 @@ extends Control
 
 signal menu_requested()
 signal language_requested()
+signal practice_requested()
 var initial_setup: bool = false
 var _leave_confirmation: ConfirmationDialog
 var _quit_after_confirm: bool = false
 var _settings: AcceptDialog
+var _guide: YearGuideDialog
+var _help_button: Button
+var _back_button: Button
+var _save_button: Button
 var _advance_confirmation: ConfirmationDialog
 var _pending_days: int = 1
 var _history: Label
@@ -136,14 +141,19 @@ func _ready() -> void:
 	margin.add_child(root)
 	var nav: HBoxContainer = HBoxContainer.new()
 	root.add_child(nav)
-	nav.add_child(_button("menu.back", _request_menu))
+	_back_button = _button("menu.back", _request_menu)
+	nav.add_child(_back_button)
 	nav.add_child(_button("menu.settings", func(): _settings.popup_centered(Vector2i(600, 260))))
+	_help_button = _button("yearguide.open", _open_guide)
+	_help_button.visible = not session is TransportSession
+	nav.add_child(_help_button)
 	_new_button = _button("year.new", func(): _restart.popup_centered(Vector2i(650, 650)))
 	nav.add_child(_new_button)
 	_heritage_button = _button("yearheritage.open", func(): _tabs.current_tab = 7)
 	_heritage_button.hide()
 	nav.add_child(_heritage_button)
-	nav.add_child(_button("daily.retry_save", func(): session.checkpoint_year(); _refresh()))
+	_save_button = _button("daily.retry_save", func(): session.checkpoint_year(); _refresh())
+	nav.add_child(_save_button)
 	var title: Label = _label(tr(_title_key()), "Heading")
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	nav.add_child(title)
@@ -535,6 +545,10 @@ func _ready() -> void:
 		row.add_child(value)
 		_result_values[id] = value
 	add_child(_advance_confirmation)
+	_guide = YearGuideDialog.new()
+	_guide.theme = theme
+	_guide.practice_requested.connect(func(): practice_requested.emit())
+	add_child(_guide)
 	_refresh()
 	_apply_reduced_motion()
 	if initial_setup:
@@ -1060,7 +1074,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	var focused: Control = get_viewport().gui_get_focus_owner()
 	if focused is LineEdit or focused is TextEdit:
 		return
-	if _restart.visible or _settings.visible or _advance_confirmation.visible or _leave_confirmation.visible or _order_confirmation.visible or _result_dialog.visible:
+	if _restart.visible or _settings.visible or _advance_confirmation.visible or _leave_confirmation.visible or _order_confirmation.visible or _result_dialog.visible or _guide.visible:
 		return
 	var code: Key = event.physical_keycode if event.physical_keycode != 0 else event.keycode
 	if code == KEY_ESCAPE:
@@ -1069,6 +1083,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		_settings.popup_centered(Vector2i(600, 260))
+	elif code == KEY_F1:
+		_open_guide()
 	elif code == KEY_F2:
 		_tabs.current_tab = 4
 	elif code == KEY_H:
@@ -1111,10 +1127,11 @@ func request_quit() -> void:
 
 
 func ui_draft() -> Dictionary:
-	return {"seed": _seed.text, "goal": _goal.selected, "project": _project.selected, "leader": _leader.selected, "difficulty": _difficulty.value, "group": _group.selected, "action": _action.selected, "batches": _batches.value, "repeat": _repeat.button_pressed, "direction": _direction.selected, "preview": _preview.button_pressed, "tab": _tabs.current_tab, "stop_at": _stop_at.value, "reserve": _reserve.value, "queue_filter": _queue_filter.selected, "classic": _classic.button_pressed, "history_day": _history_day, "history_view": _history_view.duplicate(true), "history_selected": _history_selected, "building_list": _building_list.draft(), "village_context": _village_context.duplicate(true), "appearance_help": _heritage_help.button_pressed}
+	return {"seed": _seed.text, "goal": _goal.selected, "project": _project.selected, "leader": _leader.selected, "difficulty": _difficulty.value, "group": _group.selected, "action": _action.selected, "batches": _batches.value, "repeat": _repeat.button_pressed, "direction": _direction.selected, "preview": _preview.button_pressed, "tab": _tabs.current_tab, "stop_at": _stop_at.value, "reserve": _reserve.value, "queue_filter": _queue_filter.selected, "classic": _classic.button_pressed, "history_day": _history_day, "history_view": _history_view.duplicate(true), "history_selected": _history_selected, "building_list": _building_list.draft(), "village_context": _village_context.duplicate(true), "appearance_help": _heritage_help.button_pressed, "guide_topic": _guide._tabs.current_tab}
 
 
 func restore_ui_draft(draft: Dictionary) -> void:
+	_guide._tabs.current_tab = clampi(int(draft.get("guide_topic", 0)), 0, _guide._tabs.get_tab_count() - 1)
 	_classic.button_pressed = bool(draft.get("classic", false))
 	_history_day = int(draft.get("history_day", -1))
 	_history_view = draft.get("history_view", {}).duplicate(true)
@@ -1193,7 +1210,7 @@ func _apply_reduced_motion() -> void:
 
 func _process(_delta: float) -> void:
 	if board != null and _leave_confirmation != null:
-		board.set_suspended(_settings.visible or _restart.visible or _advance_confirmation.visible or _leave_confirmation.visible or _order_confirmation.visible or _result_dialog.visible)
+		board.set_suspended(_settings.visible or _restart.visible or _advance_confirmation.visible or _leave_confirmation.visible or _order_confirmation.visible or _result_dialog.visible or _guide.visible)
 
 
 func _resource_snapshot() -> Dictionary:
@@ -1469,3 +1486,9 @@ func _clear_village_inspection() -> void:
 	_village_return.hide()
 	if board is YearBoard3D and (board as YearBoard3D).village != null:
 		(board as YearBoard3D).village.clear_result_location()
+
+
+func _open_guide() -> void:
+	if session is TransportSession:
+		return
+	_guide.open_for(session.year, session is YearPracticeSession)

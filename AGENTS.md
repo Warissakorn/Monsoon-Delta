@@ -33,6 +33,7 @@ The imported [M5 roadmap](docs/ROADMAP.md) asks for approval of the 30 cards, 15
 - Runtime balance is `data/balance.json`, not `docs/examples/data/balance.json`. Player text belongs in `translations/strings.csv`; maintain Thai/English key and placeholder parity.
 - Opt-in wood transport uses `TransportGame` around an unchanged year v2, with `TransportSession` owning combined Undo/Redo and `user://transport365.json` (`monsoon_transport` v1 / `transport365_v1`). Preserve local/reserved/in-transit accounting, shared year labor, real cargo positions and physical returns. Check nested year float64/RNG and logistics together; never overwrite normal, daily or year save paths. See `docs/features/TRANSPORT.md` for the day order and ruleset contract.
 - Sandbox and tests use isolated state/save paths. Do not benchmark against or modify a real player save.
+- YearPracticeSession runs the real year v5 rules in memory. Its lesson progress stays outside the year payload; block both year and inherited normal-session checkpoint/load/start paths. Practice keeps the live origin screen detached and disabled; return preserves its run, plans, history, UI and camera. Language rebuilding must retain an unstarted setup without creating a player year. Defer the guide's practice signal until its embedded-window input event finishes.
 
 ## Verify and hand off
 
