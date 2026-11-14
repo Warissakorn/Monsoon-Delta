@@ -44,7 +44,7 @@ godot --path . -- --scene=year --seed=42 --goal=forest --lang=th
 
 ## ระบบหมู่บ้านเพิ่มเติมสำหรับปีใหม่
 
-เลือกช่อง **เปิดระบบหมู่บ้านเพิ่มเติมสำหรับปีใหม่นี้** ในฟอร์มเริ่มปีใหม่ ใช้แผนที่/งานรายวัน/ผู้นำ/ความยาก/โครงการเดิม ใช้กฎ `year365_v5` ที่รวมกลไก v4 พร้อมอายุอาคารสะสมและเหรียญเป้าหมาย โดยไม่แปลงรอบที่กำลังเล่น ค่าต้นทุนและค่ากลไกใหม่อยู่ใน `year_classic` ของ [balance](../../data/balance.json)
+เลือกช่อง **ระบบหมู่บ้านเพิ่มเติม** ในฟอร์มเริ่มปีใหม่ ใช้แผนที่/งานรายวัน/ผู้นำ/ความยาก/โครงการเดิม ใช้กฎ `year365_v5` ที่รวมกลไก v4 พร้อมอายุอาคารสะสมและเหรียญเป้าหมาย โดยไม่แปลงรอบที่กำลังเล่น ค่าต้นทุนและค่ากลไกใหม่อยู่ใน `year_classic` ของ [balance](../../data/balance.json)
 
 | ระบบ | กฎรายวัน |
 | --- | --- |
@@ -129,6 +129,35 @@ XDG_DATA_HOME="$PWD/work/year-age-th/data" XDG_CONFIG_HOME="$PWD/work/year-age-t
 | --- | --- | --- |
 | ไทย | [27 checks](../reports/year-heritage-native-th.json) | [หมู่บ้าน/เหรียญ](../images/year-heritage-village-th.png) · [อาคารอายุ 90 วัน](../images/year-heritage-building-th.png) · [ผลครบปี](../images/year-heritage-result-th.png) · [ตั้งปีใหม่](../images/year-heritage-setup-th.png) |
 | English | [27 checks](../reports/year-heritage-native-en.json) | [Village/medals](../images/year-heritage-village-en.png) · [90-day building](../images/year-heritage-building-en.png) · [Year result](../images/year-heritage-result-en.png) · [New year](../images/year-heritage-setup-en.png) |
+
+## ขัดเกลาหน้าหมู่บ้านและผลปลายรอบ
+
+หน้าหมู่บ้านแยกการ์ดเป้าหมาย ความเป็นอยู่ และโครงการ ข้อมูลเหรียญอยู่ด้านบนและแสดงเฉพาะเงื่อนไขของเป้าหมายที่เลือก เช่น forest แสดงคน/ป่า โดยไม่แสดงข้าว 0/0 หลักฐานวันที่ได้รับยังแยกจากยอดปัจจุบัน คำอธิบายภาพหมู่บ้านและเรื่องเล่าเปิดอ่านได้เมื่อต้องการ
+
+รายการอาคารแสดงสภาพปัจจุบันพร้อมอายุ เลือกกลุ่ม **ทั้งหมด / บ้านพัก / งานและส่วนกลาง / ระบบน้ำ / ต้องซ่อม** และเรียง **ตำแหน่ง / อายุมากก่อน / สภาพต่ำก่อน** ได้ รวมซากอาคารที่ไม่มีอายุสะสมแล้ว พร้อมข้อความเมื่อไม่พบอาคารในกลุ่มนั้น ตัวกรองและการเรียงไม่แก้สถานะเกมหรือเซฟ
+
+กดรายการอาคารเพื่อดูช่องบนกระดาน แล้วใช้ **กลับรายการอาคาร · Esc** เพื่อคืนกล้อง ช่องที่เลือก เครื่องมือ ตัวกรอง การเรียง และตำแหน่งเลื่อนเดิม การสลับภาษารักษาสถานะการดูนี้ไว้ ประวัติรายวันกับรายการอาคารมีเป้าหมายกลับเพียงรายการเดียว เมื่อเดินวันหรือเริ่มปีใหม่จะล้างบริบทดูอาคารเดิม
+
+หน้าสรุปปลายรอบใช้ตัวเลขคะแนนรวมที่เด่นและตารางแยกรายการ จัดค่าให้ตรงกัน มี **กลับสู่กระดาน** และ **ดูหมู่บ้านและเหรียญ** ปุ่มอยู่ในขอบหน้าต่าง ส่วนเนื้อหาเลื่อนได้หากจำเป็น รอบที่จบแล้วซ่อนพยากรณ์วันถัดไป ปิดพรีวิวอนาคต และแสดงข้อความว่ารอบจบแล้ว ตัวเลือก **ระบบหมู่บ้านเพิ่มเติม** อยู่ช่วงบนของแบบฟอร์มปีใหม่โดยไม่ต้องเลื่อนหา
+
+งานนี้ปรับการแสดงผลและการนำทาง คงกฎ คะแนน รูปแบบเซฟ และความเข้ากันได้ v1–v5 ไม่มีการให้รางวัลหรือเพิ่มอายุจากการอ่านหน้าจอ
+
+### ตรวจส่วนขัดเกลา
+
+ใช้ `scripts/test.sh --filter=year_polish` และชุดเต็ม [เทสต์](../../tests/test_year_polish.gd) ครอบคลุมเงื่อนไขเป้าหมายที่เกี่ยวข้อง การกรองซาก/สภาพ การกลับคืนกล้อง/เครื่องมือ สลับภาษา สรุปคะแนนจริง การซ่อนพรีวิวเมื่อจบรอบ การไม่แสดง controls ของกฎใหม่บนเซฟเก่า และการไม่แก้ไฟล์จากการดูข้อมูล
+
+[Native probe](../../tools/year_polish_probe.gd) ใช้ public replay 90 วันและเล่นถึงวันสุดท้ายจริง ตรวจเมาส์/ปุ่มลัดและภาพไทย/อังกฤษที่ 1280×720 กับ 1600×900 แยก XDG/เซฟจากผู้เล่น:
+
+```sh
+XDG_DATA_HOME="$PWD/work/year-polish-th/data" XDG_CONFIG_HOME="$PWD/work/year-polish-th/config" XDG_CACHE_HOME="$PWD/work/year-polish-th/cache" godot --path . --audio-driver Dummy --resolution 1280x720 --script res://tools/year_polish_probe.gd -- --out-dir="$PWD/work/year-polish-th" --lang=th
+```
+
+เปลี่ยนภาษา/โฟลเดอร์เป็น `en` สำหรับอังกฤษ และเพิ่ม `--wide` หลัง `--` เพื่อทดสอบ 1600×900 ผลตรวจ Godot 4.6.3 วันที่ 2026-11-14: ชุดเต็ม **734/734**, เฉพาะส่วน **8/8**, เอกสารต้นฉบับ 54/54 คงเดิม และ diff check ผ่าน ผล native **27/27 ทุกภาษาและขนาดหน้าต่าง** รวม 4 ชุด ใช้ public replay จริง ผลตรวจ UI อัตโนมัติไม่ใช่ human playtest หรือหลักฐานสมดุลใหม่
+
+| ภาษา | 1280×720 | 1600×900 | ภาพ 1280×720 |
+| --- | --- | --- | --- |
+| ไทย | [27 checks](../reports/year-polish-native-th-1280.json) | [27 checks](../reports/year-polish-native-th-1600.json) | [เป้าหมาย](../images/year-polish-village-th.png) · [รายการอาคาร](../images/year-polish-buildings-th.png) · [ดูช่อง/กลับ](../images/year-polish-inspector-th.png) · [คะแนน](../images/year-polish-result-th.png) · [ปีใหม่](../images/year-polish-setup-th.png) |
+| English | [27 checks](../reports/year-polish-native-en-1280.json) | [27 checks](../reports/year-polish-native-en-1600.json) | [Ambition](../images/year-polish-village-en.png) · [Buildings](../images/year-polish-buildings-en.png) · [Inspect/return](../images/year-polish-inspector-en.png) · [Score](../images/year-polish-result-en.png) · [New year](../images/year-polish-setup-en.png) |
 
 ## กระดาน 3D และการตอบสนองแบบโหมดปกติ
 

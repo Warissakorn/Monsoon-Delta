@@ -66,7 +66,7 @@ func _run() -> void:
 	_check(int(session.year["day"]) == 365 and session.year["outcome"] == "won", "native final-day input wins the full year")
 	_check(screen._result_dialog.visible, "committed end opens the score breakdown")
 	var parts: Dictionary = YearHeritage.score_parts(session.year)
-	_check(int(parts["goal"]) == 250 and int(parts["total"]) == int(session.year["score"]) and screen._result_dialog.dialog_text.contains(str(parts["total"])), "result shows the real permanent bonus and final score")
+	_check(int(parts["goal"]) == 250 and int(parts["total"]) == int(session.year["score"]) and screen._result_total.text.contains(str(parts["total"])), "result shows the real permanent bonus and final score")
 	await _capture("year-heritage-result-" + language)
 	bytes = FileAccess.get_file_as_bytes(session.save_path)
 	await _key(KEY_SPACE)

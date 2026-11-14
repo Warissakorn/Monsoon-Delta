@@ -1,0 +1,118 @@
+{
+  "checks": [
+    {
+      "check": "isolated v5 year starts",
+      "passed": true
+    },
+    {
+      "check": "real daily replay reaches a valid ninety-day village",
+      "passed": true
+    },
+    {
+      "check": "goal card shows the earned medal and only useful requirements",
+      "passed": true
+    },
+    {
+      "check": "ambition is shown before the long building list",
+      "passed": true
+    },
+    {
+      "check": "native option menu opens",
+      "passed": true
+    },
+    {
+      "check": "native option selects the requested item",
+      "passed": true
+    },
+    {
+      "check": "native option menu opens",
+      "passed": true
+    },
+    {
+      "check": "native option selects the requested item",
+      "passed": true
+    },
+    {
+      "check": "native home filter removes workplaces from the list",
+      "passed": true
+    },
+    {
+      "check": "native oldest-first sort is selected",
+      "passed": true
+    },
+    {
+      "check": "building inspection keeps the selected work tool and offers return",
+      "passed": true
+    },
+    {
+      "check": "Escape restores village tab, camera and prior selection",
+      "passed": true
+    },
+    {
+      "check": "return keeps the original filter, order and scroll position",
+      "passed": true
+    },
+    {
+      "check": "native option menu opens",
+      "passed": true
+    },
+    {
+      "check": "native option selects the requested item",
+      "passed": true
+    },
+    {
+      "check": "an empty repair filter gives a clear empty state",
+      "passed": true
+    },
+    {
+      "check": "extra systems are visible in the initial new-year form without scrolling",
+      "passed": true
+    },
+    {
+      "check": "navigation, filters and cancelled setup do not change gameplay, RNG, save or Undo",
+      "passed": true
+    },
+    {
+      "check": "full-year replay starts",
+      "passed": true
+    },
+    {
+      "check": "native final day opens the polished result card",
+      "passed": true
+    },
+    {
+      "check": "result card shows the actual total and medal contribution",
+      "passed": true
+    },
+    {
+      "check": "every score value fits without wrapping or clipping",
+      "passed": true
+    },
+    {
+      "check": "completed year has no next-day forecast or ghost prediction",
+      "passed": true
+    },
+    {
+      "check": "result window fits within the viewport",
+      "passed": true
+    },
+    {
+      "check": "native result action opens village and medals",
+      "passed": true
+    },
+    {
+      "check": "back-to-map action returns to the inspector",
+      "passed": true
+    },
+    {
+      "check": "reopening results and viewing the village do not save or resolve again",
+      "passed": true
+    }
+  ],
+  "language": "en",
+  "passed": true,
+  "resolution": [
+    1280,
+    720
+  ]
+}
