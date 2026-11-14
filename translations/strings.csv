@@ -1111,3 +1111,120 @@ Base %d × %.1f = %d points","คน %d · อาหาร %d
 "yearheritage.event.condition","The village appearance changed after repeated reviews.","ภาพความเป็นอยู่ของหมู่บ้านเปลี่ยนตามผลประเมินสะสม"
 "yearheritage.next_review","Next review: day %d","ประเมินครั้งถัดไปวันที่ %d"
 "yearheritage.no_review","No further reviews this year.","ไม่มีการประเมินเพิ่มเติมในปีนี้"
+"yearpolish.buildings","Buildings","อาคารในหมู่บ้าน"
+"yearpolish.filter.all","All buildings","อาคารทั้งหมด"
+"yearpolish.filter.homes","Homes","บ้านพัก"
+"yearpolish.filter.work","Work & community","งานและส่วนกลาง"
+"yearpolish.filter.water","Water works","ระบบน้ำ"
+"yearpolish.filter.damaged","Needs repair","ต้องซ่อม"
+"yearpolish.sort.location","Map order","ตามตำแหน่ง"
+"yearpolish.sort.age","Oldest first","อายุมากก่อน"
+"yearpolish.sort.condition","Lowest condition first","สภาพต่ำก่อน"
+"yearpolish.filter_help","Show a building group without changing the village.","เลือกกลุ่มอาคารที่ต้องการดู"
+"yearpolish.sort_help","Order the list by map location, age or condition.","เรียงรายการตามตำแหน่ง อายุ หรือสภาพ"
+"yearpolish.building_count","%d of %d buildings","แสดง %d จาก %d อาคาร"
+"yearpolish.empty_buildings","No buildings match this filter.","ยังไม่มีอาคารในกลุ่มนี้"
+"yearpolish.ruin","Ruins · restore to start a new building history.","ซากอาคาร · ฟื้นฟูแล้วเริ่มนับอายุใหม่"
+"yearpolish.inspect_building","Inspect this building. Return to this list with Esc.","ดูอาคารบนกระดาน กด Esc เพื่อกลับรายการนี้"
+"yearpolish.return_village","Back to buildings · Esc","กลับรายการอาคาร · Esc"
+"yearpolish.ambition","Village ambition","เป้าหมายหมู่บ้าน"
+"yearpolish.appearance_help","How village appearance develops","ภาพหมู่บ้านพัฒนาอย่างไร"
+"yearpolish.project","Village project","โครงการหมู่บ้าน"
+"yearpolish.village_story","The village story","เรื่องราวหมู่บ้าน"
+"yearpolish.enable","Extra village systems","ระบบหมู่บ้านเพิ่มเติม"
+"yearpolish.mode_help","Raft homes, traps, bracing, moisture, irrigation, building age and medals.","เรือนแพ ไซ ค้ำบ้าน ความชื้น จัดสรรน้ำ อายุอาคาร และเหรียญเป้าหมาย"
+"yearpolish.back_board","Back to the map","กลับสู่กระดาน"
+"yearpolish.view_village","View village & medals","ดูหมู่บ้านและเหรียญ"
+"yearpolish.final_score","%d points","%d คะแนน"
+"yearpolish.score.people","Villagers","ประชากร"
+"yearpolish.score.food","Food remaining","อาหารคงเหลือ"
+"yearpolish.score.challenges","Challenges completed","ภารกิจที่สำเร็จ"
+"yearpolish.score.project","Village project","โครงการหมู่บ้าน"
+"yearpolish.score.goal","Ambition medal","เหรียญเป้าหมาย"
+"yearpolish.score.base","Base score","คะแนนฐาน"
+"yearpolish.score.multiplier","Difficulty multiplier","ตัวคูณความยาก"
+"yearpolish.now","Now:","ปัจจุบัน:"
+"yearpolish.awarded_with","When earned:","วันที่ได้รับ:"
+"yearpolish.metric.population","People","คน"
+"yearpolish.metric.forests","Forests","ป่าโต"
+"yearpolish.metric.harvest","Rice harvested","ข้าวเก็บเกี่ยวสะสม"
+"yearpolish.finished_plan","This year has ended. View the result or inspect the village.","รอบนี้จบแล้ว ดูสรุปคะแนนหรือตรวจหมู่บ้านได้"
+"yearguide.title","365-day field guide","คู่มือโหมด 365 วัน"
+"yearguide.open","How to play · F1","วิธีเล่น · F1"
+"yearguide.before_start","Start a year, or try the separate practice village first.","เริ่มปีใหม่ หรือทดลองบทฝึกในหมู่บ้านแยกก่อนเล่นจริงได้"
+"yearguide.current","Day %d · meals %d/day · free workers %d · housing %d · food storage %d","วันที่ %d · ใช้อาหาร %d/วัน · คนว่าง %d · ที่พัก %d · จุอาหาร %d"
+"yearguide.daily.title","Daily survival","อยู่รอดรายวัน"
+"yearguide.daily.body","One day is one turn. Work progresses first, then water, then meals and population. Production can finish on the same day that food is eaten, so the net food change may still be negative.
+
+Keep food work running and check housing. Every job reserves its materials and workers; idle people still need meals. F2 shows a seven-day forecast of the current plan.
+
+Advance up to 7 days or until the next notice. Time stops at the first work completion, warning or other notice. Inspect the report and adjust your plan before continuing.","หนึ่งวันคือหนึ่งเทิร์น งานคืบหน้าก่อน จากนั้นน้ำ อาหาร และประชากร ผลิตอาหารได้ในวันเดียวกับที่ต้องกิน ยอดอาหารสุทธิจึงอาจยังลดลง
+
+รักษาสายผลิตอาหารและตรวจที่พัก ทุกงานสำรองวัสดุและคน คนว่างยังกินอาหาร เปิด F2 เพื่อดูแผนปัจจุบันล่วงหน้าเจ็ดวัน
+
+เดินได้สูงสุด 7 วันหรือถึงประกาศถัดไป เวลาเดินจะหยุดเมื่อพบงานเสร็จ คำเตือน หรือประกาศแรก อ่านผลแล้วปรับแผนก่อนเดินต่อ"
+"yearguide.work.title","Workers & orders","คนและงาน"
+"yearguide.work.body","Select a hex and an action. The form shows workers, days, materials and why an order cannot be placed. Prepare an advisor suggestion or try an order for seven days, then assign it explicitly.
+
+Repeat keeps a production job running. Pausing returns its workers; cancelling refunds only unused reserved materials. Check the work queue with H for missing water, resources, reach or damaged workplaces.
+
+Undo/Redo changes the current plan only. Once a day resolves, its results cannot be undone.","เลือกช่องและคำสั่ง แบบฟอร์มแสดงคน วัน วัสดุ และเหตุที่ทำไม่ได้ ใช้คำแนะนำเตรียมงานหรือทดลองคำสั่งล่วงหน้าเจ็ดวัน แล้วกดมอบหมายเอง
+
+ทำซ้ำช่วยให้สายผลิตเดินต่อ พักงานคืนคนให้ว่าง ยกเลิกคืนเฉพาะวัสดุที่สำรองแต่ยังไม่ใช้ เปิดคิว H เพื่อดูเหตุขาดน้ำ วัตถุดิบ ระยะทำงาน หรือโรงผลิตเสียหาย
+
+ย้อนแผน/ทำซ้ำใช้กับแผนปัจจุบัน เมื่อเดินวันแล้วจะย้อนผลวันนั้นไม่ได้"
+"yearguide.water.title","Water & repairs","น้ำและซ่อมแซม"
+"yearguide.water.body","The river changes with the seasons. Watch the inflow forecast and next-day preview. Red markers show predicted damage; inspect the affected hex before advancing.
+
+Elevation, gates, reservoirs and waterwheels alter real water flow. Buildings lose condition when water reaches their tolerance. Repairs take workers, materials and time, so start before condition reaches zero.
+
+A loss warning is shown before idle-worker advice. Cancelling the warning or inspecting a risk does not advance time.","แม่น้ำเปลี่ยนตามฤดู ดูพยากรณ์น้ำเข้าและพรีวิววันถัดไป เครื่องหมายแดงแสดงความเสียหายที่คาด ควรตรวจช่องเสี่ยงก่อนเดินเวลา
+
+ระดับดิน ประตู อ่าง และระหัดเปลี่ยนทางน้ำจริง อาคารเสียสภาพเมื่อน้ำถึงระดับที่ทนได้ ซ่อมต้องใช้คน วัสดุ และเวลา จึงควรเริ่มก่อนสภาพเหลือศูนย์
+
+คำเตือนแพ้จะแสดงก่อนคำเตือนคนว่าง ยกเลิกหรือกดดูช่องเสี่ยงจะยังไม่เดินวัน"
+"yearguide.village.title","Village & goals","หมู่บ้านและเป้าหมาย"
+"yearguide.village.body","Research improves the daily economy. Read its requirements and reserve enough supplies for daily meals before spending materials.
+
+Inspect a hex for actual condition, crop growth and water. Daily history records what really happened, including resource causes and coordinates.","วิจัยช่วยพัฒนาเศรษฐกิจรายวัน อ่านเงื่อนไขและสำรองอาหารประจำวันก่อนใช้วัสดุ
+
+ตรวจช่องเพื่อดูสภาพ ผลผลิต และน้ำจริง ประวัติรายวันเก็บผลที่เกิดขึ้น พร้อมสาเหตุทรัพยากรและพิกัด"
+"yearguide.extra_on","This year has extra systems: raft homes, passive fish traps, one-day bracing, stored moisture, irrigation priorities and clearing paddies/saplings. Their costs and limits are shown in the order form.","รอบนี้มีระบบเพิ่มเติม: เรือนแพ ไซจับปลา ค้ำบ้านเฉพาะวัน ความชื้นสะสม ลำดับรับน้ำ และรื้อนา/กล้าไม้ ดูต้นทุนและข้อจำกัดในแบบฟอร์มคำสั่ง"
+"yearguide.extra_off","This year keeps its original rules. Extra village systems can be chosen for a new year; opening this guide does not add them to the current run.","รอบนี้ใช้กติกาเดิม ระบบหมู่บ้านเพิ่มเติมเลือกได้ตอนเริ่มปีใหม่ การเปิดคู่มือไม่เพิ่มระบบให้รอบที่เล่นอยู่"
+"yearguide.heritage_on","This year records real building age and village appearance. The building list can focus a location and return with Esc. Appearance adds no production or housing. Earned ambition medals keep their base bonus even if requirements fall later.","รอบนี้เก็บอายุอาคารจริงและภาพความเป็นอยู่ กดรายการอาคารเพื่อดูช่องแล้วใช้ Esc กลับ ภาพตกแต่งไม่เพิ่มผลผลิตหรือที่พัก เหรียญที่ได้รับแล้วเก็บโบนัสไว้แม้เงื่อนไขลดลงภายหลัง"
+"yearguide.controls.title","Controls","ปุ่มใช้งาน"
+"yearguide.controls.body","Space/Enter: next day · F1: this guide · F2: forecast · H: work queue · F3: daily history
+
+Ctrl+Z: undo plan · Ctrl+Y / Ctrl+Shift+Z: redo plan
+
+WASD/arrows: pan · Q/E: rotate · mouse wheel: zoom · middle drag: pan · V/L: labels · Tab: preview
+
+1–0 / C P B X R prepare tools supported by your current rules. Right-click cancels the selected tool. Esc returns from building inspection or opens settings.","Space/Enter: วันถัดไป · F1: คู่มือนี้ · F2: คาดการณ์ · H: คิวงาน · F3: ประวัติรายวัน
+
+Ctrl+Z: ย้อนแผน · Ctrl+Y / Ctrl+Shift+Z: ทำแผนซ้ำ
+
+WASD/ลูกศร: เลื่อน · Q/E: หมุน · ล้อเมาส์: ซูม · ลากปุ่มกลาง: เลื่อน · V/L: ป้ายระดับ · Tab: พรีวิว
+
+1–0 / C P B X R เลือกเครื่องมือที่กติการอบนี้รองรับ คลิกขวายกเลิกเครื่องมือ Esc กลับจากการดูอาคารหรือเปิดตั้งค่า"
+"yearpractice.start","Practice the 365-day mode","ฝึกเล่นโหมด 365 วัน"
+"yearpractice.title","365-day practice · separate village","ฝึก 365 วัน · หมู่บ้านแยก"
+"yearpractice.leave","Leave practice","ออกจากบทฝึก"
+"yearpractice.restart","Restart practice","เริ่มบทฝึกใหม่"
+"yearpractice.restart_confirm","Restart from the first step? Your real village is kept as it was.","เริ่มบทฝึกจากขั้นแรกใหม่หรือไม่ รอบจริงยังคงเดิม"
+"yearpractice.memory_only","Practice is separate from your real run. Return whenever you are ready.","บทฝึกแยกจากรอบจริง กลับได้เมื่อพร้อม"
+"yearpractice.step","Practice · step %d of %d","บทฝึก · ขั้นที่ %d จาก %d"
+"yearpractice.prepare","Show this step","แสดงขั้นตอนนี้"
+"yearpractice.assign","Prepare Forage, enable Repeat, then assign a worker at a forest. This button only prepares the form; you place the order.","เตรียมเก็บอาหารป่า เปิดทำซ้ำ แล้วมอบหมายคนที่ช่องป่า ปุ่มแสดงขั้นตอนเตรียมแบบฟอร์มให้เท่านั้น คุณเป็นคนกดมอบหมาย"
+"yearpractice.undo","Undo the forage order. Notice that workers and the planning state return without advancing a day.","กดย้อนแผนเพื่อนำงานเก็บอาหารออก สังเกตว่าคนและแผนกลับคืนโดยยังไม่เดินวัน"
+"yearpractice.redo","Redo the forage order. Check that its target and Repeat setting return.","กดทำแผนซ้ำเพื่อนำงานเก็บอาหารกลับมา ตรวจว่าช่องและการทำซ้ำกลับมาด้วย"
+"yearpractice.produce","Advance until this forage job finishes its first batch. Food is produced before daily meals, so inspect the actual daily record as well as the net total.","เดินวันจนงานเก็บอาหารนี้เสร็จชุดแรก ผลิตก่อนมื้อประจำวัน จึงควรดูบันทึกผลจริงควบคู่ยอดสุทธิ"
+"yearpractice.pause","Open the work queue and pause the forage job. Its worker becomes free while the job stays in the queue.","เปิดคิวงานแล้วพักงานเก็บอาหาร คนจะว่างขึ้น แต่งานยังอยู่ในคิว"
+"yearpractice.resume","Resume the same forage job in the work queue. The worker returns to production.","กดทำต่อให้งานเก็บอาหารเดิมในคิว คนจะกลับมาผลิตอาหาร"
+"yearpractice.housing","Build one more home and advance until construction finishes. Materials are reserved when ordered; housing increases only when the work is complete.","สร้างบ้านเพิ่มหนึ่งหลัง แล้วเดินจนก่อสร้างเสร็จ วัสดุสำรองตอนสั่ง แต่ที่พักเพิ่มเมื่อสร้างเสร็จจริง"
+"yearpractice.done","Practice complete! You assigned work, used Undo/Redo, produced food, paused/resumed work and completed a home. Return to your real run or restart practice.","ฝึกสำเร็จแล้ว! คุณมอบหมายงาน ย้อน/ทำซ้ำ ผลิตอาหาร พัก/ทำต่องาน และสร้างบ้านเสร็จ กลับรอบจริงหรือเริ่มบทฝึกใหม่ได้"
+"yearpractice.failed","This practice year ended before all steps were complete. Restart practice and use the forecast to plan the next attempt.","ปีฝึกจบก่อนทำครบทุกขั้น เริ่มบทฝึกใหม่แล้วใช้พยากรณ์ช่วยวางแผนได้"
+"yearpractice.keep_work","Keep the lesson’s forage job until the pause/resume steps are complete. You can restart practice at any time.","เก็บงานอาหารของบทฝึกไว้จนผ่านขั้นพัก/ทำต่อ เริ่มบทฝึกใหม่ได้ทุกเมื่อ"
+"yearpractice.restart_only","Use Restart practice to begin the lesson again.","ใช้ปุ่มเริ่มบทฝึกใหม่เพื่อเริ่มบทเรียนอีกครั้ง"
+"yearguide.projects_on","This expanded year has work camps, advanced crafting and a village project. Its progress and rewards are shown in the village tab.","รอบขยายนี้มีค่ายงาน คราฟขั้นสูง และโครงการหมู่บ้าน ดูความก้าวหน้าและรางวัลในหน้าหมู่บ้าน"
+"yearguide.projects_off","This original year uses the smaller map and has no village projects or work camps. Research and ordinary construction remain available.","รอบเดิมนี้ใช้แผนที่ขนาดเล็ก ไม่มีโครงการหรือค่ายงาน ยังวิจัยและสร้างอาคารพื้นฐานได้"
+"yearguide.heritage_off","This year checks its optional goal at the end of the year. The goal is not required to survive all 365 days.","รอบนี้ตรวจเป้าหมายเสริมเมื่อจบปี ไม่จำเป็นต้องผ่านเป้าหมายเพื่ออยู่รอดครบ 365 วัน"

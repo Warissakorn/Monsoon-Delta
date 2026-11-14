@@ -8,6 +8,7 @@ signal sandbox_requested()
 signal daily_requested()
 signal year_requested()
 signal new_year_requested()
+signal year_practice_requested()
 signal transport_requested()
 signal lesson_requested(scenario_id: String)
 signal language_changed(language: String)
@@ -322,6 +323,9 @@ func _build_home(parent: Node) -> void:
 	elif year_error != "msg.no_save":
 		_home.add_child(_label(year_error, "Caption", true))
 	var new_year: Button = _button("year.new", func(): new_year_requested.emit(), "QuietButton", true)
+	var practice: Button = _button("yearpractice.start", func(): year_practice_requested.emit(), "QuietButton", true)
+	practice.name = "YearPractice"
+	_home.add_child(practice)
 	new_year.name = "NewFullYearGame"
 	_home.add_child(new_year)
 	_home.add_child(_label("year.classic", "Caption", true))
