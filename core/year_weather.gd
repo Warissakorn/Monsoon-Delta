@@ -3,12 +3,15 @@ extends RefCounted
 ## A seeded, integer schedule is generated once. Reading a forecast uses no RNG.
 
 
-static func generate(seed_value: int) -> Array:
+static func generate(seed_value: int, years: int = 1) -> Array:
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = SeedUtil.derive_seed(seed_value, 365)
 	var settings: Dictionary = DataDB.balance()["year_game"]["weather"]
 	var result: Array = []
-	for day: int in range(1, 366):
+	for absolute: int in range(1, years * 365 + 1):
+		var day: int = (absolute - 1) % 365 + 1
+		if day == 1:
+			rng.seed = SeedUtil.derive_seed(seed_value, 365 + (absolute - 1) / 365)
 		var bounds: Array = settings[DailyProduction.season(day)]
 		var amount: int = rng.randi_range(int(bounds[0]), int(bounds[1]))
 		for storm: Dictionary in settings["storms"]:
@@ -21,12 +24,13 @@ static func generate(seed_value: int) -> Array:
 
 
 static func inflow(s: Dictionary, index: int) -> float:
-	return float(s["weather"][index]) / 1000.0 * (1.0 + float(s.get("difficulty", 0)) * float(DataDB.balance()["year_campaign"]["inflow_per_difficulty"]))
+	var annual: float = 1.0 + (index / 365) * float(DataDB.balance()["year_multiyear"]["inflow_per_year"]) if YearGame.multi_year(s) else 1.0
+	return float(s["weather"][index]) / 1000.0 * (1.0 + float(s.get("difficulty", 0)) * float(DataDB.balance()["year_campaign"]["inflow_per_difficulty"])) * annual
 
 
 static func forecast(s: Dictionary) -> Array:
 	var horizon: int = 14 if "water3" in s["research"] else 7
 	var result: Array = []
-	for index: int in range(int(s["day"]), mini(365, int(s["day"]) + horizon)):
+	for index: int in range(int(s["day"]), mini(YearGame.total_days(s), int(s["day"]) + horizon)):
 		result.append({"day": index + 1, "inflow": inflow(s, index)})
 	return result

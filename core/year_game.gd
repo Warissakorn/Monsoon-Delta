@@ -1,6 +1,6 @@
 class_name YearGame
 extends RefCounted
-## One playable year. State is plain data, water is resolved by shared WaterSim.
+## One or several playable years. State is plain data, water is resolved by shared WaterSim.
 
 const RESOURCES: Array[String] = ["food", "wood", "stone", "clay", "planks", "bricks"]
 const STRUCTURES: Array[String] = ["", "hall", "house", "stilt_house", "sawmill", "kiln", "granary", "gate", "reservoir", "waterwheel"]
@@ -12,7 +12,7 @@ static var _campaign_configs: Dictionary = {}
 
 static func config(s: Dictionary = {}) -> Dictionary:
 	var base: Dictionary = YearExpansion.config() if expanded(s) else DataDB.balance()["year_game"]
-	if s.get("ruleset") not in ["year365_v3", "year365_v4", "year365_v5"]:
+	if s.get("ruleset") not in ["year365_v3", "year365_v4", "year365_v5", "year365_v6"]:
 		return base
 	var leader: String = s.get("leader", "farmer")
 	var cache_key: String = leader + String(s["ruleset"])
@@ -39,7 +39,29 @@ static func config(s: Dictionary = {}) -> Dictionary:
 
 
 static func expanded(s: Dictionary) -> bool:
-	return s.get("ruleset", "year365_v1") in ["year365_v2", "year365_v3", "year365_v4", "year365_v5"]
+	return s.get("ruleset", "year365_v1") in ["year365_v2", "year365_v3", "year365_v4", "year365_v5", "year365_v6"]
+
+
+static func multi_year(s: Dictionary) -> bool:
+	return s.get("ruleset") == "year365_v6"
+
+
+static func total_days(s: Dictionary) -> int:
+	return 365 * int(s.get("campaign_years", 1)) if multi_year(s) else 365
+
+
+static func day_of_year(s: Dictionary, absolute_day: int = -1) -> int:
+	var day: int = maxi(1, int(s["day"]) if absolute_day < 0 else absolute_day)
+	return (day - 1) % 365 + 1
+
+
+static func year_number(s: Dictionary, absolute_day: int = -1) -> int:
+	var day: int = maxi(1, int(s["day"]) if absolute_day < 0 else absolute_day)
+	return (day - 1) / 365 + 1
+
+
+static func season(s: Dictionary) -> String:
+	return DailyProduction.season(day_of_year(s))
 
 
 static func resources(s: Dictionary) -> Array[String]:
@@ -63,8 +85,8 @@ static func new_expanded(seed_value: int = 42, goal: String = "none", project: S
 	return YearExpansion.create(seed_value, goal, project)
 
 
-static func new_campaign(seed_value: int, goal: String, project: String, leader: String = "farmer", difficulty: int = 0, classic: bool = false, heritage: bool = false) -> Dictionary:
-	if leader not in ["farmer", "carpenter", "fisher", "soil_doctor"] or difficulty < 0 or difficulty > 10 or (heritage and not classic):
+static func new_campaign(seed_value: int, goal: String, project: String, leader: String = "farmer", difficulty: int = 0, classic: bool = false, heritage: bool = false, campaign_years: int = 1) -> Dictionary:
+	if leader not in ["farmer", "carpenter", "fisher", "soil_doctor"] or difficulty < 0 or difficulty > 10 or (heritage and not classic) or campaign_years not in [1, 3, 5] or (campaign_years > 1 and not (classic and heritage)):
 		return {}
 	var result: Dictionary = new_expanded(seed_value, goal, project)
 	if result.is_empty():
@@ -76,6 +98,10 @@ static func new_campaign(seed_value: int, goal: String, project: String, leader:
 		YearClassic.initialize(result)
 	if heritage:
 		YearHeritage.initialize(result)
+	if campaign_years > 1:
+		result["ruleset"] = "year365_v6"
+		result["campaign_years"] = campaign_years
+		result["weather"] = YearWeather.generate(seed_value, campaign_years)
 	return result
 
 
@@ -211,7 +237,7 @@ static func check_order(s: Dictionary, id: String, index: int, batches: int = 1,
 				break
 		if not found:
 			return "year.error.target"
-	if id == "plant_paddy" and int(s["day"]) >= 300:
+	if id == "plant_paddy" and (int(s["day"]) % 365 if multi_year(s) else int(s["day"])) >= 300:
 		return "year.error.season"
 	if id.begins_with("build_") and id not in ["build_gate", "build_wheel", "build_raft", "build_fish_trap"] and float(s["board"]["tiles"][index]["water"]) >= 0.5:
 		return "year.error.water"
@@ -470,8 +496,8 @@ static func _work(s: Dictionary, events: Array, visual: TurnReport = null) -> vo
 
 static func _water(s: Dictionary, events: Array, visual: TurnReport = null) -> void:
 	var board: GameState = board_of(s)
-	var season: String = DailyProduction.season(int(s["day"]))
-	board.turn = 4 if season in ["early_rain", "flood"] else 1
+	var current_season: String = season(s)
+	board.turn = 4 if current_season in ["early_rain", "flood"] else 1
 	board.year_mods = [
 		{"key": "water_iterations", "op": "set", "value": float(config(s)["water_iterations"])},
 		{"key": "forest_absorb", "op": "set", "value": float(config(s)["forest_absorb"]) + (0.015 if "agriculture3" in s["research"] else 0.0)},
@@ -507,6 +533,8 @@ static func _water(s: Dictionary, events: Array, visual: TurnReport = null) -> v
 				tolerance += 0.4
 			if YearClassic.enabled(s) and int(s["brace_days"][index]) > 0:
 				YearLedger.fact(visual, s, index, "yearplus.braced", tolerance, tolerance + float(YearClassic.config()["brace_bonus"]))
+				if visual != null:
+					visual.brace_results.append({"coord": tile.coord, "base_threshold": tolerance, "protected_threshold": tolerance + float(YearClassic.config()["brace_bonus"]), "level": tile.water, "prevented_loss": tile.water >= tolerance and tile.water < tolerance + float(YearClassic.config()["brace_bonus"]), "expired": true})
 				tolerance += float(YearClassic.config()["brace_bonus"])
 			if tile.water >= tolerance and structure != "raft_house":
 				var before_damage: Dictionary = YearLedger.snapshot(s) if visual != null else {}
@@ -535,11 +563,13 @@ static func _water(s: Dictionary, events: Array, visual: TurnReport = null) -> v
 			s["crop_stress"][index] = int(s["crop_stress"][index]) + 1
 			if int(s["crop_stress"][index]) >= 5 and int(s["crop_growth"][index]) > 0:
 				YearLedger.fact(visual, s, index, "year.event.crop_lost", int(s["crop_growth"][index]), 0)
+				if visual != null:
+					visual.paddies_died.append(tile.coord)
 				s["crop_growth"][index] = 0
 				events.append("year.event.crop_lost")
 			continue
 		s["crop_stress"][index] = 0
-		var watered: bool = season in ["early_rain", "flood"] or tile.water >= 0.1
+		var watered: bool = current_season in ["early_rain", "flood"] or tile.water >= 0.1
 		if not watered:
 			var radius: int = 2 if "water2" in s["research"] else 1
 			if expanded(s) and s["project"] == "water" and int(s["project_stage"]) >= 2:
@@ -561,7 +591,9 @@ static func _water(s: Dictionary, events: Array, visual: TurnReport = null) -> v
 			if previous == 44:
 				events.append("year.event.harvest_ready")
 	if YearClassic.enabled(s):
-		YearClassic.crops_and_fish(s, board, season, events, visual)
+		YearClassic.crops_and_fish(s, board, current_season, events, visual)
+	if visual != null:
+		visual.outcome = C.Outcome.LOSE_HALL if s["outcome"] == "lost_hall" else C.Outcome.NONE
 	if damaged:
 		events.append("year.event.damage")
 	s["board"] = board.to_dict()
@@ -669,11 +701,11 @@ static func resolve_day(s: Dictionary, visual: TurnReport = null) -> Array:
 	_water(s, events, visual)
 	_population(s, events, visual)
 	var day: int = int(s["day"])
-	if day in [121, 181, 301]:
+	if day_of_year(s) in [121, 181, 301]:
 		events.append("year.event.season")
 	# Reveal only the forecast horizon, then stop at the first warning of a surge.
-	var coming: int = mini(364, day + 2)
-	if day < 363 and int(s["weather"][coming]) >= 1800 and (coming == 0 or int(s["weather"][coming - 1]) < 1800):
+	var coming: int = mini(total_days(s) - 1, day + 2)
+	if day < total_days(s) - 2 and int(s["weather"][coming]) >= 1800 and (coming == 0 or int(s["weather"][coming - 1]) < 1800):
 		events.append("year.event.storm")
 	var before_rewards: Dictionary = YearLedger.snapshot(s) if visual != null else {}
 	if s["outcome"] == "running":
@@ -682,9 +714,11 @@ static func resolve_day(s: Dictionary, visual: TurnReport = null) -> Array:
 			YearExpansion.after_day(s, events)
 	YearHeritage.after_day(s, events)
 	if s["outcome"] == "running":
-		if day == 365:
+		if day == total_days(s):
 			s["outcome"] = "won"
 			events.append("year.event.won")
+		elif multi_year(s) and day % 365 == 0:
+			events.append("yearmulti.event.year_complete")
 	YearLedger.record(visual, s, before_rewards, "yearplus.cause.rewards")
 	if s["outcome"] != "running":
 		s["score"] = score(s)

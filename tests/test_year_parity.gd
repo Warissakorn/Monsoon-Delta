@@ -75,7 +75,7 @@ func test_v4_strict_arrays_and_rule_version_pairing_reject_corruption() -> void:
 	var envelope: Dictionary = YearCheckpoint.envelope(good)
 	envelope["version"] = 3
 	assert_eq(YearCheckpoint.decode(envelope)["error"], "msg.save_corrupt")
-	envelope["version"] = 6
+	envelope["version"] = 7
 	assert_eq(YearCheckpoint.decode(envelope)["error"], "msg.save_unsupported")
 
 
@@ -268,7 +268,7 @@ func test_nonfatal_impact_confirmation_and_inspection_are_read_only() -> void:
 	var bytes: PackedByteArray = FileAccess.get_file_as_bytes(PATH)
 	screen._request_advance(7)
 	assert_true(screen._advance_confirmation.visible)
-	assert_true(screen._advance_confirmation.dialog_text.contains("predicted impacts"))
+	assert_true(screen._advance_text.text.contains("predicted impacts"))
 	assert_true(screen._impact_button.visible)
 	screen._advance_confirmation.custom_action.emit("inspect")
 	assert_eq(screen.selected, screen._impact_tile)

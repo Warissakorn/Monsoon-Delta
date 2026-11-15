@@ -1,12 +1,12 @@
 class_name YearHeritage
 extends RefCounted
-## Daily building history and permanent ambition medals, opt-in year365_v5 only.
+## Daily building history and permanent ambition medals, year365_v5 and multi-year v6.
 const FIELDS: Array[String] = ["settlement_progress", "goal_medal"]
 const PROGRESS_FIELDS: Array[String] = ["version", "condition", "observed_day", "evaluated_day", "candidate", "candidate_periods", "hungry_days", "displaced", "buildings"]
 const MEDAL_FIELDS: Array[String] = ["day", "population", "forests", "harvest"]
 
 static func enabled(s: Dictionary) -> bool:
-	return s.get("ruleset") == "year365_v5"
+	return s.get("ruleset") in ["year365_v5", "year365_v6"]
 
 
 static func config() -> Dictionary:

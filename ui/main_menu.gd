@@ -317,6 +317,8 @@ func _build_home(parent: Node) -> void:
 		var summary: Label = _label("", "Caption", true)
 		summary.name = "YearContinueSummary"
 		summary.text = tr("year.continue_summary") % [int(saved["day"]), int(saved["population"]), int(saved["resources"]["food"]), tr("year.outcome." + String(saved["outcome"]))]
+		if YearGame.multi_year(saved):
+			summary.text = tr("yearmulti.continue") % [YearGame.year_number(saved), int(saved["campaign_years"]), YearGame.day_of_year(saved), int(saved["population"]), int(saved["resources"]["food"]), tr("year.outcome." + String(saved["outcome"]))]
 		year_button.tooltip_text = summary.text + "\n" + tr("pause.seed") % String(saved["board"]["seed"])
 		_home.add_child(summary)
 	elif year_error != "msg.no_save":

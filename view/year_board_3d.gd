@@ -82,16 +82,7 @@ func update_view() -> void:
 	village.set_targets(coords)
 	village.select(village.state.tiles[selected].coord if selected >= 0 else BoardView.NO_COORD)
 	village.year_predicted = predicted
-	var prediction: Dictionary = YearPresentation.preview(model, predicted)
-	if not prediction.is_empty() and forecast_flow != null:
-		var report: TurnReport = prediction["report"]
-		report.flow_edges = forecast_flow.flow_edges
-		report.wheel_transfers = forecast_flow.wheel_transfers
-		report.fish_food_by_tile = forecast_flow.fish_food_by_tile
-		report.fish_food = forecast_flow.fish_food
-		report.paddy_gains = forecast_flow.paddy_gains
-		report.moisture_changes = forecast_flow.moisture_changes
-		report.irrigation_results = forecast_flow.irrigation_results
+	var prediction: Dictionary = YearPresentation.preview(model, predicted, forecast_flow)
 	village.set_preview(prediction, not predicted.is_empty())
 	village.set_labels_visible(labels_visible)
 

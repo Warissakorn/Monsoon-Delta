@@ -137,7 +137,7 @@ func test_loss_confirmation_takes_priority_over_idle_workers_and_cancellation_is
 	var bytes: PackedByteArray = FileAccess.get_file_as_bytes(PATH)
 	screen._request_advance(7)
 	assert_true(screen._advance_confirmation.visible)
-	assert_true(screen._advance_confirmation.dialog_text.contains("ends the run"))
+	assert_true(screen._advance_text.text.contains("ends the run"))
 	screen._advance_confirmation.hide()
 	assert_eq(screen.session.year, before)
 	assert_eq(FileAccess.get_file_as_bytes(PATH), bytes)

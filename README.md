@@ -62,6 +62,8 @@ HUD มี **[เอฟเฟกต์ทรัพยากรเพิ่ม/�
 
 เลือก **หนึ่งปีแห่งสายน้ำ · 365 วัน** จากเมนู หรือ `godot --path . -- --scene=year --seed=42 --lang=th` เล่นครบ 4 ฤดู รอบใหม่มีแผนที่ 127 ช่อง ค่ายงาน เส้นใย/ชุดกลไก โรงช่าง อัปเกรดอาคาร และโครงการอาหาร/น้ำ/ช่างที่ใช้รางวัลต่อกับโจทย์ถัดไป ดู [ระบบขยาย](docs/features/YEAR_PROJECTS.md) มีน้ำจริง งานต่อเนื่อง แหล่งวัสดุ โรงเลื่อย/เตาเผา คราฟ นา คลัง ซ่อมอาคาร ประชากร และความรู้จาก Challenge สำหรับเลือกพัฒนา 3 สาย เซฟปีแยกจากเกมปกติและต้นแบบ เปิดอีกครั้งเพื่อเล่นต่อ หรือเริ่มปีใหม่พร้อม seed/เป้าหมายในหน้าจอ ดู [คู่มือรอบเต็ม](docs/features/YEAR365.md)
 
+เพิ่ม **[รอบ 1/3/5 ปีและวางแผนพื้นที่](docs/features/YEAR_CAMPAIGNS.md)**: รอบหลายปีเก็บหมู่บ้าน งาน วิจัย และวัสดุข้ามปี พร้อมคำเตือนผลผลิตนา ทดลองจนงานเสร็จ และหน้าพัฒนาพื้นที่รายช่อง ยืนยันแล้วใช้ Undo/Redo ได้ เซฟเก่าคงกฎเดิม
+
 ## ทดลองขนส่งไม้
 
 เปิด **[ทดลองขนส่งไม้ · รอบ 365 วัน](docs/features/TRANSPORT.md)** จากเมนูหรือ `godot --path . -- --scene=transport --lang=th`: ตัดไม้ ส่งทางบก/เรือ แปรรูปและส่งเข้าคลัง มีความจุ เวลา ของจอง/ระหว่างทาง ท่าปิด/ทางขาด พรีวิวและ Undo/Redo ใช้คนร่วมกับงานปี แยกเซฟจากรอบเดิม
@@ -101,7 +103,7 @@ scripts/test.sh
 
 สารบัญช่วย Agent ที่เปิดลิงก์ต่อได้ หากระบบจำกัดให้อ่านเฉพาะหน้าแรกจริง ๆ ต้องให้ระบบเปิดสิทธิ์อ่าน URL ปลายทางหรือแนบเนื้อหาเอกสารเพิ่มเติม ลิงก์ไม่เปลี่ยนสิทธิ์การเข้าถึง
 
-รวม **788 ไฟล์** ที่ Git ติดตาม (รวมไฟล์ซ่อนและไฟล์ประกอบ Godot ไม่รวม `.git/` และไฟล์ที่ยังไม่ติดตาม) อัปเดตด้วย `python3 scripts/update_file_index.py`; ตรวจด้วย `python3 scripts/update_file_index.py --check` หลัง `git add` ไฟล์ใหม่
+รวม **880 ไฟล์** ที่ Git ติดตาม (รวมไฟล์ซ่อนและไฟล์ประกอบ Godot ไม่รวม `.git/` และไฟล์ที่ยังไม่ติดตาม) อัปเดตด้วย `python3 scripts/update_file_index.py`; ตรวจด้วย `python3 scripts/update_file_index.py --check` หลัง `git add` ไฟล์ใหม่
 
 ### ไฟล์รากโปรเจกต์
 
@@ -159,16 +161,22 @@ scripts/test.sh
 | [assets/icons/README.md](assets/icons/README.md) | Interface icons | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/README.md) |
 | [assets/icons/brace_house.svg](assets/icons/brace_house.svg) | ภาพเวกเตอร์ SVG · brace_house.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/brace_house.svg) |
 | [assets/icons/brace_house.svg.import](assets/icons/brace_house.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · brace_house.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/brace_house.svg.import) |
+| [assets/icons/bricks.svg](assets/icons/bricks.svg) | ภาพเวกเตอร์ SVG · bricks.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/bricks.svg) |
+| [assets/icons/bricks.svg.import](assets/icons/bricks.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · bricks.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/bricks.svg.import) |
 | [assets/icons/broken_house.svg](assets/icons/broken_house.svg) | ภาพเวกเตอร์ SVG · broken_house.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/broken_house.svg) |
 | [assets/icons/broken_house.svg.import](assets/icons/broken_house.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · broken_house.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/broken_house.svg.import) |
 | [assets/icons/chop.svg](assets/icons/chop.svg) | ภาพเวกเตอร์ SVG · chop.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/chop.svg) |
 | [assets/icons/chop.svg.import](assets/icons/chop.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · chop.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/chop.svg.import) |
+| [assets/icons/clay.svg](assets/icons/clay.svg) | ภาพเวกเตอร์ SVG · clay.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/clay.svg) |
+| [assets/icons/clay.svg.import](assets/icons/clay.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · clay.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/clay.svg.import) |
 | [assets/icons/dead_rice.svg](assets/icons/dead_rice.svg) | ภาพเวกเตอร์ SVG · dead_rice.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/dead_rice.svg) |
 | [assets/icons/dead_rice.svg.import](assets/icons/dead_rice.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · dead_rice.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/dead_rice.svg.import) |
 | [assets/icons/demolish.svg](assets/icons/demolish.svg) | ภาพเวกเตอร์ SVG · demolish.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/demolish.svg) |
 | [assets/icons/demolish.svg.import](assets/icons/demolish.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · demolish.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/demolish.svg.import) |
 | [assets/icons/dig.svg](assets/icons/dig.svg) | ภาพเวกเตอร์ SVG · dig.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/dig.svg) |
 | [assets/icons/dig.svg.import](assets/icons/dig.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · dig.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/dig.svg.import) |
+| [assets/icons/fiber.svg](assets/icons/fiber.svg) | ภาพเวกเตอร์ SVG · fiber.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/fiber.svg) |
+| [assets/icons/fiber.svg.import](assets/icons/fiber.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · fiber.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/fiber.svg.import) |
 | [assets/icons/fill.svg](assets/icons/fill.svg) | ภาพเวกเตอร์ SVG · fill.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/fill.svg) |
 | [assets/icons/fill.svg.import](assets/icons/fill.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · fill.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/fill.svg.import) |
 | [assets/icons/fish.svg](assets/icons/fish.svg) | ภาพเวกเตอร์ SVG · fish.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/fish.svg) |
@@ -189,6 +197,8 @@ scripts/test.sh
 | [assets/icons/hall.svg.import](assets/icons/hall.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · hall.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/hall.svg.import) |
 | [assets/icons/house.svg](assets/icons/house.svg) | ภาพเวกเตอร์ SVG · house.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/house.svg) |
 | [assets/icons/house.svg.import](assets/icons/house.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · house.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/house.svg.import) |
+| [assets/icons/kits.svg](assets/icons/kits.svg) | ภาพเวกเตอร์ SVG · kits.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/kits.svg) |
+| [assets/icons/kits.svg.import](assets/icons/kits.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · kits.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/kits.svg.import) |
 | [assets/icons/labor.svg](assets/icons/labor.svg) | ภาพเวกเตอร์ SVG · labor.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/labor.svg) |
 | [assets/icons/labor.svg.import](assets/icons/labor.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · labor.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/labor.svg.import) |
 | [assets/icons/marker_plate.svg](assets/icons/marker_plate.svg) | ภาพเวกเตอร์ SVG · marker_plate.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/marker_plate.svg) |
@@ -201,6 +211,8 @@ scripts/test.sh
 | [assets/icons/paddy.svg.import](assets/icons/paddy.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · paddy.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/paddy.svg.import) |
 | [assets/icons/people.svg](assets/icons/people.svg) | ภาพเวกเตอร์ SVG · people.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/people.svg) |
 | [assets/icons/people.svg.import](assets/icons/people.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · people.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/people.svg.import) |
+| [assets/icons/planks.svg](assets/icons/planks.svg) | ภาพเวกเตอร์ SVG · planks.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/planks.svg) |
+| [assets/icons/planks.svg.import](assets/icons/planks.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · planks.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/planks.svg.import) |
 | [assets/icons/plant.svg](assets/icons/plant.svg) | ภาพเวกเตอร์ SVG · plant.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/plant.svg) |
 | [assets/icons/plant.svg.import](assets/icons/plant.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · plant.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/plant.svg.import) |
 | [assets/icons/raft_house.svg](assets/icons/raft_house.svg) | ภาพเวกเตอร์ SVG · raft_house.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/raft_house.svg) |
@@ -213,6 +225,8 @@ scripts/test.sh
 | [assets/icons/stable.svg.import](assets/icons/stable.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · stable.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/stable.svg.import) |
 | [assets/icons/stilt_house.svg](assets/icons/stilt_house.svg) | ภาพเวกเตอร์ SVG · stilt_house.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/stilt_house.svg) |
 | [assets/icons/stilt_house.svg.import](assets/icons/stilt_house.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · stilt_house.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/stilt_house.svg.import) |
+| [assets/icons/stone.svg](assets/icons/stone.svg) | ภาพเวกเตอร์ SVG · stone.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/stone.svg) |
+| [assets/icons/stone.svg.import](assets/icons/stone.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · stone.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/stone.svg.import) |
 | [assets/icons/struggling.svg](assets/icons/struggling.svg) | ภาพเวกเตอร์ SVG · struggling.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/struggling.svg) |
 | [assets/icons/struggling.svg.import](assets/icons/struggling.svg.import) | การตั้งค่านำเข้าทรัพยากร Godot · struggling.svg.import | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/struggling.svg.import) |
 | [assets/icons/sun.svg](assets/icons/sun.svg) | ภาพเวกเตอร์ SVG · sun.svg | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/assets/icons/sun.svg) |
@@ -300,14 +314,26 @@ scripts/test.sh
 | [core/undo_stack.gd.uid](core/undo_stack.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · undo_stack.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/undo_stack.gd.uid) |
 | [core/water_sim.gd](core/water_sim.gd) | สคริปต์ GDScript · water_sim.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/water_sim.gd) |
 | [core/water_sim.gd.uid](core/water_sim.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · water_sim.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/water_sim.gd.uid) |
+| [core/year_area_development.gd](core/year_area_development.gd) | สคริปต์ GDScript · year_area_development.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_area_development.gd) |
+| [core/year_area_development.gd.uid](core/year_area_development.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_area_development.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_area_development.gd.uid) |
 | [core/year_checkpoint.gd](core/year_checkpoint.gd) | สคริปต์ GDScript · year_checkpoint.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_checkpoint.gd) |
 | [core/year_checkpoint.gd.uid](core/year_checkpoint.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_checkpoint.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_checkpoint.gd.uid) |
+| [core/year_classic.gd](core/year_classic.gd) | สคริปต์ GDScript · year_classic.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_classic.gd) |
+| [core/year_classic.gd.uid](core/year_classic.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_classic.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_classic.gd.uid) |
 | [core/year_expansion.gd](core/year_expansion.gd) | สคริปต์ GDScript · year_expansion.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_expansion.gd) |
 | [core/year_expansion.gd.uid](core/year_expansion.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_expansion.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_expansion.gd.uid) |
 | [core/year_game.gd](core/year_game.gd) | สคริปต์ GDScript · year_game.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_game.gd) |
 | [core/year_game.gd.uid](core/year_game.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_game.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_game.gd.uid) |
+| [core/year_heritage.gd](core/year_heritage.gd) | สคริปต์ GDScript · year_heritage.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_heritage.gd) |
+| [core/year_heritage.gd.uid](core/year_heritage.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_heritage.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_heritage.gd.uid) |
+| [core/year_ledger.gd](core/year_ledger.gd) | สคริปต์ GDScript · year_ledger.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_ledger.gd) |
+| [core/year_ledger.gd.uid](core/year_ledger.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_ledger.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_ledger.gd.uid) |
 | [core/year_map.gd](core/year_map.gd) | สคริปต์ GDScript · year_map.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_map.gd) |
 | [core/year_map.gd.uid](core/year_map.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_map.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_map.gd.uid) |
+| [core/year_order_preview.gd](core/year_order_preview.gd) | สคริปต์ GDScript · year_order_preview.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_order_preview.gd) |
+| [core/year_order_preview.gd.uid](core/year_order_preview.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_order_preview.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_order_preview.gd.uid) |
+| [core/year_planner.gd](core/year_planner.gd) | สคริปต์ GDScript · year_planner.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_planner.gd) |
+| [core/year_planner.gd.uid](core/year_planner.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_planner.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_planner.gd.uid) |
 | [core/year_session.gd](core/year_session.gd) | สคริปต์ GDScript · year_session.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_session.gd) |
 | [core/year_session.gd.uid](core/year_session.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_session.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_session.gd.uid) |
 | [core/year_weather.gd](core/year_weather.gd) | สคริปต์ GDScript · year_weather.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/core/year_weather.gd) |
@@ -479,6 +505,7 @@ scripts/test.sh
 | [docs/features/VILLAGE_WORLD.md](docs/features/VILLAGE_WORLD.md) | ฉากหมู่บ้านลุ่มน้ำที่อิงสถานะจริง | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/features/VILLAGE_WORLD.md) |
 | [docs/features/VISUAL_REFRESH.md](docs/features/VISUAL_REFRESH.md) | ภาพหมู่บ้านลุ่มน้ำ | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/features/VISUAL_REFRESH.md) |
 | [docs/features/YEAR365.md](docs/features/YEAR365.md) | หนึ่งปีแห่งสายน้ำ — เกมรอบเต็ม 365 วัน | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/features/YEAR365.md) |
+| [docs/features/YEAR_CAMPAIGNS.md](docs/features/YEAR_CAMPAIGNS.md) | รอบหลายปีและการวางแผนพื้นที่ | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/features/YEAR_CAMPAIGNS.md) |
 | [docs/features/YEAR_PROJECTS.md](docs/features/YEAR_PROJECTS.md) | รอบปีขยาย — โครงการหมู่บ้านและสายคราฟต์ | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/features/YEAR_PROJECTS.md) |
 
 ### `docs/history/`
@@ -610,10 +637,34 @@ scripts/test.sh
 | [docs/images/world-village-dry.png](docs/images/world-village-dry.png) | ภาพประกอบเอกสาร · ภาพ PNG · world-village-dry.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/world-village-dry.png) |
 | [docs/images/world-village-flood.png](docs/images/world-village-flood.png) | ภาพประกอบเอกสาร · ภาพ PNG · world-village-flood.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/world-village-flood.png) |
 | [docs/images/world-village-rain.png](docs/images/world-village-rain.png) | ภาพประกอบเอกสาร · ภาพ PNG · world-village-rain.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/world-village-rain.png) |
+| [docs/images/year-campaign-area-th.png](docs/images/year-campaign-area-th.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-campaign-area-th.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-campaign-area-th.png) |
+| [docs/images/year-campaign-second-year-en.png](docs/images/year-campaign-second-year-en.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-campaign-second-year-en.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-campaign-second-year-en.png) |
+| [docs/images/year-campaign-warning-th.png](docs/images/year-campaign-warning-th.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-campaign-warning-th.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-campaign-warning-th.png) |
 | [docs/images/year-expansion-complete-en.png](docs/images/year-expansion-complete-en.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-expansion-complete-en.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-expansion-complete-en.png) |
 | [docs/images/year-expansion-complete-th.png](docs/images/year-expansion-complete-th.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-expansion-complete-th.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-expansion-complete-th.png) |
 | [docs/images/year-expansion-village-en.png](docs/images/year-expansion-village-en.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-expansion-village-en.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-expansion-village-en.png) |
 | [docs/images/year-expansion-village-th.png](docs/images/year-expansion-village-th.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-expansion-village-th.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-expansion-village-th.png) |
+| [docs/images/year-extra-history-en.png](docs/images/year-extra-history-en.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-extra-history-en.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-extra-history-en.png) |
+| [docs/images/year-extra-history-th.png](docs/images/year-extra-history-th.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-extra-history-th.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-extra-history-th.png) |
+| [docs/images/year-extra-setup-en.png](docs/images/year-extra-setup-en.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-extra-setup-en.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-extra-setup-en.png) |
+| [docs/images/year-extra-setup-th.png](docs/images/year-extra-setup-th.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-extra-setup-th.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-extra-setup-th.png) |
+| [docs/images/year-extra-try-en.png](docs/images/year-extra-try-en.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-extra-try-en.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-extra-try-en.png) |
+| [docs/images/year-extra-try-th.png](docs/images/year-extra-try-th.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-extra-try-th.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-extra-try-th.png) |
+| [docs/images/year-extra-warning-en.png](docs/images/year-extra-warning-en.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-extra-warning-en.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-extra-warning-en.png) |
+| [docs/images/year-extra-warning-th.png](docs/images/year-extra-warning-th.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-extra-warning-th.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-extra-warning-th.png) |
+| [docs/images/year-heritage-building-en.png](docs/images/year-heritage-building-en.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-heritage-building-en.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-heritage-building-en.png) |
+| [docs/images/year-heritage-building-th.png](docs/images/year-heritage-building-th.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-heritage-building-th.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-heritage-building-th.png) |
+| [docs/images/year-heritage-result-en.png](docs/images/year-heritage-result-en.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-heritage-result-en.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-heritage-result-en.png) |
+| [docs/images/year-heritage-result-th.png](docs/images/year-heritage-result-th.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-heritage-result-th.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-heritage-result-th.png) |
+| [docs/images/year-heritage-setup-en.png](docs/images/year-heritage-setup-en.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-heritage-setup-en.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-heritage-setup-en.png) |
+| [docs/images/year-heritage-setup-th.png](docs/images/year-heritage-setup-th.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-heritage-setup-th.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-heritage-setup-th.png) |
+| [docs/images/year-heritage-village-en.png](docs/images/year-heritage-village-en.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-heritage-village-en.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-heritage-village-en.png) |
+| [docs/images/year-heritage-village-th.png](docs/images/year-heritage-village-th.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-heritage-village-th.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-heritage-village-th.png) |
+| [docs/images/year-main-3d-en.png](docs/images/year-main-3d-en.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-main-3d-en.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-main-3d-en.png) |
+| [docs/images/year-main-3d-flood-th.png](docs/images/year-main-3d-flood-th.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-main-3d-flood-th.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-main-3d-flood-th.png) |
+| [docs/images/year-main-3d-th.png](docs/images/year-main-3d-th.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-main-3d-th.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-main-3d-th.png) |
+| [docs/images/year-planner-week-th.png](docs/images/year-planner-week-th.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-planner-week-th.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-planner-week-th.png) |
+| [docs/images/year-planner-work-en.png](docs/images/year-planner-work-en.png) | ภาพประกอบเอกสาร · ภาพ PNG · year-planner-work-en.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year-planner-work-en.png) |
 | [docs/images/year365-complete-en.png](docs/images/year365-complete-en.png) | ภาพประกอบเอกสาร · ภาพ PNG · year365-complete-en.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year365-complete-en.png) |
 | [docs/images/year365-complete-th.png](docs/images/year365-complete-th.png) | ภาพประกอบเอกสาร · ภาพ PNG · year365-complete-th.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year365-complete-th.png) |
 | [docs/images/year365-flood-en.png](docs/images/year365-flood-en.png) | ภาพประกอบเอกสาร · ภาพ PNG · year365-flood-en.png | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/images/year365-flood-en.png) |
@@ -677,9 +728,20 @@ scripts/test.sh
 | [docs/reports/village-world-living-qa-th.json](docs/reports/village-world-living-qa-th.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · village-world-living-qa-th.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/village-world-living-qa-th.json) |
 | [docs/reports/village-world-qa-en.json](docs/reports/village-world-qa-en.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · village-world-qa-en.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/village-world-qa-en.json) |
 | [docs/reports/village-world-qa-th.json](docs/reports/village-world-qa-th.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · village-world-qa-th.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/village-world-qa-th.json) |
+| [docs/reports/year-campaign-legacy-th.json](docs/reports/year-campaign-legacy-th.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · year-campaign-legacy-th.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/year-campaign-legacy-th.json) |
+| [docs/reports/year-campaign-native-en.json](docs/reports/year-campaign-native-en.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · year-campaign-native-en.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/year-campaign-native-en.json) |
+| [docs/reports/year-campaign-native-th.json](docs/reports/year-campaign-native-th.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · year-campaign-native-th.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/year-campaign-native-th.json) |
 | [docs/reports/year-expansion-qa-en.json](docs/reports/year-expansion-qa-en.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · year-expansion-qa-en.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/year-expansion-qa-en.json) |
 | [docs/reports/year-expansion-qa-th.json](docs/reports/year-expansion-qa-th.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · year-expansion-qa-th.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/year-expansion-qa-th.json) |
 | [docs/reports/year-expansion-replays.json](docs/reports/year-expansion-replays.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · year-expansion-replays.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/year-expansion-replays.json) |
+| [docs/reports/year-heritage-native-en.json](docs/reports/year-heritage-native-en.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · year-heritage-native-en.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/year-heritage-native-en.json) |
+| [docs/reports/year-heritage-native-th.json](docs/reports/year-heritage-native-th.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · year-heritage-native-th.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/year-heritage-native-th.json) |
+| [docs/reports/year-main-3d-en.json](docs/reports/year-main-3d-en.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · year-main-3d-en.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/year-main-3d-en.json) |
+| [docs/reports/year-main-3d-th.json](docs/reports/year-main-3d-th.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · year-main-3d-th.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/year-main-3d-th.json) |
+| [docs/reports/year-parity-native-en.json](docs/reports/year-parity-native-en.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · year-parity-native-en.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/year-parity-native-en.json) |
+| [docs/reports/year-parity-native-th.json](docs/reports/year-parity-native-th.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · year-parity-native-th.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/year-parity-native-th.json) |
+| [docs/reports/year-planner-en.json](docs/reports/year-planner-en.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · year-planner-en.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/year-planner-en.json) |
+| [docs/reports/year-planner-th.json](docs/reports/year-planner-th.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · year-planner-th.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/year-planner-th.json) |
 | [docs/reports/year365-qa-en.json](docs/reports/year365-qa-en.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · year365-qa-en.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/year365-qa-en.json) |
 | [docs/reports/year365-qa-th.json](docs/reports/year365-qa-th.json) | หลักฐานย้อนหลัง · ข้อมูล JSON · year365-qa-th.json | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/docs/reports/year365-qa-th.json) |
 
@@ -968,12 +1030,24 @@ scripts/test.sh
 | [tests/test_water.gd.uid](tests/test_water.gd.uid) | การทดสอบ · รหัสอ้างอิงทรัพยากร Godot · test_water.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_water.gd.uid) |
 | [tests/test_water_flow.gd](tests/test_water_flow.gd) | การทดสอบ · สคริปต์ GDScript · test_water_flow.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_water_flow.gd) |
 | [tests/test_water_flow.gd.uid](tests/test_water_flow.gd.uid) | การทดสอบ · รหัสอ้างอิงทรัพยากร Godot · test_water_flow.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_water_flow.gd.uid) |
+| [tests/test_year_campaign_planning.gd](tests/test_year_campaign_planning.gd) | การทดสอบ · สคริปต์ GDScript · test_year_campaign_planning.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_campaign_planning.gd) |
+| [tests/test_year_campaign_planning.gd.uid](tests/test_year_campaign_planning.gd.uid) | การทดสอบ · รหัสอ้างอิงทรัพยากร Godot · test_year_campaign_planning.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_campaign_planning.gd.uid) |
 | [tests/test_year_expansion.gd](tests/test_year_expansion.gd) | การทดสอบ · สคริปต์ GDScript · test_year_expansion.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_expansion.gd) |
 | [tests/test_year_expansion.gd.uid](tests/test_year_expansion.gd.uid) | การทดสอบ · รหัสอ้างอิงทรัพยากร Godot · test_year_expansion.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_expansion.gd.uid) |
 | [tests/test_year_game.gd](tests/test_year_game.gd) | การทดสอบ · สคริปต์ GDScript · test_year_game.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_game.gd) |
 | [tests/test_year_game.gd.uid](tests/test_year_game.gd.uid) | การทดสอบ · รหัสอ้างอิงทรัพยากร Godot · test_year_game.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_game.gd.uid) |
+| [tests/test_year_heritage.gd](tests/test_year_heritage.gd) | การทดสอบ · สคริปต์ GDScript · test_year_heritage.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_heritage.gd) |
+| [tests/test_year_heritage.gd.uid](tests/test_year_heritage.gd.uid) | การทดสอบ · รหัสอ้างอิงทรัพยากร Godot · test_year_heritage.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_heritage.gd.uid) |
+| [tests/test_year_main.gd](tests/test_year_main.gd) | การทดสอบ · สคริปต์ GDScript · test_year_main.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_main.gd) |
+| [tests/test_year_main.gd.uid](tests/test_year_main.gd.uid) | การทดสอบ · รหัสอ้างอิงทรัพยากร Godot · test_year_main.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_main.gd.uid) |
+| [tests/test_year_parity.gd](tests/test_year_parity.gd) | การทดสอบ · สคริปต์ GDScript · test_year_parity.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_parity.gd) |
+| [tests/test_year_parity.gd.uid](tests/test_year_parity.gd.uid) | การทดสอบ · รหัสอ้างอิงทรัพยากร Godot · test_year_parity.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_parity.gd.uid) |
+| [tests/test_year_planner.gd](tests/test_year_planner.gd) | การทดสอบ · สคริปต์ GDScript · test_year_planner.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_planner.gd) |
+| [tests/test_year_planner.gd.uid](tests/test_year_planner.gd.uid) | การทดสอบ · รหัสอ้างอิงทรัพยากร Godot · test_year_planner.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_planner.gd.uid) |
 | [tests/test_year_session.gd](tests/test_year_session.gd) | การทดสอบ · สคริปต์ GDScript · test_year_session.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_session.gd) |
 | [tests/test_year_session.gd.uid](tests/test_year_session.gd.uid) | การทดสอบ · รหัสอ้างอิงทรัพยากร Godot · test_year_session.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_session.gd.uid) |
+| [tests/test_year_view.gd](tests/test_year_view.gd) | การทดสอบ · สคริปต์ GDScript · test_year_view.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_view.gd) |
+| [tests/test_year_view.gd.uid](tests/test_year_view.gd.uid) | การทดสอบ · รหัสอ้างอิงทรัพยากร Godot · test_year_view.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tests/test_year_view.gd.uid) |
 
 ### `tools/`
 
@@ -1031,6 +1105,16 @@ scripts/test.sh
 | [tools/village_world_fixture.gd.uid](tools/village_world_fixture.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · village_world_fixture.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tools/village_world_fixture.gd.uid) |
 | [tools/village_world_probe.gd](tools/village_world_probe.gd) | สคริปต์ GDScript · village_world_probe.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tools/village_world_probe.gd) |
 | [tools/village_world_probe.gd.uid](tools/village_world_probe.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · village_world_probe.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tools/village_world_probe.gd.uid) |
+| [tools/year_campaign_probe.gd](tools/year_campaign_probe.gd) | สคริปต์ GDScript · year_campaign_probe.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tools/year_campaign_probe.gd) |
+| [tools/year_campaign_probe.gd.uid](tools/year_campaign_probe.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_campaign_probe.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tools/year_campaign_probe.gd.uid) |
+| [tools/year_heritage_probe.gd](tools/year_heritage_probe.gd) | สคริปต์ GDScript · year_heritage_probe.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tools/year_heritage_probe.gd) |
+| [tools/year_heritage_probe.gd.uid](tools/year_heritage_probe.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_heritage_probe.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tools/year_heritage_probe.gd.uid) |
+| [tools/year_main_probe.gd](tools/year_main_probe.gd) | สคริปต์ GDScript · year_main_probe.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tools/year_main_probe.gd) |
+| [tools/year_main_probe.gd.uid](tools/year_main_probe.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_main_probe.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tools/year_main_probe.gd.uid) |
+| [tools/year_parity_probe.gd](tools/year_parity_probe.gd) | สคริปต์ GDScript · year_parity_probe.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tools/year_parity_probe.gd) |
+| [tools/year_parity_probe.gd.uid](tools/year_parity_probe.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_parity_probe.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tools/year_parity_probe.gd.uid) |
+| [tools/year_planner_probe.gd](tools/year_planner_probe.gd) | สคริปต์ GDScript · year_planner_probe.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tools/year_planner_probe.gd) |
+| [tools/year_planner_probe.gd.uid](tools/year_planner_probe.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_planner_probe.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tools/year_planner_probe.gd.uid) |
 | [tools/year_probe.gd](tools/year_probe.gd) | สคริปต์ GDScript · year_probe.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tools/year_probe.gd) |
 | [tools/year_probe.gd.uid](tools/year_probe.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_probe.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tools/year_probe.gd.uid) |
 | [tools/year_project_strategy.gd](tools/year_project_strategy.gd) | สคริปต์ GDScript · year_project_strategy.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/tools/year_project_strategy.gd) |
@@ -1095,6 +1179,10 @@ scripts/test.sh
 | [ui/turn_result_locations.gd.uid](ui/turn_result_locations.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · turn_result_locations.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/ui/turn_result_locations.gd.uid) |
 | [ui/village_advisor.gd](ui/village_advisor.gd) | สคริปต์ GDScript · village_advisor.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/ui/village_advisor.gd) |
 | [ui/village_advisor.gd.uid](ui/village_advisor.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · village_advisor.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/ui/village_advisor.gd.uid) |
+| [ui/year_area_development_panel.gd](ui/year_area_development_panel.gd) | สคริปต์ GDScript · year_area_development_panel.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/ui/year_area_development_panel.gd) |
+| [ui/year_area_development_panel.gd.uid](ui/year_area_development_panel.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_area_development_panel.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/ui/year_area_development_panel.gd.uid) |
+| [ui/year_plan_text.gd](ui/year_plan_text.gd) | สคริปต์ GDScript · year_plan_text.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/ui/year_plan_text.gd) |
+| [ui/year_plan_text.gd.uid](ui/year_plan_text.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_plan_text.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/ui/year_plan_text.gd.uid) |
 | [ui/year_screen.gd](ui/year_screen.gd) | สคริปต์ GDScript · year_screen.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/ui/year_screen.gd) |
 | [ui/year_screen.gd.uid](ui/year_screen.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_screen.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/ui/year_screen.gd.uid) |
 
@@ -1140,4 +1228,10 @@ scripts/test.sh
 | [view/water_surface.gdshader.uid](view/water_surface.gdshader.uid) | รหัสอ้างอิงทรัพยากร Godot · water_surface.gdshader.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/view/water_surface.gdshader.uid) |
 | [view/year_board.gd](view/year_board.gd) | สคริปต์ GDScript · year_board.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/view/year_board.gd) |
 | [view/year_board.gd.uid](view/year_board.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_board.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/view/year_board.gd.uid) |
+| [view/year_board_3d.gd](view/year_board_3d.gd) | สคริปต์ GDScript · year_board_3d.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/view/year_board_3d.gd) |
+| [view/year_board_3d.gd.uid](view/year_board_3d.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_board_3d.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/view/year_board_3d.gd.uid) |
+| [view/year_presentation.gd](view/year_presentation.gd) | สคริปต์ GDScript · year_presentation.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/view/year_presentation.gd) |
+| [view/year_presentation.gd.uid](view/year_presentation.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_presentation.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/view/year_presentation.gd.uid) |
+| [view/year_village_view.gd](view/year_village_view.gd) | สคริปต์ GDScript · year_village_view.gd | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/view/year_village_view.gd) |
+| [view/year_village_view.gd.uid](view/year_village_view.gd.uid) | รหัสอ้างอิงทรัพยากร Godot · year_village_view.gd.uid | [Raw](https://raw.githubusercontent.com/Warissakorn/Monsoon-Delta/main/view/year_village_view.gd.uid) |
 <!-- project-file-index:end -->

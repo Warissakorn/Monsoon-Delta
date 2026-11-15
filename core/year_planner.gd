@@ -13,19 +13,23 @@ static func describe(year: Dictionary) -> Dictionary:
 	for step: int in range(HORIZON):
 		if copy["outcome"] != "running":
 			break
-		var before: Dictionary = copy.duplicate(true)
 		var visual: Array[TurnReport] = []
 		var report: Dictionary = YearGame.advance(copy, 1, visual)
 		var damaged: Array[int] = []
-		for index: int in range(copy["structures"].size()):
-			if int(copy["health"][index]) < int(before["health"][index]):
+		var crops: Array[int] = []
+		for fact: Dictionary in visual[0].year_ledger["locations"]:
+			var index: int = int(fact["tile"])
+			if fact["kind"] == "year.event.damage":
 				damaged.append(index)
-				risks.append({"kind": "damage", "day": int(copy["day"]), "tile": index, "amount": int(before["health"][index]) - int(copy["health"][index])})
+				risks.append({"kind": "damage", "day": int(copy["day"]), "tile": index, "amount": int(fact["before"]) - int(fact["after"])})
+			elif fact["kind"] == "year.event.crop_lost":
+				crops.append(index)
+				risks.append({"kind": "crops", "day": int(copy["day"]), "tile": index, "amount": int(fact["before"])})
 		for job: Dictionary in visual[0].year_jobs_completed:
 			var index: int = int(job["tile"])
 			if not completions.has(index):
 				completions[index] = int(copy["day"])
-		days.append({"day": int(copy["day"]), "food": int(copy["resources"]["food"]), "food_need": YearGame.food_need(copy), "population": int(copy["population"]), "housing": YearGame.housing(copy), "inflow": YearWeather.inflow(copy, int(copy["day"]) - 1), "outcome": copy["outcome"], "events": report["events"].duplicate(), "damaged": damaged})
+		days.append({"day": int(copy["day"]), "food": int(copy["resources"]["food"]), "food_need": YearGame.food_need(copy), "population": int(copy["population"]), "housing": YearGame.housing(copy), "inflow": YearWeather.inflow(copy, int(copy["day"]) - 1), "outcome": copy["outcome"], "events": report["events"].duplicate(), "damaged": damaged, "crops": crops})
 	var jobs: Array[Dictionary] = job_rows(year, completions)
 	return {"days": days, "risks": risks, "jobs": jobs, "advice": _advice(year, copy, days, risks, jobs)}
 
@@ -55,6 +59,9 @@ static func _advice(year: Dictionary, after: Dictionary, days: Array[Dictionary]
 			return {"kind": "damage", "tile": hall, "action": _repair(year, hall), "values": [int(risk["day"]), int(risk["amount"])], "day": int(risk["day"])}
 	if not risks.is_empty():
 		var risk: Dictionary = risks[0]
+		if risk["kind"] == "crops":
+			var action: String = "harvest" if harvest_in_time(year, int(risk["tile"])) else ""
+			return {"kind": "crops", "tile": int(risk["tile"]), "action": action, "values": [int(risk["day"]), int(risk["amount"])], "day": int(risk["day"])}
 		return {"kind": "damage", "tile": int(risk["tile"]), "action": _repair(year, int(risk["tile"])), "values": [int(risk["day"]), int(risk["amount"])], "day": int(risk["day"])}
 	for row: Dictionary in jobs:
 		if row["kind"] == "blocked":
@@ -95,7 +102,9 @@ static func target(year: Dictionary, id: String) -> int:
 	for index: int in range(year["structures"].size()):
 		if not YearGame.check_order(year, id, index).is_empty():
 			continue
-		if int(year["day"]) + YearGame._job_days(year, id, index) > 365:
+		if int(year["day"]) + YearGame._job_days(year, id, index) > YearGame.total_days(year):
+			continue
+		if id == "harvest" and not harvest_in_time(year, index):
 			continue
 		var tile: Dictionary = year["board"]["tiles"][index]
 		var distance: int = Hex.distance(Vector2i(int(hall["q"]), int(hall["r"])), Vector2i(int(tile["q"]), int(tile["r"])))
@@ -104,3 +113,17 @@ static func target(year: Dictionary, id: String) -> int:
 			best = index
 			score = value
 	return best
+
+
+static func harvest_in_time(year: Dictionary, index: int) -> bool:
+	var copy: Dictionary = year.duplicate(true)
+	if not YearGame.order(copy, "harvest", index).is_empty():
+		return false
+	for _day: int in range(YearGame._job_days(copy, "harvest", index)):
+		if copy["outcome"] != "running" or int(copy["day"]) >= YearGame.total_days(copy):
+			return false
+		var visual: TurnReport = TurnReport.new()
+		YearGame.resolve_day(copy, visual)
+		if visual.year_jobs_completed.any(func(job: Dictionary): return job["tile"] == index and job["id"] == "harvest"):
+			return true
+	return false

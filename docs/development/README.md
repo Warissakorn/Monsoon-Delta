@@ -133,6 +133,9 @@ XDG_DATA_HOME="$PWD/work/menu-draft-qa/en/data" XDG_CONFIG_HOME="$PWD/work/menu-
 
 ## รอบเต็ม 365 วัน
 
+รอบหลายปีและหน้าพัฒนาพื้นที่ใช้ [คู่มือเฉพาะ](../features/YEAR_CAMPAIGNS.md) ตรวจ `scripts/test.sh --filter=year_campaign_planning` และ `tools/year_campaign_probe.gd` ไทย/อังกฤษ เก็บวันจริงต่อเนื่องและใช้ calendar helpers เมื่ออ่านฤดู กฎใหม่ต้องคงการ resolve และเซฟ v1–v5 เดิม
+
+
 ตรวจ [YearHeritage](../../core/year_heritage.gd) ด้วย `scripts/test.sh --filter=year_heritage` และ `tools/year_heritage_probe.gd` ไทย/อังกฤษตาม [คู่มืออายุอาคารและเหรียญ](../features/YEAR365.md#ตรวจอายุอาคารและเหรียญ) เวลาที่เก็บเป็นวันจริง ภาพที่เทียบเป็นช่วง 30 วันอยู่เฉพาะ YearPresentation ไม่ resolve/serialize สำเนา การเพิ่มกฎบันทึกต้องแยก `monsoon_year` จาก envelope หมายเลขเดียวกันของเซฟ normal เสมอ
 
 ระบบปี v5 เลือกผ่านฟอร์มปีใหม่ (รวมกฎ v4 และอายุอาคาร/เหรียญถาวร) ดู [กฎและบัญชีรายวัน](../features/YEAR365.md#ระบบหมู่บ้านเพิ่มเติมสำหรับปีใหม่) ตรวจเฉพาะส่วนด้วย `scripts/test.sh --filter=year_parity` และ native `tools/year_parity_probe.gd` ทั้งไทย/อังกฤษ คำเตือนใช้ผลถึงวันที่หยุดจริง การทดลองคำสั่งใช้ 7 วันผ่าน notice เหมือน YearPlanner; ทั้งคู่ไม่เขียนเซฟจนผู้เล่นยืนยัน
