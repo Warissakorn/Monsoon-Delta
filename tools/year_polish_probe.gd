@@ -2,17 +2,47 @@ extends "res://tools/year_heritage_probe.gd"
 ## Mouse/physical-key checks for the polished UI; all world state uses public replay.
 
 
+func _option_mouse(point: Vector2, pressed: bool) -> void:
+	point *= Vector2(root.size) / root.get_visible_rect().size
+	Input.warp_mouse(point)
+	var motion: InputEventMouseMotion = InputEventMouseMotion.new()
+	motion.position = point
+	motion.global_position = point
+	Input.parse_input_event(motion)
+	await process_frame
+	var event: InputEventMouseButton = InputEventMouseButton.new()
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.position = point
+	event.global_position = point
+	event.pressed = pressed
+	Input.parse_input_event(event)
+	await process_frame
+
+
 func _choose(button: OptionButton, index: int) -> void:
-	await _click(button)
+	await process_frame
+	await process_frame
+	var ancestor: Node = button.get_parent()
+	while ancestor != null:
+		if ancestor is ScrollContainer:
+			ancestor.ensure_control_visible(button)
+		ancestor = ancestor.get_parent()
+	await process_frame
+	await process_frame
+	var point: Vector2 = button.get_global_rect().get_center()
+	if button.get_window() != root:
+		point += Vector2(button.get_window().position)
+	# Press, drag onto the requested option, then release. A menu opening upward
+	# can otherwise select its bottom item on the initial slow release under load.
+	await _option_mouse(point, true)
 	var popup: PopupMenu = button.get_popup()
 	_check(popup.visible, "native option menu opens")
 	if not popup.visible:
+		await _option_mouse(point, false)
 		return
-	# Option menus include panel padding; proportional positions can hit the
-	# bottom padding rather than the final item. These menus contain no separators.
 	var item_height: float = popup.get_theme_font("font").get_height(popup.get_theme_font_size("font_size")) + popup.get_theme_constant("v_separation")
 	var padding: float = maxf(0.0, (float(popup.size.y) - float(popup.item_count) * item_height) * 0.5)
-	await _click_at(Vector2(popup.position) + Vector2(float(popup.size.x) * 0.5, padding + (float(index) + 0.5) * item_height))
+	await _option_mouse(Vector2(popup.position) + Vector2(float(popup.size.x) * 0.5, padding + (float(index) + 0.5) * item_height), false)
 	_check(button.selected == index, "native option selects the requested item")
 
 

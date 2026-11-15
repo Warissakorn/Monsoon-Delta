@@ -129,6 +129,7 @@ func test_every_checkpoint_entry_point_keeps_protected_and_future_files_untouche
 	assert_eq(session.load_year(), "msg.no_save")
 	assert_eq(session._read_year()["error"], "msg.no_save")
 	assert_eq(session.start_campaign(73, "rice", "water"), "yearpractice.restart_only")
+	assert_eq(session.start_campaign(73, "rice", "water", "farmer", 0, true, true, 3), "yearpractice.restart_only")
 	assert_eq(session.start_year(), "yearpractice.restart_only")
 	assert_eq(session.start({"seed": 73}), "yearpractice.restart_only")
 	assert_eq(session.load_game(), "msg.no_save")
@@ -253,7 +254,7 @@ func test_practice_quit_restores_the_original_unsaved_progress_confirmation() ->
 
 
 func test_guide_reads_current_rules_and_never_changes_checkpoint_or_undo() -> void:
-	for year: Dictionary in [YearGame.new_game(), YearGame.new_campaign(42, "none", "food"), YearGame.new_campaign(42, "none", "food", "farmer", 0, true, true)]:
+	for year: Dictionary in [YearGame.new_game(), YearGame.new_campaign(42, "none", "food"), YearGame.new_campaign(42, "none", "food", "farmer", 0, true, true), YearGame.new_campaign(42, "none", "food", "farmer", 0, true, true, 3)]:
 		var screen: YearScreen = YearScreen.new()
 		screen.session = YearSession.new()
 		screen.session.save_path = PATH
@@ -342,5 +343,51 @@ func test_language_change_from_practice_never_creates_an_unstarted_player_year()
 	assert_true(not returned._restart.visible)
 	assert_eq(returned.ui_draft(), draft)
 	assert_true(not FileAccess.file_exists(PATH))
+	boot.free()
+	assert_eq(GamePreferences.write(preferences), "")
+
+
+func test_multiyear_run_and_planning_draft_survive_practice_and_language_change() -> void:
+	var preferences: Dictionary = GamePreferences.read()
+	var boot: YearBoot = YearBoot.new()
+	(Engine.get_main_loop() as SceneTree).root.add_child(boot)
+	boot._language = "en"
+	var origin: YearScreen = YearScreen.new()
+	origin.session = YearSession.new()
+	origin.session.save_path = PATH
+	assert_eq(origin.session.start_campaign(73, "forest", "water", "fisher", 5, true, true, 3), "")
+	boot._bind_year_screen(origin)
+	boot._replace_screen(origin)
+	origin._campaign_years.select(2)
+	origin._campaign_length_changed()
+	origin._trial_horizon.select(1)
+	origin._guide._tabs.current_tab = 3
+	origin._seed.text = "keep five-year setup draft"
+	var session: YearSession = origin.session
+	var before: Dictionary = session.year.duplicate(true)
+	var draft: Dictionary = origin.ui_draft()
+	var bytes: PackedByteArray = FileAccess.get_file_as_bytes(PATH)
+	boot._start_year_practice()
+	var attempt: YearPracticeSession = (boot._screen as YearPracticeScreen)._attempt
+	assert_eq(YearGame.total_days(attempt.year), 365)
+	assert_true(not YearGame.multi_year(attempt.year))
+	_assign(attempt)
+	boot._change_year_language()
+	assert_true((boot._screen as YearPracticeScreen)._attempt == attempt)
+	assert_eq(attempt.step, 1)
+	boot._return_year_practice()
+	var returned: YearScreen = boot._screen as YearScreen
+	assert_true(returned.session == session)
+	assert_eq(returned.session.year, before)
+	assert_eq(returned.ui_draft(), draft)
+	assert_eq(returned._campaign_years.selected, 2)
+	assert_eq(returned._trial_horizon.selected, 1)
+	assert_true(returned._classic.disabled and returned._classic.button_pressed)
+	assert_eq(YearGame.total_days(returned.session.year), 1095)
+	assert_eq(FileAccess.get_file_as_bytes(PATH), bytes)
+	returned.open_area_development()
+	assert_true(returned._area_dialog.visible)
+	assert_true(returned._area_panel != null)
+	assert_eq(FileAccess.get_file_as_bytes(PATH), bytes)
 	boot.free()
 	assert_eq(GamePreferences.write(preferences), "")

@@ -1,0 +1,663 @@
+{
+  "date": "2026-11-15",
+  "engine": "Godot 4.6.3",
+  "parents": {
+    "pr38_head": "379d77bc5c1094ced98d0fe4ede2cb8560be803c",
+    "main_after_pr38": "38cf03e67967f0b9891efac25633baca5b781ac3",
+    "pr39_before_integration": "a4e36a60d5c04452a64456b5806fc962cac06de7"
+  },
+  "suite": {
+    "passed": 762,
+    "failed": 0,
+    "targeted_practice_passed": 14
+  },
+  "cli": {
+    "boot_passed": 28,
+    "school_passed": 5
+  },
+  "native_method": "Automated native mouse/key events; public daily replay and authored risk fixtures as documented in the probes. Isolated checkpoint and XDG paths.",
+  "native": [
+    {
+      "probe": "year_campaign",
+      "language": "th",
+      "resolution": [
+        1280,
+        720
+      ],
+      "passed": true,
+      "checks": [
+        {
+          "check": "explicit three-year campaign validates",
+          "passed": true
+        },
+        {
+          "check": "loaded campaign duration is preserved in setup",
+          "passed": true
+        },
+        {
+          "check": "cancelling duration changes preserves the checkpoint",
+          "passed": true
+        },
+        {
+          "check": "native develop-hex button opens contextual actions",
+          "passed": true
+        },
+        {
+          "check": "area dialog and its close button fit the window",
+          "passed": true
+        },
+        {
+          "check": "native trial resolves beyond seven days until the house finishes",
+          "passed": true
+        },
+        {
+          "check": "trial does not assign resources or save",
+          "passed": true
+        },
+        {
+          "check": "preview focuses its forecast details for reading",
+          "passed": true
+        },
+        {
+          "check": "native confirmation assigns exactly one job",
+          "passed": true
+        },
+        {
+          "check": "native Undo restores the plan and materials",
+          "passed": true
+        },
+        {
+          "check": "public replay reaches a live second-year boundary",
+          "passed": true
+        },
+        {
+          "check": "native next-day input enters year two without resetting the village",
+          "passed": true
+        },
+        {
+          "check": "second-year checkpoint reloads exactly",
+          "passed": true
+        },
+        {
+          "check": "authored crop-risk fixture validates",
+          "passed": true
+        },
+        {
+          "check": "advisor warns rather than suggesting a harvest that will be too late",
+          "passed": true
+        },
+        {
+          "check": "crop-loss forecast has a map marker",
+          "passed": true
+        },
+        {
+          "check": "native warning offers individual risk locations",
+          "passed": true
+        },
+        {
+          "check": "risk confirmation buttons fit the window",
+          "passed": true
+        },
+        {
+          "check": "inspecting a risk does not advance or save",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "probe": "year_campaign",
+      "language": "en",
+      "resolution": [
+        1280,
+        720
+      ],
+      "passed": true,
+      "checks": [
+        {
+          "check": "explicit three-year campaign validates",
+          "passed": true
+        },
+        {
+          "check": "loaded campaign duration is preserved in setup",
+          "passed": true
+        },
+        {
+          "check": "cancelling duration changes preserves the checkpoint",
+          "passed": true
+        },
+        {
+          "check": "native develop-hex button opens contextual actions",
+          "passed": true
+        },
+        {
+          "check": "area dialog and its close button fit the window",
+          "passed": true
+        },
+        {
+          "check": "native trial resolves beyond seven days until the house finishes",
+          "passed": true
+        },
+        {
+          "check": "trial does not assign resources or save",
+          "passed": true
+        },
+        {
+          "check": "preview focuses its forecast details for reading",
+          "passed": true
+        },
+        {
+          "check": "native confirmation assigns exactly one job",
+          "passed": true
+        },
+        {
+          "check": "native Undo restores the plan and materials",
+          "passed": true
+        },
+        {
+          "check": "public replay reaches a live second-year boundary",
+          "passed": true
+        },
+        {
+          "check": "native next-day input enters year two without resetting the village",
+          "passed": true
+        },
+        {
+          "check": "second-year checkpoint reloads exactly",
+          "passed": true
+        },
+        {
+          "check": "authored crop-risk fixture validates",
+          "passed": true
+        },
+        {
+          "check": "advisor warns rather than suggesting a harvest that will be too late",
+          "passed": true
+        },
+        {
+          "check": "crop-loss forecast has a map marker",
+          "passed": true
+        },
+        {
+          "check": "native warning offers individual risk locations",
+          "passed": true
+        },
+        {
+          "check": "risk confirmation buttons fit the window",
+          "passed": true
+        },
+        {
+          "check": "inspecting a risk does not advance or save",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "probe": "year_practice",
+      "language": "th",
+      "resolution": [
+        1280,
+        720
+      ],
+      "passed": true,
+      "checks": [
+        {
+          "check": "normal checkpoint fixture exists separately",
+          "passed": true
+        },
+        {
+          "check": "original player year starts",
+          "passed": true
+        },
+        {
+          "check": "F1 opens the current-year guide",
+          "passed": true
+        },
+        {
+          "check": "native guide tabs open the water chapter",
+          "passed": true
+        },
+        {
+          "check": "reading the guide and modal input do not resolve or save the run",
+          "passed": true
+        },
+        {
+          "check": "guide opens a separate practice screen and keeps the original node paused",
+          "passed": true
+        },
+        {
+          "check": "practice begins at its own fixed world with no save action",
+          "passed": true
+        },
+        {
+          "check": "lesson hint prepares repeated food work without placing it",
+          "passed": true
+        },
+        {
+          "check": "real food assignment advances the first goal",
+          "passed": true
+        },
+        {
+          "check": "planning lessons keep the undo opportunity before time advances",
+          "passed": true
+        },
+        {
+          "check": "native Undo removes the actual order",
+          "passed": true
+        },
+        {
+          "check": "native Redo restores the same job",
+          "passed": true
+        },
+        {
+          "check": "real daily completion passes production despite daily meal costs",
+          "passed": true
+        },
+        {
+          "check": "native pause returns the lesson worker",
+          "passed": true
+        },
+        {
+          "check": "native resume returns the worker to production",
+          "passed": true
+        },
+        {
+          "check": "final lesson prepares a valid home construction form",
+          "passed": true
+        },
+        {
+          "check": "reserving construction materials does not invent housing",
+          "passed": true
+        },
+        {
+          "check": "actual construction completion finishes all seven lesson goals",
+          "passed": true
+        },
+        {
+          "check": "completion returns to the exact original player run",
+          "passed": true
+        },
+        {
+          "check": "return preserves planning, history, setup draft, current tool and camera",
+          "passed": true
+        },
+        {
+          "check": "the complete practice attempt leaves both player checkpoint files byte-identical",
+          "passed": true
+        },
+        {
+          "check": "player can return to the main menu normally",
+          "passed": true
+        },
+        {
+          "check": "main menu can start a new practice attempt independently",
+          "passed": true
+        },
+        {
+          "check": "practice help cannot nest another practice attempt",
+          "passed": true
+        },
+        {
+          "check": "practice restart has its own confirmation",
+          "passed": true
+        },
+        {
+          "check": "leaving practice returns to the same menu without starting a player year",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "probe": "year_practice",
+      "language": "en",
+      "resolution": [
+        1280,
+        720
+      ],
+      "passed": true,
+      "checks": [
+        {
+          "check": "normal checkpoint fixture exists separately",
+          "passed": true
+        },
+        {
+          "check": "original player year starts",
+          "passed": true
+        },
+        {
+          "check": "F1 opens the current-year guide",
+          "passed": true
+        },
+        {
+          "check": "native guide tabs open the water chapter",
+          "passed": true
+        },
+        {
+          "check": "reading the guide and modal input do not resolve or save the run",
+          "passed": true
+        },
+        {
+          "check": "guide opens a separate practice screen and keeps the original node paused",
+          "passed": true
+        },
+        {
+          "check": "practice begins at its own fixed world with no save action",
+          "passed": true
+        },
+        {
+          "check": "lesson hint prepares repeated food work without placing it",
+          "passed": true
+        },
+        {
+          "check": "real food assignment advances the first goal",
+          "passed": true
+        },
+        {
+          "check": "planning lessons keep the undo opportunity before time advances",
+          "passed": true
+        },
+        {
+          "check": "native Undo removes the actual order",
+          "passed": true
+        },
+        {
+          "check": "native Redo restores the same job",
+          "passed": true
+        },
+        {
+          "check": "real daily completion passes production despite daily meal costs",
+          "passed": true
+        },
+        {
+          "check": "native pause returns the lesson worker",
+          "passed": true
+        },
+        {
+          "check": "native resume returns the worker to production",
+          "passed": true
+        },
+        {
+          "check": "final lesson prepares a valid home construction form",
+          "passed": true
+        },
+        {
+          "check": "reserving construction materials does not invent housing",
+          "passed": true
+        },
+        {
+          "check": "actual construction completion finishes all seven lesson goals",
+          "passed": true
+        },
+        {
+          "check": "completion returns to the exact original player run",
+          "passed": true
+        },
+        {
+          "check": "return preserves planning, history, setup draft, current tool and camera",
+          "passed": true
+        },
+        {
+          "check": "the complete practice attempt leaves both player checkpoint files byte-identical",
+          "passed": true
+        },
+        {
+          "check": "player can return to the main menu normally",
+          "passed": true
+        },
+        {
+          "check": "main menu can start a new practice attempt independently",
+          "passed": true
+        },
+        {
+          "check": "practice help cannot nest another practice attempt",
+          "passed": true
+        },
+        {
+          "check": "practice restart has its own confirmation",
+          "passed": true
+        },
+        {
+          "check": "leaving practice returns to the same menu without starting a player year",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "probe": "year_polish",
+      "language": "th",
+      "resolution": [
+        1280,
+        720
+      ],
+      "passed": true,
+      "checks": [
+        {
+          "check": "isolated v5 year starts",
+          "passed": true
+        },
+        {
+          "check": "real daily replay reaches a valid ninety-day village",
+          "passed": true
+        },
+        {
+          "check": "goal card shows the earned medal and only useful requirements",
+          "passed": true
+        },
+        {
+          "check": "ambition is shown before the long building list",
+          "passed": true
+        },
+        {
+          "check": "native option menu opens",
+          "passed": true
+        },
+        {
+          "check": "native option selects the requested item",
+          "passed": true
+        },
+        {
+          "check": "native option menu opens",
+          "passed": true
+        },
+        {
+          "check": "native option selects the requested item",
+          "passed": true
+        },
+        {
+          "check": "native home filter removes workplaces from the list",
+          "passed": true
+        },
+        {
+          "check": "native oldest-first sort is selected",
+          "passed": true
+        },
+        {
+          "check": "building inspection keeps the selected work tool and offers return",
+          "passed": true
+        },
+        {
+          "check": "Escape restores village tab, camera and prior selection",
+          "passed": true
+        },
+        {
+          "check": "return keeps the original filter, order and scroll position",
+          "passed": true
+        },
+        {
+          "check": "native option menu opens",
+          "passed": true
+        },
+        {
+          "check": "native option selects the requested item",
+          "passed": true
+        },
+        {
+          "check": "an empty repair filter gives a clear empty state",
+          "passed": true
+        },
+        {
+          "check": "extra systems are visible in the initial new-year form without scrolling",
+          "passed": true
+        },
+        {
+          "check": "navigation, filters and cancelled setup do not change gameplay, RNG, save or Undo",
+          "passed": true
+        },
+        {
+          "check": "full-year replay starts",
+          "passed": true
+        },
+        {
+          "check": "native final day opens the polished result card",
+          "passed": true
+        },
+        {
+          "check": "result card shows the actual total and medal contribution",
+          "passed": true
+        },
+        {
+          "check": "every score value fits without wrapping or clipping",
+          "passed": true
+        },
+        {
+          "check": "completed year has no next-day forecast or ghost prediction",
+          "passed": true
+        },
+        {
+          "check": "result window fits within the viewport",
+          "passed": true
+        },
+        {
+          "check": "native result action opens village and medals",
+          "passed": true
+        },
+        {
+          "check": "back-to-map action returns to the inspector",
+          "passed": true
+        },
+        {
+          "check": "reopening results and viewing the village do not save or resolve again",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "probe": "year_polish",
+      "language": "en",
+      "resolution": [
+        1280,
+        720
+      ],
+      "passed": true,
+      "checks": [
+        {
+          "check": "isolated v5 year starts",
+          "passed": true
+        },
+        {
+          "check": "real daily replay reaches a valid ninety-day village",
+          "passed": true
+        },
+        {
+          "check": "goal card shows the earned medal and only useful requirements",
+          "passed": true
+        },
+        {
+          "check": "ambition is shown before the long building list",
+          "passed": true
+        },
+        {
+          "check": "native option menu opens",
+          "passed": true
+        },
+        {
+          "check": "native option selects the requested item",
+          "passed": true
+        },
+        {
+          "check": "native option menu opens",
+          "passed": true
+        },
+        {
+          "check": "native option selects the requested item",
+          "passed": true
+        },
+        {
+          "check": "native home filter removes workplaces from the list",
+          "passed": true
+        },
+        {
+          "check": "native oldest-first sort is selected",
+          "passed": true
+        },
+        {
+          "check": "building inspection keeps the selected work tool and offers return",
+          "passed": true
+        },
+        {
+          "check": "Escape restores village tab, camera and prior selection",
+          "passed": true
+        },
+        {
+          "check": "return keeps the original filter, order and scroll position",
+          "passed": true
+        },
+        {
+          "check": "native option menu opens",
+          "passed": true
+        },
+        {
+          "check": "native option selects the requested item",
+          "passed": true
+        },
+        {
+          "check": "an empty repair filter gives a clear empty state",
+          "passed": true
+        },
+        {
+          "check": "extra systems are visible in the initial new-year form without scrolling",
+          "passed": true
+        },
+        {
+          "check": "navigation, filters and cancelled setup do not change gameplay, RNG, save or Undo",
+          "passed": true
+        },
+        {
+          "check": "full-year replay starts",
+          "passed": true
+        },
+        {
+          "check": "native final day opens the polished result card",
+          "passed": true
+        },
+        {
+          "check": "result card shows the actual total and medal contribution",
+          "passed": true
+        },
+        {
+          "check": "every score value fits without wrapping or clipping",
+          "passed": true
+        },
+        {
+          "check": "completed year has no next-day forecast or ghost prediction",
+          "passed": true
+        },
+        {
+          "check": "result window fits within the viewport",
+          "passed": true
+        },
+        {
+          "check": "native result action opens village and medals",
+          "passed": true
+        },
+        {
+          "check": "back-to-map action returns to the inspector",
+          "passed": true
+        },
+        {
+          "check": "reopening results and viewing the village do not save or resolve again",
+          "passed": true
+        }
+      ]
+    }
+  ]
+}

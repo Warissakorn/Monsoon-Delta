@@ -300,7 +300,7 @@ func test_future_and_mismatched_envelopes_leave_live_history_and_checkpoint_unto
 	var future: Dictionary = YearCheckpoint.envelope(session.year)
 	future["version"] = 4
 	assert_eq(YearCheckpoint.decode(future)["error"], "msg.save_corrupt")
-	future["version"] = 6
+	future["version"] = 7
 	var bytes: String = JSON.stringify(future)
 	var file: FileAccess = FileAccess.open(PATH, FileAccess.WRITE)
 	file.store_string(bytes)

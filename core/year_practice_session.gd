@@ -89,7 +89,7 @@ func start_year(_seed: int = 42, _goal: String = "none", _project: String = "") 
 	return "yearpractice.restart_only"
 
 
-func start_campaign(_seed: int, _goal: String, _project: String, _leader: String = "farmer", _difficulty: int = 0, _classic: bool = false, _heritage: bool = false) -> String:
+func start_campaign(_seed: int, _goal: String, _project: String, _leader: String = "farmer", _difficulty: int = 0, _classic: bool = false, _heritage: bool = false, _campaign_years: int = 1) -> String:
 	return "yearpractice.restart_only"
 
 

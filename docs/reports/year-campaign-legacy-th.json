@@ -1,0 +1,102 @@
+{
+  "checks": [
+    {
+      "check": "new profile uses extra daily systems",
+      "passed": true
+    },
+    {
+      "check": "new-year form keeps the loaded campaign profile",
+      "passed": true
+    },
+    {
+      "check": "cancelling restart preserves state and checkpoint",
+      "passed": true
+    },
+    {
+      "check": "physical 6 selects raft construction",
+      "passed": true
+    },
+    {
+      "check": "physical R selects bracing",
+      "passed": true
+    },
+    {
+      "check": "physical Tab toggles prediction",
+      "passed": true
+    },
+    {
+      "check": "physical D pans the camera",
+      "passed": true
+    },
+    {
+      "check": "native try-order opens the seven-day comparison",
+      "passed": true
+    },
+    {
+      "check": "comparison does not commit or write",
+      "passed": true
+    },
+    {
+      "check": "cancelling trial leaves the year unchanged",
+      "passed": true
+    },
+    {
+      "check": "confirming trial assigns once",
+      "passed": true
+    },
+    {
+      "check": "trial assignment can be undone",
+      "passed": true
+    },
+    {
+      "check": "nonfatal flood fixture validates",
+      "passed": true
+    },
+    {
+      "check": "damage warning includes a location button",
+      "passed": true
+    },
+    {
+      "check": "native risk inspection keeps the day and checkpoint",
+      "passed": true
+    },
+    {
+      "check": "harvest fixture validates",
+      "passed": true
+    },
+    {
+      "check": "native priority popup opens",
+      "passed": true
+    },
+    {
+      "check": "native priority control assigns skip",
+      "passed": true
+    },
+    {
+      "check": "native harvest order commits",
+      "passed": true
+    },
+    {
+      "check": "real daily work produces harvest food",
+      "passed": true
+    },
+    {
+      "check": "history contains one record per actual day",
+      "passed": true
+    },
+    {
+      "check": "actual record offers a clickable location",
+      "passed": true
+    },
+    {
+      "check": "result inspection offers return to history",
+      "passed": true
+    },
+    {
+      "check": "return restores camera and preserves checkpoint",
+      "passed": true
+    }
+  ],
+  "language": "th",
+  "passed": true
+}

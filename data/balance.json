@@ -1146,6 +1146,9 @@
     "trap_food_per_day": 1,
     "build_min_water": 0.1
   },
+  "year_multiyear": {
+    "inflow_per_year": 0.05
+  },
   "year_heritage": {
     "period_days": 30,
     "confirmation_periods": 2,

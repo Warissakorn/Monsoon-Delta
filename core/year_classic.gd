@@ -1,11 +1,11 @@
 class_name YearClassic
 extends RefCounted
-## Opt-in year365_v4/v5 mechanics; old campaigns keep the original daily rules.
+## Opt-in year365_v4/v5/v6 mechanics; old campaigns keep the original daily rules.
 const FIELDS: Array[String] = ["soil_moisture", "brace_days", "irrigation_policy"]
 const STRUCTURES: Array[String] = ["", "hall", "house", "stilt_house", "sawmill", "kiln", "granary", "gate", "reservoir", "waterwheel", "workshop", "camp", "raft_house", "fish_trap"]
 
 static func enabled(s: Dictionary) -> bool:
-	return s.get("ruleset") in ["year365_v4", "year365_v5"]
+	return s.get("ruleset") in ["year365_v4", "year365_v5", "year365_v6"]
 
 
 static func config() -> Dictionary:
@@ -49,6 +49,8 @@ static func crops_and_fish(s: Dictionary, board: GameState, season: String, even
 				if int(s["crop_stress"][index]) >= 5:
 					if int(s["crop_growth"][index]) > 0:
 						YearLedger.fact(report, s, index, "year.event.crop_lost", int(s["crop_growth"][index]), 0)
+						if report != null:
+							report.paddies_died.append(tile.coord)
 						events.append("year.event.crop_lost")
 					s["crop_growth"][index] = 0
 					s["soil_moisture"][index] = 0
