@@ -133,6 +133,12 @@ XDG_DATA_HOME="$PWD/work/menu-draft-qa/en/data" XDG_CONFIG_HOME="$PWD/work/menu-
 
 ## รอบเต็ม 365 วัน
 
+เมื่อรวมระบบหลายปีเข้ากับบทฝึก ต้องรักษา signature `YearPracticeSession.start_campaign` ให้ตรงกับ `YearSession` โดยไม่เพิ่ม I/O ให้บทฝึก และเก็บ `campaign_years`/`trial_horizon` ร่วมกับหมวดคู่มือ/บริบทหมู่บ้านใน UI draft ตรวจกรณีเข้าออกบทฝึกจาก v6 แล้วสลับภาษาใน `test_year_practice.gd`
+
+คู่มือและบทฝึกตรวจด้วย `scripts/test.sh --filter=year_practice` และ [native probe](../../tools/year_practice_probe.gd) ตาม [คู่มือ](../features/YEAR365.md#ตรวจคู่มือและบทฝึก) ทั้งไทย/อังกฤษและ `--wide` ใช้คำสั่งจริงจนครบ 7 ขั้นเทียบไฟล์ก่อน/หลังเข้าออก บทฝึกต้องใช้ YearPracticeSession ที่ปิดทั้ง year และ inherited normal I/O ส่วนขั้นตอนอยู่นอก year payload ห้ามให้การสร้างหน้าจอใหม่เพราะภาษาเริ่มรอบจริงที่ยังไม่ยืนยัน การย้ายออกจาก embedded guide ต้องรอจบ input event ก่อนถอด origin screen
+
+การขัดเกลาหน้าปีตรวจด้วย `scripts/test.sh --filter=year_polish` และ [native probe](../../tools/year_polish_probe.gd) ตาม [คู่มือ](../features/YEAR365.md#ตรวจส่วนขัดเกลา) ใช้ `--wide` สำหรับ 1600×900 ตัวกรองอาคารและบริบทกลับจากการดูช่องเป็น UI draft เท่านั้น ไม่เพิ่มฟิลด์เซฟ การเปลี่ยน selector ของหน้าสรุปให้ยืนยันคะแนนจาก visible labels แทนข้อความ dialog เดิม
+
 รอบหลายปีและหน้าพัฒนาพื้นที่ใช้ [คู่มือเฉพาะ](../features/YEAR_CAMPAIGNS.md) ตรวจ `scripts/test.sh --filter=year_campaign_planning` และ `tools/year_campaign_probe.gd` ไทย/อังกฤษ เก็บวันจริงต่อเนื่องและใช้ calendar helpers เมื่ออ่านฤดู กฎใหม่ต้องคงการ resolve และเซฟ v1–v5 เดิม
 
 

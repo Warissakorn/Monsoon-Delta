@@ -1,0 +1,114 @@
+{
+  "checks": [
+    {
+      "check": "normal checkpoint fixture exists separately",
+      "passed": true
+    },
+    {
+      "check": "original player year starts",
+      "passed": true
+    },
+    {
+      "check": "F1 opens the current-year guide",
+      "passed": true
+    },
+    {
+      "check": "native guide tabs open the water chapter",
+      "passed": true
+    },
+    {
+      "check": "reading the guide and modal input do not resolve or save the run",
+      "passed": true
+    },
+    {
+      "check": "guide opens a separate practice screen and keeps the original node paused",
+      "passed": true
+    },
+    {
+      "check": "practice begins at its own fixed world with no save action",
+      "passed": true
+    },
+    {
+      "check": "lesson hint prepares repeated food work without placing it",
+      "passed": true
+    },
+    {
+      "check": "real food assignment advances the first goal",
+      "passed": true
+    },
+    {
+      "check": "planning lessons keep the undo opportunity before time advances",
+      "passed": true
+    },
+    {
+      "check": "native Undo removes the actual order",
+      "passed": true
+    },
+    {
+      "check": "native Redo restores the same job",
+      "passed": true
+    },
+    {
+      "check": "real daily completion passes production despite daily meal costs",
+      "passed": true
+    },
+    {
+      "check": "native pause returns the lesson worker",
+      "passed": true
+    },
+    {
+      "check": "native resume returns the worker to production",
+      "passed": true
+    },
+    {
+      "check": "final lesson prepares a valid home construction form",
+      "passed": true
+    },
+    {
+      "check": "reserving construction materials does not invent housing",
+      "passed": true
+    },
+    {
+      "check": "actual construction completion finishes all seven lesson goals",
+      "passed": true
+    },
+    {
+      "check": "completion returns to the exact original player run",
+      "passed": true
+    },
+    {
+      "check": "return preserves planning, history, setup draft, current tool and camera",
+      "passed": true
+    },
+    {
+      "check": "the complete practice attempt leaves both player checkpoint files byte-identical",
+      "passed": true
+    },
+    {
+      "check": "player can return to the main menu normally",
+      "passed": true
+    },
+    {
+      "check": "main menu can start a new practice attempt independently",
+      "passed": true
+    },
+    {
+      "check": "practice help cannot nest another practice attempt",
+      "passed": true
+    },
+    {
+      "check": "practice restart has its own confirmation",
+      "passed": true
+    },
+    {
+      "check": "leaving practice returns to the same menu without starting a player year",
+      "passed": true
+    }
+  ],
+  "language": "th",
+  "passed": true,
+  "resolution": [
+    1600,
+    900
+  ]
+}
